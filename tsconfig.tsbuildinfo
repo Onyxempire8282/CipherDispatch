@@ -1,0 +1,1 @@
+{"root":["./src/main.tsx","./src/pwa-env.d.ts","./src/vite-env.d.ts","./src/lib/supabase.ts","./src/routes/app.tsx","./src/routes/login.tsx","./src/routes/admin/claims.tsx","./src/routes/admin/newclaim.tsx","./src/routes/appraiser/claimdetail.tsx","./src/routes/appraiser/myclaims.tsx"],"version":"5.9.3"}

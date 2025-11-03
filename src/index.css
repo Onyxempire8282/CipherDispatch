@@ -1,0 +1,6 @@
+@import "leaflet/dist/leaflet.css";
+
+:root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+input, select, button { padding: 8px; margin: 4px 0; }
+button { cursor: pointer; }
+img { display: block; }
