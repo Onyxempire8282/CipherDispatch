@@ -33,9 +33,17 @@
           <h3>My Claims</h3>
         </div>
       </div>
-      
-      <div id="status-summary" style="display:flex; gap:16px; margin:16px 0; justify-content:center; flex-wrap:wrap;">
-      </div>
+
+      <div
+        id="status-summary"
+        style="
+          display: flex;
+          gap: 16px;
+          margin: 16px 0;
+          justify-content: center;
+          flex-wrap: wrap;
+        "
+      ></div>
 
       <div id="claims-container">
         <div style="text-align: center; color: #a0aec0; padding: 40px">
@@ -82,14 +90,25 @@
 
       function renderClaims(claims) {
         // Calculate status counts
-        const pendingCount = claims.filter(c => c.status === "SCHEDULED" || c.status === "IN_PROGRESS").length;
-        const completedCount = claims.filter(c => c.status === "COMPLETED").length;
+        const scheduledCount = claims.filter(
+          (c) => c.status === "SCHEDULED"
+        ).length;
+        const inProgressCount = claims.filter(
+          (c) => c.status === "IN_PROGRESS"
+        ).length;
+        const completedCount = claims.filter(
+          (c) => c.status === "COMPLETED"
+        ).length;
 
         // Update status summary
         document.getElementById("status-summary").innerHTML = `
+          <div style="background:#2d3748; padding:16px 24px; border-radius:8px; border:2px solid #3b82f6;">
+            <div style="font-size:24px; font-weight:bold; color:#3b82f6;">${scheduledCount}</div>
+            <div style="color:#e2e8f0; font-size:14px;">📅 Scheduled</div>
+          </div>
           <div style="background:#2d3748; padding:16px 24px; border-radius:8px; border:2px solid #f59e0b;">
-            <div style="font-size:24px; font-weight:bold; color:#f59e0b;">${pendingCount}</div>
-            <div style="color:#e2e8f0; font-size:14px;">📋 Pending Claims</div>
+            <div style="font-size:24px; font-weight:bold; color:#f59e0b;">${inProgressCount}</div>
+            <div style="color:#e2e8f0; font-size:14px;">⚙️ In Progress</div>
           </div>
           <div style="background:#2d3748; padding:16px 24px; border-radius:8px; border:2px solid #10b981;">
             <div style="font-size:24px; font-weight:bold; color:#10b981;">${completedCount}</div>
@@ -105,18 +124,22 @@
 
         // Group claims by date
         const groupedClaims = groupClaimsByDate(claims);
-        
-        let html = '';
+
+        let html = "";
         for (const [dateKey, dateClaims] of Object.entries(groupedClaims)) {
           html += `
             <div style="margin-bottom:32px;">
               <h3 style="color:#e2e8f0; margin:16px 0; padding:12px; background:rgba(102, 126, 234, 0.2); border-left:4px solid #667eea; border-radius:4px;">
-                📅 ${dateKey}
+                📅 ${dateKey} <span style="color:#a0aec0; font-size:16px; font-weight:normal;">(${dateClaims.length} claim${dateClaims.length !== 1 ? 's' : ''})</span>
               </h3>
               <div class="grid">
-                ${dateClaims.map(claim => `
+                ${dateClaims
+                  .map(
+                    (claim) => `
                   <a class="claim-card" href="claim-detail.html?id=${claim.id}">
-                    <span class="status ${getStatusClass(claim.status)}">${claim.status}</span>
+                    <span class="status ${getStatusClass(claim.status)}">${
+                      claim.status
+                    }</span>
                     <h4>#${claim.claim_number}</h4>
                     <section>
                       <div class="title">Customer</div>
@@ -128,15 +151,19 @@
                     </section>
                     <section>
                       <div class="title">🚗 Vehicle Info</div>
-                      <div class="content">${claim.vehicle_year || ""} ${claim.vehicle_make || ""} ${claim.vehicle_model || ""}</div>
+                      <div class="content">${claim.vehicle_year || ""} ${
+                      claim.vehicle_make || ""
+                    } ${claim.vehicle_model || ""}</div>
                     </section>
                   </a>
-                `).join('')}
+                `
+                  )
+                  .join("")}
               </div>
             </div>
           `;
         }
-        
+
         document.getElementById("claims-container").innerHTML = html;
       }
 
@@ -144,22 +171,22 @@
         const groups = {};
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        
+
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
-        
+
         const nextWeek = new Date(today);
         nextWeek.setDate(nextWeek.getDate() + 7);
 
-        claims.forEach(claim => {
+        claims.forEach((claim) => {
           let dateKey;
-          
+
           if (!claim.appointment_start) {
             dateKey = "No Appointment Set";
           } else {
             const aptDate = new Date(claim.appointment_start);
             aptDate.setHours(0, 0, 0, 0);
-            
+
             if (claim.status === "COMPLETED") {
               dateKey = "Completed";
             } else if (aptDate.getTime() === today.getTime()) {
@@ -171,11 +198,11 @@
             } else if (aptDate < nextWeek) {
               dateKey = "This Week";
             } else {
-              dateKey = aptDate.toLocaleDateString("en-US", { 
-                weekday: "short", 
-                month: "short", 
+              dateKey = aptDate.toLocaleDateString("en-US", {
+                weekday: "short",
+                month: "short",
                 day: "numeric",
-                year: "numeric"
+                year: "numeric",
               });
             }
           }
@@ -189,21 +216,29 @@
         // Sort groups by priority
         const sortOrder = ["Overdue", "Today", "Tomorrow", "This Week"];
         const sortedGroups = {};
-        
-        sortOrder.forEach(key => {
+
+        sortOrder.forEach((key) => {
           if (groups[key]) sortedGroups[key] = groups[key];
         });
-        
+
         // Add other dated groups
-        Object.keys(groups).sort().forEach(key => {
-          if (!sortOrder.includes(key) && key !== "No Appointment Set" && key !== "Completed") {
-            sortedGroups[key] = groups[key];
-          }
-        });
-        
+        Object.keys(groups)
+          .sort()
+          .forEach((key) => {
+            if (
+              !sortOrder.includes(key) &&
+              key !== "No Appointment Set" &&
+              key !== "Completed"
+            ) {
+              sortedGroups[key] = groups[key];
+            }
+          });
+
         // Add No Appointment and Completed at the end
-        if (groups["No Appointment Set"]) sortedGroups["No Appointment Set"] = groups["No Appointment Set"];
-        if (groups["Completed"]) sortedGroups["Completed"] = groups["Completed"];
+        if (groups["No Appointment Set"])
+          sortedGroups["No Appointment Set"] = groups["No Appointment Set"];
+        if (groups["Completed"])
+          sortedGroups["Completed"] = groups["Completed"];
 
         return sortedGroups;
       }
