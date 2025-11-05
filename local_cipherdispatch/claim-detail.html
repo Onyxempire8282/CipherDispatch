@@ -451,6 +451,7 @@
 
         if (claimId) {
           await loadClaim();
+          startAutoRefresh(); // Start auto-refreshing photos every 15 seconds
         } else {
           document.getElementById("claim-content").innerHTML =
             '<div class="detail-card"><div style="text-align:center; color:#ef4444;">Invalid claim ID</div></div>';
@@ -745,6 +746,9 @@
           <button class="btn btn-primary" onclick="document.getElementById('photo-input').click()">
             📷 Upload Photos
           </button>
+          <button class="btn" onclick="loadPhotos()" style="margin-left:10px;">
+            🔄 Refresh Photos
+          </button>
           <div id="photo-grid" class="photo-grid">
             <div style="text-align:center; color:#a0aec0; padding:40px; grid-column:1/-1;">Loading photos...</div>
           </div>
@@ -1001,6 +1005,21 @@
         alert("All changes have been saved!");
         window.location.href = isAdmin ? "admin.html" : "my-claims.html";
       }
+
+      // Auto-refresh photos every 15 seconds to show updates from other users
+      let photoRefreshInterval;
+      function startAutoRefresh() {
+        photoRefreshInterval = setInterval(() => {
+          loadPhotos();
+        }, 15000); // 15 seconds
+      }
+
+      // Clean up interval when page unloads
+      window.addEventListener('beforeunload', () => {
+        if (photoRefreshInterval) {
+          clearInterval(photoRefreshInterval);
+        }
+      });
 
       document.addEventListener("keydown", (e) => {
         const lightbox = document.getElementById("lightbox");
