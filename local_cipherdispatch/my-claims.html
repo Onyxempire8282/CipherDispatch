@@ -142,8 +142,20 @@
           renderClaims(data || []);
         } catch (error) {
           console.error("Error loading claims:", error);
+
+          // Check if it's an authentication error
+          if (
+            error.message?.includes("JWT") ||
+            error.code === "PGRST301" ||
+            error.message?.includes("401")
+          ) {
+            alert("Your session has expired. Please log in again.");
+            window.location.href = "index.html";
+            return;
+          }
+
           document.getElementById("claims-container").innerHTML =
-            '<div style="text-align:center; color:#ef4444; padding:40px;">Error loading claims</div>';
+            '<div style="text-align:center; color:#ef4444; padding:40px;">Error loading claims. Please refresh the page.</div>';
         }
       }
 
