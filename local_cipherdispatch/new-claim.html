@@ -9,6 +9,18 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   </head>
   <body>
+    <!-- Navigation Menu -->
+    <nav class="nav-menu">
+      <div class="nav-left">
+        <span class="nav-brand">⚡ Claim Cipher</span>
+        <a href="admin.html">📋 Claims</a>
+        <a href="new-claim.html" class="active">➕ New Claim</a>
+      </div>
+      <div class="nav-right">
+        <button class="nav-logout" onclick="handleLogout()">Logout</button>
+      </div>
+    </nav>
+
     <div
       style="
         min-height: 100vh;
@@ -19,7 +31,6 @@
     >
       <div class="topbar">
         <div class="left">
-          <a href="admin.html">← Back</a>
           <h3>New Claim</h3>
         </div>
       </div>
@@ -146,9 +157,16 @@
       const successMsg = document.getElementById("success-msg");
       let allAppraisers = [];
 
+      async function handleLogout() {
+        await supabaseClient.auth.signOut();
+        window.location.href = "index.html";
+      }
+
       // Check authentication and load appraisers
       (async () => {
-        const { data: { session } } = await supabaseClient.auth.getSession();
+        const {
+          data: { session },
+        } = await supabaseClient.auth.getSession();
         if (!session) {
           window.location.href = "index.html";
           return;
@@ -164,7 +182,7 @@
         if (!error && data) {
           allAppraisers = data;
           const select = document.getElementById("assigned_to");
-          data.forEach(appraiser => {
+          data.forEach((appraiser) => {
             const option = document.createElement("option");
             option.value = appraiser.user_id;
             option.textContent = appraiser.full_name;

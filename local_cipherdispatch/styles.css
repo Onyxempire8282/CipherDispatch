@@ -96,6 +96,89 @@ button:disabled {
   cursor: not-allowed;
 }
 
+/* Navigation Menu */
+.nav-menu {
+  background: rgba(45, 55, 72, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.nav-menu .nav-left {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.nav-menu .nav-brand {
+  font-size: 18px;
+  font-weight: bold;
+  color: #e2e8f0;
+  text-decoration: none;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.nav-menu a {
+  color: #e2e8f0;
+  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  transition: background 0.2s;
+  font-weight: 500;
+}
+
+.nav-menu a:hover {
+  background: rgba(102, 126, 234, 0.2);
+}
+
+.nav-menu a.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.nav-menu .nav-right {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.nav-menu .nav-logout {
+  background: #ef4444;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.nav-menu .nav-logout:hover {
+  background: #dc2626;
+}
+
+@media (max-width: 768px) {
+  .nav-menu {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .nav-menu .nav-left,
+  .nav-menu .nav-right {
+    justify-content: center;
+  }
+}
+
 /* Top bar for pages like admin */
 .topbar {
   display: flex;

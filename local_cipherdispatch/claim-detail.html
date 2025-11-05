@@ -240,6 +240,21 @@
     </style>
   </head>
   <body>
+    <!-- Navigation Menu -->
+    <nav class="nav-menu">
+      <div class="nav-left">
+        <span class="nav-brand">⚡ Claim Cipher</span>
+        <a href="admin.html" id="nav-claims">📋 Claims</a>
+        <a href="my-claims.html" id="nav-my-claims" style="display: none"
+          >📋 My Claims</a
+        >
+        <a href="new-claim.html" id="nav-new-claim">➕ New Claim</a>
+      </div>
+      <div class="nav-right">
+        <button class="nav-logout" onclick="handleLogout()">Logout</button>
+      </div>
+    </nav>
+
     <div
       style="
         min-height: 100vh;
@@ -272,9 +287,6 @@
               </button>
               <button class="btn btn-secondary" onclick="history.back()">
                 ← Back
-              </button>
-              <button class="btn btn-danger" onclick="handleLogout()">
-                Logout
               </button>
             </div>
           </div>
@@ -344,6 +356,17 @@
           .single();
 
         isAdmin = profile?.role === "admin";
+
+        // Update navigation based on role
+        if (isAdmin) {
+          document.getElementById("nav-claims").style.display = "block";
+          document.getElementById("nav-my-claims").style.display = "none";
+          document.getElementById("nav-new-claim").style.display = "block";
+        } else {
+          document.getElementById("nav-claims").style.display = "none";
+          document.getElementById("nav-my-claims").style.display = "block";
+          document.getElementById("nav-new-claim").style.display = "none";
+        }
 
         if (isAdmin) {
           const { data, error } = await supabaseClient
@@ -898,7 +921,7 @@
         // All changes are auto-saved as they happen
         // This button just provides a clear exit point
         alert("All changes have been saved!");
-        window.location.href = "admin.html";
+        window.location.href = isAdmin ? "admin.html" : "my-claims.html";
       }
 
       document.addEventListener("keydown", (e) => {
