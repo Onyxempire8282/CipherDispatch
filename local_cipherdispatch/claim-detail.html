@@ -660,10 +660,10 @@
           </div>
 
           <div class="action-buttons">
-            <button class="btn btn-scheduled" onclick="updateStatus('SCHEDULED')">
+            <button class="btn btn-primary" onclick="updateStatus('SCHEDULED')">
               📅 Mark Scheduled
             </button>
-            <button class="btn btn-progress" onclick="updateStatus('IN_PROGRESS')">
+            <button class="btn btn-primary" onclick="updateStatus('IN_PROGRESS')">
               🔧 Start Work
             </button>
             <button class="btn btn-complete" onclick="updateStatus('COMPLETED')">
@@ -715,16 +715,6 @@
                   : ""
               }"
               onchange="updateAppointment('end', this.value)">
-          </div>
-
-          <div class="danger-zone">
-            <h5>⚠️ Danger Zone</h5>
-            <button class="btn btn-danger" onclick="deleteClaim()">
-              🗑️ Permanently Delete Claim
-            </button>
-            <p style="font-size:12px; color:#a0aec0; margin-top:8px;">
-              ⚠️ This action cannot be undone. All photos and data will be permanently deleted.
-            </p>
           </div>
         </div>
         `;
@@ -786,6 +776,23 @@
           </div>
         </div>
       `;
+
+        // Add delete button at bottom for admin only
+        if (isAdmin) {
+          html += `
+        <div class="detail-card">
+          <div class="danger-zone">
+            <h5>⚠️ Danger Zone</h5>
+            <button class="btn btn-danger" onclick="deleteClaim()">
+              🗑️ Permanently Delete Claim
+            </button>
+            <p style="font-size:12px; color:#a0aec0; margin-top:8px;">
+              ⚠️ This action cannot be undone. All photos and data will be permanently deleted.
+            </p>
+          </div>
+        </div>
+      `;
+        }
 
         document.getElementById("claim-content").innerHTML = html;
       }
