@@ -769,16 +769,18 @@
         html += `
         <div class="detail-card">
           <h4>📸 Photos (<span id="photo-count">0</span>)</h4>
-          <input type="file" id="photo-input" accept="image/*" multiple style="display:none;" onchange="handlePhotoUpload(event)">
-          <button class="btn btn-primary" onclick="document.getElementById('photo-input').click()">
-            📷 Upload Photos
-          </button>
-          <button class="btn" id="refresh-photos-btn" onclick="refreshPhotosManually()" style="margin-left:10px;">
-            🔄 Refresh Photos
-          </button>
-          <button class="btn" onclick="downloadAllPhotos()" style="margin-left:10px; background:#10b981;">
-            📦 Download All as ZIP
-          </button>
+          <div style="display:flex; gap:10px; margin-bottom:16px;">
+            <input type="file" id="photo-input" accept="image/*" multiple style="display:none;" onchange="handlePhotoUpload(event)">
+            <button class="btn btn-primary" onclick="document.getElementById('photo-input').click()" style="flex:1;">
+              📷 Upload Photos
+            </button>
+            <button class="btn btn-primary" id="refresh-photos-btn" onclick="refreshPhotosManually()" style="flex:1;">
+              🔄 Refresh Photos
+            </button>
+            <button class="btn btn-primary" onclick="downloadAllPhotos()" style="flex:1;">
+              📦 Download All as ZIP
+            </button>
+          </div>
           <div id="photo-grid" class="photo-grid">
             <div style="text-align:center; color:#a0aec0; padding:40px; grid-column:1/-1;">Loading photos...</div>
           </div>
@@ -1070,7 +1072,10 @@
       // Zoom functionality
       let currentZoom = 1;
       let isDragging = false;
-      let startX, startY, translateX = 0, translateY = 0;
+      let startX,
+        startY,
+        translateX = 0,
+        translateY = 0;
 
       function zoomIn() {
         currentZoom = Math.min(currentZoom + 0.5, 5);
@@ -1094,22 +1099,24 @@
       }
 
       function applyZoom() {
-        const img = document.getElementById('lightbox-img');
+        const img = document.getElementById("lightbox-img");
         img.style.transform = `scale(${currentZoom}) translate(${translateX}px, ${translateY}px)`;
-        img.style.cursor = currentZoom > 1 ? 'move' : 'default';
+        img.style.cursor = currentZoom > 1 ? "move" : "default";
       }
 
       // Pan functionality when zoomed
-      document.getElementById('lightbox-img').addEventListener('mousedown', (e) => {
-        if (currentZoom > 1) {
-          isDragging = true;
-          startX = e.clientX - translateX;
-          startY = e.clientY - translateY;
-          e.preventDefault();
-        }
-      });
+      document
+        .getElementById("lightbox-img")
+        .addEventListener("mousedown", (e) => {
+          if (currentZoom > 1) {
+            isDragging = true;
+            startX = e.clientX - translateX;
+            startY = e.clientY - translateY;
+            e.preventDefault();
+          }
+        });
 
-      document.addEventListener('mousemove', (e) => {
+      document.addEventListener("mousemove", (e) => {
         if (isDragging) {
           translateX = e.clientX - startX;
           translateY = e.clientY - startY;
@@ -1117,20 +1124,20 @@
         }
       });
 
-      document.addEventListener('mouseup', () => {
+      document.addEventListener("mouseup", () => {
         isDragging = false;
       });
 
       // Download all photos as ZIP
       async function downloadAllPhotos() {
         if (photos.length === 0) {
-          alert('No photos to download');
+          alert("No photos to download");
           return;
         }
 
         const btn = event.target;
         const originalText = btn.textContent;
-        btn.textContent = '📦 Preparing ZIP...';
+        btn.textContent = "📦 Preparing ZIP...";
         btn.disabled = true;
 
         try {
@@ -1151,22 +1158,22 @@
             folder.file(photo.name, blob);
           }
 
-          btn.textContent = '📦 Creating ZIP...';
-          const content = await zip.generateAsync({ type: 'blob' });
-          
+          btn.textContent = "📦 Creating ZIP...";
+          const content = await zip.generateAsync({ type: "blob" });
+
           // Download the ZIP
-          const link = document.createElement('a');
+          const link = document.createElement("a");
           link.href = URL.createObjectURL(content);
           link.download = `claim-${claimId}-photos.zip`;
           link.click();
-          
-          btn.textContent = '✓ Downloaded!';
+
+          btn.textContent = "✓ Downloaded!";
           setTimeout(() => {
             btn.textContent = originalText;
           }, 2000);
         } catch (error) {
-          console.error('Error downloading photos:', error);
-          alert('Error creating ZIP file: ' + error.message);
+          console.error("Error downloading photos:", error);
+          alert("Error creating ZIP file: " + error.message);
           btn.textContent = originalText;
         } finally {
           btn.disabled = false;
