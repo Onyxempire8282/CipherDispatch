@@ -746,7 +746,7 @@
           <button class="btn btn-primary" onclick="document.getElementById('photo-input').click()">
             📷 Upload Photos
           </button>
-          <button class="btn" onclick="loadPhotos()" style="margin-left:10px;">
+          <button class="btn" id="refresh-photos-btn" onclick="refreshPhotosManually()" style="margin-left:10px;">
             🔄 Refresh Photos
           </button>
           <div id="photo-grid" class="photo-grid">
@@ -858,6 +858,7 @@
       }
 
       async function loadPhotos() {
+        console.log("Loading photos for claim:", claimId);
         try {
           const { data, error } = await supabaseClient.storage
             .from("claim-photos")
@@ -867,6 +868,7 @@
 
           if (error) throw error;
           photos = data || [];
+          console.log("Loaded photos:", photos.length);
           document.getElementById("photo-count").textContent = photos.length;
           renderPhotos();
         } catch (error) {
@@ -902,6 +904,31 @@
         `;
           })
           .join("");
+      }
+
+      async function refreshPhotosManually() {
+        const btn = document.getElementById("refresh-photos-btn");
+        if (!btn) return;
+
+        const originalText = btn.textContent;
+        btn.textContent = "🔄 Refreshing...";
+        btn.disabled = true;
+
+        try {
+          await loadPhotos();
+          btn.textContent = "✓ Refreshed!";
+          setTimeout(() => {
+            btn.textContent = originalText;
+          }, 1500);
+        } catch (error) {
+          console.error("Error refreshing photos:", error);
+          btn.textContent = "✗ Error";
+          setTimeout(() => {
+            btn.textContent = originalText;
+          }, 1500);
+        } finally {
+          btn.disabled = false;
+        }
       }
 
       async function handlePhotoUpload(event) {
@@ -1015,7 +1042,7 @@
       }
 
       // Clean up interval when page unloads
-      window.addEventListener('beforeunload', () => {
+      window.addEventListener("beforeunload", () => {
         if (photoRefreshInterval) {
           clearInterval(photoRefreshInterval);
         }
