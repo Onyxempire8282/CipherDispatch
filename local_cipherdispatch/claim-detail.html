@@ -332,7 +332,7 @@
         const { data: profile } = await supabaseClient
           .from("profiles")
           .select("role")
-          .eq("id", currentUser.id)
+          .eq("user_id", currentUser.id)
           .single();
 
         isAdmin = profile?.role === "admin";
@@ -340,9 +340,10 @@
         if (isAdmin) {
           const { data } = await supabaseClient
             .from("profiles")
-            .select("id, email, role")
+            .select("user_id, email, role")
             .eq("role", "appraiser")
             .order("email");
+          allAppraisers = data || [];
           allAppraisers = data || [];
         }
 
@@ -369,8 +370,8 @@
           if (currentClaim.assigned_to) {
             const { data: appraiserData } = await supabaseClient
               .from("profiles")
-              .select("id, email")
-              .eq("id", currentClaim.assigned_to)
+              .select("user_id, email")
+              .eq("user_id", currentClaim.assigned_to)
               .single();
             currentClaim.appraiser = appraiserData;
           }
@@ -531,8 +532,8 @@
               ${allAppraisers
                 .map(
                   (a) => `
-                <option value="${a.id}" ${
-                    currentClaim.assigned_to === a.id ? "selected" : ""
+                <option value="${a.user_id}" ${
+                    currentClaim.assigned_to === a.user_id ? "selected" : ""
                   }>
                   ${a.email}
                 </option>

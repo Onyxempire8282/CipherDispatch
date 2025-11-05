@@ -79,15 +79,21 @@
 
       async function checkUserRoleAndRedirect(user) {
         try {
-          const { data: profile } = await supabaseClient
+          console.log("Checking role for user:", user.id, user.email);
+
+          const { data: profile, error } = await supabaseClient
             .from("profiles")
             .select("role")
-            .eq("id", user.id)
+            .eq("user_id", user.id)
             .single();
 
+          console.log("Profile data:", profile, "Error:", error);
+
           if (profile?.role === "admin") {
+            console.log("Redirecting to admin.html");
             window.location.href = "admin.html";
           } else {
+            console.log("Redirecting to my-claims.html");
             window.location.href = "my-claims.html";
           }
         } catch (error) {

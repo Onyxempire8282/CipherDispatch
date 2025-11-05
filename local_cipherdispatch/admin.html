@@ -97,7 +97,7 @@
               const { data: appraiserData } = await supabaseClient
                 .from("profiles")
                 .select("email")
-                .eq("id", claim.assigned_to)
+                .eq("user_id", claim.assigned_to)
                 .single();
               claim.appraiser = appraiserData;
             }
