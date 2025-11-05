@@ -197,9 +197,14 @@
                   .map(
                     (claim) => `
                   <a class="claim-card" href="claim-detail.html?id=${claim.id}">
-                    <span class="status ${getStatusClass(claim.status)}">${
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                      <span class="status ${getStatusClass(claim.status)}">${
                       claim.status
                     }</span>
+                      <span style="background:#667eea; color:white; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:bold;">
+                        ✏️ Edit
+                      </span>
+                    </div>
                     <h4>#${claim.claim_number}</h4>
                     <section>
                       <div class="title">Customer</div>
