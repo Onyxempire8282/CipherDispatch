@@ -39,9 +39,16 @@
           <button id="toggle-archived" class="toggle-archived">
             📦 View Archived
           </button>
+          <button id="download-csv" class="toggle-archived" style="display:none; background:#10b981;">
+            📥 Download CSV
+          </button>
           <a href="new-claim.html">+ New Claim</a>
         </div>
       </div>
+      
+      <div id="status-summary" style="display:flex; gap:16px; margin:16px 0; justify-content:center; flex-wrap:wrap;">
+      </div>
+
       <div id="claims-grid" class="grid">
         <div style="text-align: center; color: #a0aec0; padding: 40px">
           Loading claims...
@@ -78,8 +85,15 @@
           document.getElementById("view-title").textContent = showArchived
             ? "Archived Claims"
             : "Active Claims";
+          document.getElementById("download-csv").style.display = showArchived
+            ? "block"
+            : "none";
           renderClaims();
         });
+
+      document.getElementById("download-csv").addEventListener("click", () => {
+        downloadCSV();
+      });
 
       async function loadClaims() {
         try {
@@ -112,6 +126,27 @@
       }
 
       function renderClaims() {
+        // Calculate status counts
+        const scheduledCount = allClaims.filter(c => c.status === "SCHEDULED").length;
+        const inProgressCount = allClaims.filter(c => c.status === "IN_PROGRESS").length;
+        const completedCount = allClaims.filter(c => c.status === "COMPLETED").length;
+
+        // Update status summary
+        document.getElementById("status-summary").innerHTML = `
+          <div style="background:#2d3748; padding:16px 24px; border-radius:8px; border:2px solid #3b82f6;">
+            <div style="font-size:24px; font-weight:bold; color:#3b82f6;">${scheduledCount}</div>
+            <div style="color:#e2e8f0; font-size:14px;">📅 Scheduled</div>
+          </div>
+          <div style="background:#2d3748; padding:16px 24px; border-radius:8px; border:2px solid #f59e0b;">
+            <div style="font-size:24px; font-weight:bold; color:#f59e0b;">${inProgressCount}</div>
+            <div style="color:#e2e8f0; font-size:14px;">⚙️ In Progress</div>
+          </div>
+          <div style="background:#2d3748; padding:16px 24px; border-radius:8px; border:2px solid #10b981;">
+            <div style="font-size:24px; font-weight:bold; color:#10b981;">${completedCount}</div>
+            <div style="color:#e2e8f0; font-size:14px;">✅ Completed</div>
+          </div>
+        `;
+
         const filteredClaims = allClaims.filter((claim) =>
           showArchived
             ? claim.status === "COMPLETED"
@@ -178,6 +213,75 @@
           hour: "numeric",
           minute: "2-digit",
         })}`;
+      }
+
+      function downloadCSV() {
+        const completedClaims = allClaims.filter(c => c.status === "COMPLETED");
+        
+        if (completedClaims.length === 0) {
+          alert("No completed claims to download");
+          return;
+        }
+
+        // CSV headers
+        const headers = [
+          "Claim Number",
+          "Customer Name",
+          "Phone",
+          "Email",
+          "VIN",
+          "Vehicle Year",
+          "Vehicle Make",
+          "Vehicle Model",
+          "Address Line 1",
+          "Address Line 2",
+          "City",
+          "State",
+          "Postal Code",
+          "Status",
+          "Assigned To",
+          "Appointment Start",
+          "Appointment End",
+          "Notes",
+          "Created At"
+        ];
+
+        // Convert claims to CSV rows
+        const rows = completedClaims.map(claim => [
+          claim.claim_number || "",
+          claim.customer_name || "",
+          claim.phone || "",
+          claim.email || "",
+          claim.vin || "",
+          claim.vehicle_year || "",
+          claim.vehicle_make || "",
+          claim.vehicle_model || "",
+          claim.address_line1 || "",
+          claim.address_line2 || "",
+          claim.city || "",
+          claim.state || "",
+          claim.postal_code || "",
+          claim.status || "",
+          claim.appraiser?.full_name || "Unassigned",
+          claim.appointment_start || "",
+          claim.appointment_end || "",
+          claim.notes || "",
+          claim.created_at || ""
+        ].map(field => `"${String(field).replace(/"/g, '""')}"`).join(","));
+
+        // Combine headers and rows
+        const csv = [headers.join(","), ...rows].join("\n");
+
+        // Create download link
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `completed_claims_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = "hidden";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
       }
     </script>
   </body>

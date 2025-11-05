@@ -96,8 +96,24 @@
 
             <label>Postal Code</label>
             <input type="text" id="postal_code" placeholder="Postal code" />
-            <label>Appointment Date &amp; Time</label>
+
+            <label>Appointment Start Date &amp; Time</label>
             <input type="datetime-local" id="appointment_start" />
+
+            <label>Appointment End Date &amp; Time</label>
+            <input type="datetime-local" id="appointment_end" />
+
+            <label>Assign Appraiser</label>
+            <select id="assigned_to">
+              <option value="">Unassigned</option>
+            </select>
+
+            <label>Status</label>
+            <select id="status">
+              <option value="SCHEDULED">Scheduled</option>
+              <option value="IN_PROGRESS">In Progress</option>
+              <option value="COMPLETED">Completed</option>
+            </select>
 
             <label>Notes</label>
             <textarea
@@ -128,13 +144,34 @@
       const claimForm = document.getElementById("claim-form");
       const errorMsg = document.getElementById("error-msg");
       const successMsg = document.getElementById("success-msg");
+      let allAppraisers = [];
 
-      // Check authentication
-      supabaseClient.auth.getSession().then(({ data: { session } }) => {
+      // Check authentication and load appraisers
+      (async () => {
+        const { data: { session } } = await supabaseClient.auth.getSession();
         if (!session) {
           window.location.href = "index.html";
+          return;
         }
-      });
+
+        // Load appraisers for assignment dropdown
+        const { data, error } = await supabaseClient
+          .from("profiles")
+          .select("user_id, full_name, role")
+          .eq("role", "appraiser")
+          .order("full_name");
+
+        if (!error && data) {
+          allAppraisers = data;
+          const select = document.getElementById("assigned_to");
+          data.forEach(appraiser => {
+            const option = document.createElement("option");
+            option.value = appraiser.user_id;
+            option.textContent = appraiser.full_name;
+            select.appendChild(option);
+          });
+        }
+      })();
 
       claimForm.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -157,8 +194,11 @@
           postal_code: document.getElementById("postal_code").value || null,
           appointment_start:
             document.getElementById("appointment_start").value || null,
+          appointment_end:
+            document.getElementById("appointment_end").value || null,
+          assigned_to: document.getElementById("assigned_to").value || null,
+          status: document.getElementById("status").value,
           notes: document.getElementById("notes").value || null,
-          status: "SCHEDULED",
         };
 
         try {
