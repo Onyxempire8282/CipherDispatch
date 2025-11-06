@@ -133,10 +133,17 @@
 
             // Load photo count for each claim
             try {
-              const { data: photoData } = await supabaseClient.storage
+              const { data: photoData, error: photoError } = await supabaseClient.storage
                 .from("claim-photos")
                 .list(`${claim.id}/`);
-              claim.photoCount = photoData ? photoData.length : 0;
+              
+              if (photoError) {
+                console.warn(`Photo list error for claim ${claim.id}:`, photoError);
+                claim.photoCount = 0;
+              } else {
+                claim.photoCount = photoData ? photoData.length : 0;
+                console.log(`Claim ${claim.claim_number}: ${claim.photoCount} photos`);
+              }
             } catch (error) {
               console.warn(
                 `Could not load photos for claim ${claim.id}:`,
