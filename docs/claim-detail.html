@@ -491,17 +491,24 @@
       })();
 
       // Helper function to create notifications
-      async function createNotification(userId, claimId, type, message, oldValue, newValue) {
+      async function createNotification(
+        userId,
+        claimId,
+        type,
+        message,
+        oldValue,
+        newValue
+      ) {
         try {
-          const { error } = await supabaseClient.rpc('create_notification', {
+          const { error } = await supabaseClient.rpc("create_notification", {
             p_user_id: userId,
             p_claim_id: claimId,
             p_type: type,
             p_message: message,
             p_old_value: oldValue,
-            p_new_value: newValue
+            p_new_value: newValue,
           });
-          
+
           if (error) {
             console.error("Error creating notification:", error);
           }
@@ -580,96 +587,154 @@
 
         let html = `
         <div class="detail-card">
-          <h4>👤 Customer Information</h4>
-          <div class="detail-row">
-            <span class="detail-label">Name:</span>
-            <span class="detail-value">${currentClaim.customer_name}</span>
-          </div>
-          ${
-            currentClaim.phone
-              ? `
-            <div class="detail-row">
-              <span class="detail-label">Phone:</span>
-              <span class="detail-value"><a href="tel:${currentClaim.phone}" style="color:#3b82f6;">${currentClaim.phone}</a></span>
-            </div>
-          `
-              : ""
-          }
-          ${
-            currentClaim.email
-              ? `
-            <div class="detail-row">
-              <span class="detail-label">Email:</span>
-              <span class="detail-value"><a href="mailto:${currentClaim.email}" style="color:#3b82f6;">${currentClaim.email}</a></span>
-            </div>
-          `
-              : ""
-          }
-          ${
-            fullAddress
-              ? `
-            <div class="detail-row">
-              <span class="detail-label">Address:</span>
-              <span class="detail-value">${fullAddress}</span>
-            </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h4 style="margin:0;">👤 Customer Information</h4>
             ${
-              mapUrl
-                ? `
-              <div style="margin-top:12px;">
-                <a href="${mapUrl}" target="_blank" class="btn btn-map">📍 Open in Maps</a>
-              </div>
-            `
+              isAdmin
+                ? `<button class="btn btn-primary" style="padding:6px 12px; font-size:12px;" onclick="toggleEditMode()">✏️ Edit Details</button>`
                 : ""
             }
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Name:</span>
+            <span class="detail-value" id="view-customer-name">${
+              currentClaim.customer_name
+            }</span>
+            <input type="text" id="edit-customer-name" value="${
+              currentClaim.customer_name
+            }" style="display:none; flex:1; padding:8px; background:#1a202c; border:1px solid #4a5568; border-radius:4px; color:#e2e8f0;">
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Phone:</span>
+            <span class="detail-value" id="view-phone">${
+              currentClaim.phone
+                ? `<a href="tel:${currentClaim.phone}" style="color:#3b82f6;">${currentClaim.phone}</a>`
+                : "N/A"
+            }</span>
+            <input type="tel" id="edit-phone" value="${
+              currentClaim.phone || ""
+            }" style="display:none; flex:1; padding:8px; background:#1a202c; border:1px solid #4a5568; border-radius:4px; color:#e2e8f0;">
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Email:</span>
+            <span class="detail-value" id="view-email">${
+              currentClaim.email
+                ? `<a href="mailto:${currentClaim.email}" style="color:#3b82f6;">${currentClaim.email}</a>`
+                : "N/A"
+            }</span>
+            <input type="email" id="edit-email" value="${
+              currentClaim.email || ""
+            }" style="display:none; flex:1; padding:8px; background:#1a202c; border:1px solid #4a5568; border-radius:4px; color:#e2e8f0;">
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Address Line 1:</span>
+            <span class="detail-value" id="view-address-line1">${
+              currentClaim.address_line1 || "N/A"
+            }</span>
+            <input type="text" id="edit-address-line1" value="${
+              currentClaim.address_line1 || ""
+            }" style="display:none; flex:1; padding:8px; background:#1a202c; border:1px solid #4a5568; border-radius:4px; color:#e2e8f0;">
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Address Line 2:</span>
+            <span class="detail-value" id="view-address-line2">${
+              currentClaim.address_line2 || "N/A"
+            }</span>
+            <input type="text" id="edit-address-line2" value="${
+              currentClaim.address_line2 || ""
+            }" style="display:none; flex:1; padding:8px; background:#1a202c; border:1px solid #4a5568; border-radius:4px; color:#e2e8f0;">
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">City:</span>
+            <span class="detail-value" id="view-city">${
+              currentClaim.city || "N/A"
+            }</span>
+            <input type="text" id="edit-city" value="${
+              currentClaim.city || ""
+            }" style="display:none; flex:1; padding:8px; background:#1a202c; border:1px solid #4a5568; border-radius:4px; color:#e2e8f0;">
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">State:</span>
+            <span class="detail-value" id="view-state">${
+              currentClaim.state || "N/A"
+            }</span>
+            <input type="text" id="edit-state" value="${
+              currentClaim.state || ""
+            }" style="display:none; flex:1; padding:8px; background:#1a202c; border:1px solid #4a5568; border-radius:4px; color:#e2e8f0;">
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Postal Code:</span>
+            <span class="detail-value" id="view-postal-code">${
+              currentClaim.postal_code || "N/A"
+            }</span>
+            <input type="text" id="edit-postal-code" value="${
+              currentClaim.postal_code || ""
+            }" style="display:none; flex:1; padding:8px; background:#1a202c; border:1px solid #4a5568; border-radius:4px; color:#e2e8f0;">
+          </div>
+          ${
+            mapUrl
+              ? `
+            <div style="margin-top:12px;">
+              <a href="${mapUrl}" target="_blank" class="btn btn-map">📍 Open in Maps</a>
+            </div>
           `
               : ""
           }
+          <div id="edit-actions" style="display:none; margin-top:16px; gap:8px;">
+            <button class="btn btn-complete" onclick="saveClaimDetails()">💾 Save Changes</button>
+            <button class="btn" style="background:#6b7280;" onclick="cancelEditMode()">❌ Cancel</button>
+          </div>
         </div>
 
         <div class="detail-card">
           <h4>🚗 Vehicle Information</h4>
-          ${
-            currentClaim.vin
-              ? `
-            <div class="detail-row">
-              <span class="detail-label">VIN:</span>
-              <span class="detail-value">${currentClaim.vin}</span>
-            </div>
-          `
-              : ""
-          }
+          <div class="detail-row">
+            <span class="detail-label">VIN:</span>
+            <span class="detail-value" id="view-vin">${
+              currentClaim.vin || "N/A"
+            }</span>
+            <input type="text" id="edit-vin" value="${
+              currentClaim.vin || ""
+            }" style="display:none; flex:1; padding:8px; background:#1a202c; border:1px solid #4a5568; border-radius:4px; color:#e2e8f0;">
+          </div>
           <div class="detail-row">
             <span class="detail-label">Year:</span>
-            <span class="detail-value">${
+            <span class="detail-value" id="view-vehicle-year">${
               currentClaim.vehicle_year || "N/A"
             }</span>
+            <input type="text" id="edit-vehicle-year" value="${
+              currentClaim.vehicle_year || ""
+            }" style="display:none; flex:1; padding:8px; background:#1a202c; border:1px solid #4a5568; border-radius:4px; color:#e2e8f0;">
           </div>
           <div class="detail-row">
             <span class="detail-label">Make:</span>
-            <span class="detail-value">${
+            <span class="detail-value" id="view-vehicle-make">${
               currentClaim.vehicle_make || "N/A"
             }</span>
+            <input type="text" id="edit-vehicle-make" value="${
+              currentClaim.vehicle_make || ""
+            }" style="display:none; flex:1; padding:8px; background:#1a202c; border:1px solid #4a5568; border-radius:4px; color:#e2e8f0;">
           </div>
           <div class="detail-row">
             <span class="detail-label">Model:</span>
-            <span class="detail-value">${
+            <span class="detail-value" id="view-vehicle-model">${
               currentClaim.vehicle_model || "N/A"
             }</span>
+            <input type="text" id="edit-vehicle-model" value="${
+              currentClaim.vehicle_model || ""
+            }" style="display:none; flex:1; padding:8px; background:#1a202c; border:1px solid #4a5568; border-radius:4px; color:#e2e8f0;">
           </div>
         </div>
 
-        ${
-          currentClaim.notes
-            ? `
-          <div class="detail-card">
-            <h4>📝 Accident Description / Notes</h4>
-            <div style="white-space: pre-wrap; background:#1a202c; padding:16px; border-radius:6px; color:#e2e8f0;">
-              ${currentClaim.notes}
-            </div>
+        <div class="detail-card">
+          <h4>📝 Accident Description / Notes</h4>
+          <div id="view-notes" style="white-space: pre-wrap; background:#1a202c; padding:16px; border-radius:6px; color:#e2e8f0;">
+            ${currentClaim.notes || "No notes added"}
           </div>
-        `
-            : ""
-        }
+          <textarea id="edit-notes" style="display:none; width:100%; min-height:120px; padding:12px; background:#1a202c; border:1px solid #4a5568; border-radius:6px; color:#e2e8f0; font-family:inherit; resize:vertical;">${
+            currentClaim.notes || ""
+          }</textarea>
+        </div>
 `;
 
         if (isAdmin) {
@@ -828,26 +893,26 @@
       async function updateStatus(status) {
         try {
           const oldStatus = currentClaim.status;
-          
+
           const { error } = await supabaseClient
             .from("claims")
             .update({ status })
             .eq("id", claimId);
 
           if (error) throw error;
-          
+
           // Create notification for appraiser if assigned
           if (currentClaim.assigned_to) {
             await createNotification(
               currentClaim.assigned_to,
               claimId,
-              status === 'CANCELED' ? 'CANCELED' : 'STATUS_CHANGED',
+              status === "CANCELED" ? "CANCELED" : "STATUS_CHANGED",
               `Claim #${currentClaim.claim_number} status changed from ${oldStatus} to ${status}`,
               oldStatus,
               status
             );
           }
-          
+
           await loadClaim();
           alert(`Status updated to ${status}`);
         } catch (error) {
@@ -858,26 +923,26 @@
       async function assignAppraiser(appraiserId) {
         try {
           const oldAppraiserId = currentClaim.assigned_to;
-          
+
           const { error } = await supabaseClient
             .from("claims")
             .update({ assigned_to: appraiserId || null })
             .eq("id", claimId);
 
           if (error) throw error;
-          
+
           // Create notification for newly assigned appraiser
           if (appraiserId && appraiserId !== oldAppraiserId) {
             await createNotification(
               appraiserId,
               claimId,
-              'ASSIGNED',
+              "ASSIGNED",
               `You have been assigned to claim #${currentClaim.claim_number}`,
               oldAppraiserId,
               appraiserId
             );
           }
-          
+
           await loadClaim();
           alert(
             appraiserId
@@ -909,6 +974,121 @@
           await loadClaim(); // Reload to show updated time
         } catch (error) {
           alert("Error updating appointment: " + error.message);
+        }
+      }
+
+      function toggleEditMode() {
+        // Hide view elements, show edit elements
+        const fields = [
+          "customer-name",
+          "phone",
+          "email",
+          "address-line1",
+          "address-line2",
+          "city",
+          "state",
+          "postal-code",
+          "vin",
+          "vehicle-year",
+          "vehicle-make",
+          "vehicle-model",
+        ];
+
+        fields.forEach((field) => {
+          const viewEl = document.getElementById(`view-${field}`);
+          const editEl = document.getElementById(`edit-${field}`);
+          if (viewEl) viewEl.style.display = "none";
+          if (editEl) editEl.style.display = "block";
+        });
+
+        // Toggle notes
+        const viewNotes = document.getElementById("view-notes");
+        const editNotes = document.getElementById("edit-notes");
+        if (viewNotes) viewNotes.style.display = "none";
+        if (editNotes) editNotes.style.display = "block";
+
+        // Show save/cancel buttons
+        const editActions = document.getElementById("edit-actions");
+        if (editActions) editActions.style.display = "flex";
+      }
+
+      function cancelEditMode() {
+        // Show view elements, hide edit elements
+        const fields = [
+          "customer-name",
+          "phone",
+          "email",
+          "address-line1",
+          "address-line2",
+          "city",
+          "state",
+          "postal-code",
+          "vin",
+          "vehicle-year",
+          "vehicle-make",
+          "vehicle-model",
+        ];
+
+        fields.forEach((field) => {
+          const viewEl = document.getElementById(`view-${field}`);
+          const editEl = document.getElementById(`edit-${field}`);
+          if (viewEl) viewEl.style.display = "block";
+          if (editEl) editEl.style.display = "none";
+        });
+
+        // Toggle notes
+        const viewNotes = document.getElementById("view-notes");
+        const editNotes = document.getElementById("edit-notes");
+        if (viewNotes) viewNotes.style.display = "block";
+        if (editNotes) editNotes.style.display = "none";
+
+        // Hide save/cancel buttons
+        const editActions = document.getElementById("edit-actions");
+        if (editActions) editActions.style.display = "none";
+      }
+
+      async function saveClaimDetails() {
+        try {
+          const updatedFields = {
+            customer_name: document.getElementById("edit-customer-name").value,
+            phone: document.getElementById("edit-phone").value,
+            email: document.getElementById("edit-email").value,
+            address_line1: document.getElementById("edit-address-line1").value,
+            address_line2: document.getElementById("edit-address-line2").value,
+            city: document.getElementById("edit-city").value,
+            state: document.getElementById("edit-state").value,
+            postal_code: document.getElementById("edit-postal-code").value,
+            vin: document.getElementById("edit-vin").value,
+            vehicle_year: document.getElementById("edit-vehicle-year").value,
+            vehicle_make: document.getElementById("edit-vehicle-make").value,
+            vehicle_model: document.getElementById("edit-vehicle-model").value,
+            notes: document.getElementById("edit-notes").value,
+          };
+
+          const { error } = await supabaseClient
+            .from("claims")
+            .update(updatedFields)
+            .eq("id", claimId);
+
+          if (error) throw error;
+
+          // Create notification if claim is assigned
+          if (currentClaim.assigned_to) {
+            await createNotification(
+              currentClaim.assigned_to,
+              claimId,
+              "UPDATED",
+              `Claim #${currentClaim.claim_number} details have been updated`,
+              null,
+              null
+            );
+          }
+
+          alert("Claim details saved successfully!");
+          await loadClaim(); // Reload to show updated data
+          cancelEditMode();
+        } catch (error) {
+          alert("Error saving claim details: " + error.message);
         }
       }
 

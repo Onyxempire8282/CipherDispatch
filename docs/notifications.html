@@ -165,7 +165,8 @@
           // Query the new notifications table with claim details
           const { data: notifs, error } = await supabaseClient
             .from("notifications")
-            .select(`
+            .select(
+              `
               *,
               claims!notifications_claim_id_fkey (
                 claim_number,
@@ -173,7 +174,8 @@
                 status,
                 appointment_start
               )
-            `)
+            `
+            )
             .eq("user_id", currentUserId)
             .order("created_at", { ascending: false })
             .limit(50);
@@ -236,12 +238,12 @@
 
         notifications.forEach((notification) => {
           const timeAgo = getTimeAgo(notification.created_at);
-          
+
           // Get icon and color based on notification type
           let icon = "🔔";
           let bgColor = "rgba(102, 126, 234, 0.1)";
           let borderColor = "#667eea";
-          
+
           if (notification.type === "ASSIGNED") {
             icon = "🆕";
             bgColor = "rgba(102, 126, 234, 0.1)";
@@ -259,11 +261,15 @@
             bgColor = "rgba(16, 185, 129, 0.1)";
             borderColor = "#10b981";
           }
-          
+
           html += `
             <a href="claim-detail.html?id=${notification.claim_id}" 
                class="notification-card ${!notification.isRead ? "unread" : ""}"
-               style="${!notification.isRead ? `background:${bgColor}; border-left-color:${borderColor};` : ""}"
+               style="${
+                 !notification.isRead
+                   ? `background:${bgColor}; border-left-color:${borderColor};`
+                   : ""
+               }"
                onclick="markAsRead('${notification.id}')">
               <div class="notification-icon">${icon}</div>
               <div class="notification-content">
@@ -271,7 +277,9 @@
                   ${notification.message}
                 </div>
                 <div class="notification-message">
-                  Customer: ${notification.customer_name} • Claim #${notification.claim_number}
+                  Customer: ${notification.customer_name} • Claim #${
+            notification.claim_number
+          }
                 </div>
                 <div class="notification-time">${timeAgo}</div>
               </div>
@@ -307,10 +315,12 @@
       }
 
       document.getElementById("mark-all-read").addEventListener("click", () => {
-        const unreadIds = notifications.filter((n) => !n.isRead).map((n) => n.id);
-        
+        const unreadIds = notifications
+          .filter((n) => !n.isRead)
+          .map((n) => n.id);
+
         if (unreadIds.length === 0) return;
-        
+
         // Update all unread notifications in database
         supabaseClient
           .from("notifications")
