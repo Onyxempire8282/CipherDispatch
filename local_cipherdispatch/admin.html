@@ -130,6 +130,20 @@
                 .single();
               claim.appraiser = appraiserData;
             }
+
+            // Load photo count for each claim
+            try {
+              const { data: photoData } = await supabaseClient.storage
+                .from("claim-photos")
+                .list(`${claim.id}/`);
+              claim.photoCount = photoData ? photoData.length : 0;
+            } catch (error) {
+              console.warn(
+                `Could not load photos for claim ${claim.id}:`,
+                error
+              );
+              claim.photoCount = 0;
+            }
           }
 
           renderClaims();
@@ -213,9 +227,16 @@
                       <span class="status ${getStatusClass(claim.status)}">${
                       claim.status
                     }</span>
-                      <span style="background:#667eea; color:white; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:bold;">
-                        ✏️ Edit
-                      </span>
+                      <div style="display:flex; gap:8px; align-items:center;">
+                        ${
+                          claim.photoCount > 0
+                            ? `<span style="background:#10b981; color:white; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:bold;">📸 ${claim.photoCount}</span>`
+                            : ""
+                        }
+                        <span style="background:#667eea; color:white; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:bold;">
+                          ✏️ Edit
+                        </span>
+                      </div>
                     </div>
                     <h4>#${claim.claim_number}</h4>
                     <section>
