@@ -242,7 +242,23 @@
                 ${dateClaims
                   .map(
                     (claim) => `
-                  <a class="claim-card" href="claim-detail.html?id=${claim.id}">
+                  <div class="claim-card" style="position:relative;">
+                    ${
+                      showArchived
+                        ? `
+                      <button 
+                        onclick="deleteArchivedClaim('${claim.id}', '${claim.claim_number}', event)" 
+                        style="position:absolute; top:8px; right:8px; background:#ef4444; color:white; border:none; border-radius:4px; padding:6px 10px; cursor:pointer; font-size:12px; font-weight:bold; z-index:10;"
+                        title="Delete this claim permanently"
+                      >
+                        🗑️ Delete
+                      </button>
+                    `
+                        : ""
+                    }
+                    <a href="claim-detail.html?id=${
+                      claim.id
+                    }" style="text-decoration:none; color:inherit; display:block;">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                       <span class="status ${getStatusClass(claim.status)}">${
                       claim.status
@@ -278,7 +294,8 @@
                         claim.appraiser?.full_name || "Unassigned"
                       }</div>
                     </section>
-                  </a>
+                    </a>
+                  </div>
                 `
                   )
                   .join("")}
@@ -479,6 +496,51 @@
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+      }
+
+      async function deleteArchivedClaim(claimId, claimNumber, event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const confirmed = confirm(
+          `⚠️ WARNING: Are you sure you want to PERMANENTLY DELETE this claim?\n\n` +
+            `Claim #${claimNumber}\n\n` +
+            `This action CANNOT be undone and will delete:\n` +
+            `- The claim record\n` +
+            `- All associated photos\n` +
+            `- All related notifications\n\n` +
+            `Click OK to confirm permanent deletion.`
+        );
+
+        if (!confirmed) return;
+
+        try {
+          // Delete all photos for this claim first
+          const { data: photoList } = await supabaseClient.storage
+            .from("claim-photos")
+            .list(`${claimId}/`);
+
+          if (photoList && photoList.length > 0) {
+            const paths = photoList.map((p) => `${claimId}/${p.name}`);
+            await supabaseClient.storage.from("claim-photos").remove(paths);
+          }
+
+          // Delete the claim (notifications will cascade delete automatically)
+          const { error } = await supabaseClient
+            .from("claims")
+            .delete()
+            .eq("id", claimId);
+
+          if (error) throw error;
+
+          alert(`Claim #${claimNumber} has been permanently deleted.`);
+
+          // Reload claims to update the view
+          await loadClaims();
+        } catch (error) {
+          console.error("Error deleting claim:", error);
+          alert("Error deleting claim: " + error.message);
+        }
       }
     </script>
   </body>
