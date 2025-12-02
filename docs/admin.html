@@ -122,6 +122,8 @@
           // Load appraiser info for each claim
           allClaims = data || [];
           for (const claim of allClaims) {
+            claim.photoCount = 0; // Initialize to 0
+
             if (claim.assigned_to) {
               const { data: appraiserData } = await supabaseClient
                 .from("profiles")
@@ -130,36 +132,13 @@
                 .single();
               claim.appraiser = appraiserData;
             }
-
-            // Load photo count for each claim
-            try {
-              const { data: photoData, error: photoError } =
-                await supabaseClient.storage
-                  .from("claim-photos")
-                  .list(`${claim.id}/`);
-
-              if (photoError) {
-                console.warn(
-                  `Photo list error for claim ${claim.id}:`,
-                  photoError
-                );
-                claim.photoCount = 0;
-              } else {
-                claim.photoCount = photoData ? photoData.length : 0;
-                console.log(
-                  `Claim ${claim.claim_number}: ${claim.photoCount} photos`
-                );
-              }
-            } catch (error) {
-              console.warn(
-                `Could not load photos for claim ${claim.id}:`,
-                error
-              );
-              claim.photoCount = 0;
-            }
           }
 
+          // Render immediately with photo counts at 0
           renderClaims();
+
+          // Load photo counts in background (lazy load)
+          loadPhotoCounts();
         } catch (error) {
           console.error("Error loading claims:", error);
 
@@ -177,6 +156,30 @@
           document.getElementById("claims-container").innerHTML =
             '<div style="text-align:center; color:#ef4444; padding:40px;">Error loading claims. Please refresh the page.</div>';
         }
+      }
+
+      async function loadPhotoCounts() {
+        // Load photo counts in parallel for better performance
+        const photoPromises = allClaims.map(async (claim) => {
+          try {
+            const { data: photoData, error: photoError } =
+              await supabaseClient.storage
+                .from("claim-photos")
+                .list(`${claim.id}/`);
+
+            if (!photoError && photoData) {
+              claim.photoCount = photoData.length;
+            }
+          } catch (error) {
+            // Silently fail - photo count stays at 0
+          }
+        });
+
+        // Wait for all photo counts to load
+        await Promise.all(photoPromises);
+
+        // Re-render to show photo counts
+        renderClaims();
       }
 
       function renderClaims() {
