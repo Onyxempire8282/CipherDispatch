@@ -210,6 +210,10 @@
         errorMsg.style.display = "none";
         successMsg.style.display = "none";
 
+        // Convert datetime-local values to ISO format
+        const aptStart = document.getElementById("appointment_start").value;
+        const aptEnd = document.getElementById("appointment_end").value;
+
         const formData = {
           claim_number: document.getElementById("claim_number").value,
           customer_name: document.getElementById("customer_name").value,
@@ -225,10 +229,8 @@
           city: document.getElementById("city").value || null,
           state: document.getElementById("state").value || null,
           postal_code: document.getElementById("postal_code").value || null,
-          appointment_start:
-            document.getElementById("appointment_start").value || null,
-          appointment_end:
-            document.getElementById("appointment_end").value || null,
+          appointment_start: aptStart ? new Date(aptStart).toISOString() : null,
+          appointment_end: aptEnd ? new Date(aptEnd).toISOString() : null,
           assigned_to: document.getElementById("assigned_to").value || null,
           status: document.getElementById("status").value,
           notes: document.getElementById("notes").value || null,
