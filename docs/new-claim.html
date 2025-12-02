@@ -210,7 +210,7 @@
         errorMsg.style.display = "none";
         successMsg.style.display = "none";
 
-        // Convert datetime-local values to ISO format
+        // Get datetime-local values and append timezone info to preserve local time
         const aptStart = document.getElementById("appointment_start").value;
         const aptEnd = document.getElementById("appointment_end").value;
 
@@ -229,8 +229,8 @@
           city: document.getElementById("city").value || null,
           state: document.getElementById("state").value || null,
           postal_code: document.getElementById("postal_code").value || null,
-          appointment_start: aptStart ? new Date(aptStart).toISOString() : null,
-          appointment_end: aptEnd ? new Date(aptEnd).toISOString() : null,
+          appointment_start: aptStart ? aptStart + ":00" : null,
+          appointment_end: aptEnd ? aptEnd + ":00" : null,
           assigned_to: document.getElementById("assigned_to").value || null,
           status: document.getElementById("status").value,
           notes: document.getElementById("notes").value || null,
