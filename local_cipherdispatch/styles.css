@@ -346,3 +346,58 @@ button:disabled {
     padding: 24px;
   }
 }
+
+/* Claim card meta (firm & city + badges) */
+.claim-card .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.claim-card .card-meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.card-meta__firm-city {
+  font-size: 12px;
+  color: #cbd5e1;
+  font-weight: 600;
+  white-space: nowrap;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.badge {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: bold;
+  color: white;
+}
+.badge-photo {
+  background: #10b981;
+}
+.badge-edit {
+  background: #667eea;
+}
+.claim-card .top-right-delete {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 20;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+@media (max-width: 768px) {
+  .card-meta__firm-city {
+    max-width: 120px;
+  }
+}
