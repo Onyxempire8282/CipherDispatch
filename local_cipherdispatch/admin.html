@@ -267,6 +267,9 @@
                       claim.status
                     }</span>
                       <div style="display:flex; gap:8px; align-items:center;">
+                        <span style="font-size:12px; color:#cbd5e1; font-weight:600; white-space:nowrap; max-width:220px; overflow:hidden; text-overflow:ellipsis;">
+                          ${claim.firm_name ? `Firm: ${claim.firm_name}` : ""}${claim.firm_name && claim.city ? ` — ${claim.city}` : claim.city ? `${claim.city}` : ""}
+                        </span>
                         ${
                           claim.photoCount > 0
                             ? `<span style="background:#10b981; color:white; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:bold;">📸 ${claim.photoCount}</span>`
