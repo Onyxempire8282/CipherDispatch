@@ -144,6 +144,38 @@
       async function loadMyClaims() {
         try {
           console.log("Loading claims for user:", currentUserId);
+
+          // First, let's check the user's profile and role
+          console.log("Checking user profile...");
+          const { data: profileData, error: profileError } =
+            await supabaseClient
+              .from("profiles")
+              .select("*")
+              .eq("user_id", currentUserId)
+              .single();
+
+          if (profileError) {
+            console.error("Profile error:", profileError);
+          } else {
+            console.log("User profile:", profileData);
+          }
+
+          // Try a simple claims query without assigned_to filter first
+          console.log("Testing basic claims access...");
+          const { data: testData, error: testError } = await supabaseClient
+            .from("claims")
+            .select("id, claim_number, status")
+            .limit(1);
+
+          if (testError) {
+            console.error("Basic claims access failed:", testError);
+            throw new Error(`Cannot access claims table: ${testError.message}`);
+          } else {
+            console.log("Basic claims access works:", testData);
+          }
+
+          // Now try the assigned_to query
+          console.log("Trying assigned_to query...");
           const { data, error } = await supabaseClient
             .from("claims")
             .select("*")
