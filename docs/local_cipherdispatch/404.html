@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Redirecting...</title>
+    <script>
+      // Redirect 404s back to index.html for GitHub Pages
+      // This preserves the URL path in sessionStorage so we can redirect after login if needed
+      sessionStorage.setItem("redirectPath", window.location.pathname);
+      window.location.replace(window.location.origin + "/CipherDispatch/");
+    </script>
+  </head>
+  <body>
+    <p>Redirecting...</p>
+  </body>
+</html>

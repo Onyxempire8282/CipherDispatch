@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Cache-Control"
+      content="no-cache, no-store, must-revalidate"
+    />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>Claim Cipher Login</title>
+    <link rel="stylesheet" href="styles.css?v=4" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+      // Aggressive cache clearing for Chrome
+      const BUILD_TIME = "20251105"; // Update this when deploying
+
+      // Force cache clear if old version is detected
+      if (window.performance && performance.navigation.type !== 1) {
+        const version = localStorage.getItem("app-version");
+        const buildTime = localStorage.getItem("app-build-time");
+        if (version !== "static-v4" || buildTime !== BUILD_TIME) {
+          localStorage.setItem("app-version", "static-v4");
+          localStorage.setItem("app-build-time", BUILD_TIME);
+          window.location.reload(true);
+        }
+      }
+
+      // DISABLED - Service worker causing cache issues
+      // if ("serviceWorker" in navigator) {
+      //   navigator.serviceWorker
+      //     .register("/CipherDispatch/sw.js")
+      //     .then(() => console.log("Service Worker registered"))
+      //     .catch((err) => console.log("SW registration failed", err));
+      // }
+    </script>
+  </head>
+  <body>
+    <div class="container">
+      <div class="card">
+        <h2>Claim Cipher Login</h2>
+        <div
+          id="error-msg"
+          style="
+            display: none;
+            color: #ef4444;
+            margin-bottom: 16px;
+            text-align: center;
+          "
+        ></div>
+        <form id="login-form">
+          <label>Email</label>
+          <input
+            type="email"
+            id="email"
+            placeholder="Enter your email"
+            required
+          />
+          <label>Password</label>
+          <input
+            type="password"
+            id="password"
+            placeholder="Enter your password"
+            required
+          />
+          <button type="submit">Sign In</button>
+        </form>
+      </div>
+    </div>
+
+    <script src="js/config.js?v=4"></script>
+    <script>
+      const loginForm = document.getElementById("login-form");
+      const errorMsg = document.getElementById("error-msg");
+
+      // Check if already logged in
+      supabaseClient.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          checkUserRoleAndRedirect(session.user);
+        }
+      });
+
+      loginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        errorMsg.style.display = "none";
+
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+
+        try {
+          const { data, error } = await supabaseClient.auth.signInWithPassword({
+            email,
+            password,
+          });
+
+          if (error) throw error;
+
+          if (data.user) {
+            await checkUserRoleAndRedirect(data.user);
+          }
+        } catch (error) {
+          errorMsg.textContent = error.message;
+          errorMsg.style.display = "block";
+        }
+      });
+
+      async function checkUserRoleAndRedirect(user) {
+        try {
+          console.log("Checking role for user:", user.id, user.email);
+
+          const { data: profile, error } = await supabaseClient
+            .from("profiles")
+            .select("role")
+            .eq("user_id", user.id)
+            .single();
+
+          console.log("Profile data:", profile, "Error:", error);
+
+          if (profile?.role === "admin") {
+            console.log("Redirecting to admin.html");
+            window.location.href = "admin.html";
+          } else {
+            console.log("Redirecting to my-claims.html");
+            window.location.href = "my-claims.html";
+          }
+        } catch (error) {
+          console.error("Error checking role:", error);
+          window.location.href = "admin.html";
+        }
+      }
+    </script>
+  </body>
+</html>
