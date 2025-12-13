@@ -5,7 +5,10 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- Aggressive cache busting -->
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta
+      http-equiv="Cache-Control"
+      content="no-cache, no-store, must-revalidate"
+    />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     <meta
@@ -75,8 +78,28 @@
       </div>
     </div>
 
-    <script src="js/config.js?v=4"></script>
+    <script src="js/config.js?v=7&t=20251212"></script>
     <script>
+      // FORCE CACHE CLEAR WITH TIMESTAMP
+      const FORCE_REFRESH_TIMESTAMP = "20251212-19:30";
+      const lastRefresh = localStorage.getItem('lastRefresh');
+      
+      if (lastRefresh !== FORCE_REFRESH_TIMESTAMP) {
+        console.log('FORCING CACHE REFRESH DUE TO TIMESTAMP CHANGE');
+        localStorage.setItem('lastRefresh', FORCE_REFRESH_TIMESTAMP);
+        // Clear everything and reload
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(regs => {
+            regs.forEach(reg => reg.unregister());
+          });
+        }
+        caches.keys().then(names => {
+          names.forEach(name => caches.delete(name));
+        }).then(() => {
+          window.location.reload(true);
+        });
+        return;
+      }
       let showArchived = false;
       let allClaims = [];
 
@@ -243,8 +266,8 @@
                     ${
                       showArchived
                         ? `
-                      <button 
-                        onclick="deleteArchivedClaim('${claim.id}', '${claim.claim_number}', event)" 
+                      <button
+                        onclick="deleteArchivedClaim('${claim.id}', '${claim.claim_number}', event)"
                         class="top-right-delete"
                         title="Delete this claim permanently"
                       >
