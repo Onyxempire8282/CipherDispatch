@@ -1,5 +1,5 @@
 // Simple service worker to prevent caching issues
-const CACHE_VERSION = "v4";
+const CACHE_VERSION = "v1.1"; // Increment to force cache refresh
 
 self.addEventListener("install", (event) => {
   // Force the waiting service worker to become the active service worker
@@ -26,21 +26,32 @@ self.addEventListener("activate", (event) => {
 
 // Network-first strategy: always try to get fresh content
 self.addEventListener("fetch", (event) => {
+  // Only handle GET requests for same-origin static assets
+  if (
+    event.request.method !== "GET" ||
+    !event.request.url.startsWith(self.location.origin) ||
+    event.request.url.includes("supabase.co")
+  ) {
+    // Let the browser handle non-GET, cross-origin, or API requests normally
+    return;
+  }
+
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // Clone the response
-        const responseToCache = response.clone();
-
-        // Cache the fresh response
-        caches.open(CACHE_VERSION).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
-
+        // Only cache successful responses for static assets
+        if (response && response.ok) {
+          const responseToCache = response.clone();
+          caches.open(CACHE_VERSION).then((cache) => {
+            cache.put(event.request, responseToCache).catch(() => {
+              // Silently ignore cache errors
+            });
+          });
+        }
         return response;
       })
       .catch(() => {
-        // If network fails, try cache
+        // If network fails, try cache for static assets only
         return caches.match(event.request);
       })
   );

@@ -80,8 +80,27 @@
       </div>
     </div>
 
-    <script src="js/config.js?v=4"></script>
+    <script src="js/config.js?v=5"></script>
     <script>
+      // Force service worker update
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .getRegistrations()
+          .then(function (registrations) {
+            for (let registration of registrations) {
+              registration.unregister();
+            }
+          });
+        // Clear all caches
+        caches.keys().then(function (cacheNames) {
+          return Promise.all(
+            cacheNames.map(function (cacheName) {
+              return caches.delete(cacheName);
+            })
+          );
+        });
+      }
+
       let currentUserId = null;
 
       // Check authentication
@@ -124,13 +143,17 @@
 
       async function loadMyClaims() {
         try {
+          console.log("Loading claims for user:", currentUserId);
           const { data, error } = await supabaseClient
             .from("claims")
             .select("*")
-            .eq("assigned_to", currentUserId)
-            .order("appointment_start", { ascending: true });
+            .eq("assigned_to", currentUserId);
 
-          if (error) throw error;
+          if (error) {
+            console.error("Supabase error:", error);
+            throw error;
+          }
+          console.log("Claims loaded:", data);
           renderClaims(data || []);
         } catch (error) {
           console.error("Error loading claims:", error);
