@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Cache-Control"
+      content="no-cache, no-store, must-revalidate"
+    />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>Claim Cipher - Claim Detail</title>
+    <link rel="stylesheet" href="styles.css?v=4" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+      .detail-container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      .detail-card {
+        background: #2d3748;
+        border: 1px solid #4a5568;
+        border-radius: 8px;
+        padding: 24px;
+        margin-bottom: 16px;
+      }
+      .detail-card h4 {
+        margin-top: 0;
+        color: #e2e8f0;
+        border-bottom: 2px solid #4a5568;
+        padding-bottom: 8px;
+        margin-bottom: 16px;
+      }
+      .detail-row {
+        margin-bottom: 12px;
+        display: flex;
+        gap: 8px;
+      }
+      .detail-label {
+        font-weight: bold;
+        color: #e2e8f0;
+        min-width: 120px;
+      }
+      .detail-value {
+        color: #a0aec0;
+        flex: 1;
+      }
+      .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: bold;
+        color: white;
+      }
+      .status-COMPLETED {
+        background: #10b981;
+      }
+      .status-IN_PROGRESS {
+        background: #f59e0b;
+      }
+      .status-SCHEDULED {
+        background: #3b82f6;
+      }
+      .status-CANCELED {
+        background: #ef4444;
+      }
+      .status-NONE {
+        background: #6b7280;
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 16px;
+      }
+      .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        font-weight: bold;
+        cursor: pointer;
+        font-size: 14px;
+        transition: opacity 0.2s;
+      }
+      .btn:hover {
+        opacity: 0.9;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+      .btn-scheduled {
+        background: #3b82f6;
+        color: white;
+      }
+      .btn-progress {
+        background: #f59e0b;
+        color: white;
+      }
+      .btn-complete {
+        background: #10b981;
+        color: white;
+      }
+      .btn-danger {
+        background: #ef4444;
+        color: white;
+      }
+      .btn-secondary {
+        background: #4a5568;
+        color: white;
+      }
+      .btn-map {
+        background: #3b82f6;
+        color: white;
+      }
+
+      .danger-zone {
+        margin-top: 24px;
+        padding-top: 24px;
+        border-top: 2px solid #ef4444;
+      }
+      .danger-zone h5 {
+        color: #ef4444;
+        margin: 0 0 12px 0;
+      }
+
+      .photo-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 12px;
+        margin-top: 16px;
+      }
+      .photo-item {
+        position: relative;
+        height: 200px;
+        border-radius: 8px;
+        overflow: hidden;
+        cursor: pointer;
+        border: 2px solid #4a5568;
+      }
+      .photo-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .photo-delete {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: #ef4444;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      .lightbox {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.95);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+      .lightbox.active {
+        display: flex;
+      }
+      .lightbox-content {
+        position: relative;
+        max-width: 90%;
+        max-height: 70vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+      .lightbox-img {
+        max-width: 100%;
+        max-height: 70vh;
+        object-fit: contain;
+        transition: transform 0.2s;
+        cursor: move;
+      }
+      .lightbox-close {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: #ef4444;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 10px 20px;
+        cursor: pointer;
+        font-weight: bold;
+        z-index: 10000;
+      }
+      .lightbox-nav {
+        position: fixed;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(102, 126, 234, 0.9);
+        color: white;
+        border: 2px solid white;
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 32px;
+        z-index: 10001;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+      }
+      .lightbox-nav:hover {
+        background: rgba(118, 75, 162, 0.9);
+        transform: translateY(-50%) scale(1.1);
+      }
+      .lightbox-prev {
+        left: 20px;
+      }
+      .lightbox-next {
+        right: 20px;
+      }
+      .lightbox-controls {
+        position: absolute;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 10px;
+        z-index: 10000;
+      }
+      .lightbox-btn {
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 12px 20px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 14px;
+      }
+      .lightbox-btn:hover {
+        background: #764ba2;
+      }
+      .lightbox-btn.download {
+        background: #10b981;
+      }
+      .lightbox-btn.download:hover {
+        background: #059669;
+      }
+
+      select,
+      input[type="datetime-local"] {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #4a5568;
+        border-radius: 6px;
+        background: #2d3748;
+        color: #e2e8f0;
+        font-size: 14px;
+        margin-top: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Navigation Menu -->
+    <nav class="nav-menu">
+      <div class="nav-left">
+        <span class="nav-brand">⚡ Claim Cipher</span>
+        <a href="admin.html" id="nav-claims">📋 Claims</a>
+        <a href="my-claims.html" id="nav-my-claims" style="display: none"
+          >📋 My Claims</a
+        >
+        <a
+          href="notifications.html"
+          id="nav-notifications"
+          style="display: none; position: relative"
+        >
+          � Notifications
+          <span
+            id="notification-badge"
+            style="
+              display: none;
+              position: absolute;
+              top: -4px;
+              right: -8px;
+              background: #ef4444;
+              color: white;
+              border-radius: 50%;
+              width: 18px;
+              height: 18px;
+              font-size: 11px;
+              font-weight: bold;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            "
+          ></span>
+        </a>
+        <a href="new-claim.html" id="nav-new-claim">➕ New Claim</a>
+      </div>
+      <div class="nav-right">
+        <button class="nav-logout" onclick="handleLogout()">Logout</button>
+      </div>
+    </nav>
+
+    <div
+      style="
+        min-height: 100vh;
+        background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+        padding: 16px;
+      "
+    >
+      <div class="detail-container">
+        <div class="detail-card">
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              flex-wrap: wrap;
+              gap: 12px;
+            "
+          >
+            <h3 id="claim-title" style="margin: 0; color: #e2e8f0">
+              Loading...
+            </h3>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap">
+              <button
+                class="btn btn-primary"
+                onclick="saveAndExit()"
+                style="display: none"
+                id="save-exit-btn"
+              >
+                💾 Save & Exit
+              </button>
+              <button class="btn btn-secondary" onclick="history.back()">
+                ← Back
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="claim-content">
+          <div style="text-align: center; color: #a0aec0; padding: 40px">
+            Loading claim...
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="lightbox"
+      class="lightbox"
+      onclick="if(event.target.id==='lightbox') closeLightbox()"
+    >
+      <button class="lightbox-close" onclick="closeLightbox()">✕ Close</button>
+      <button class="lightbox-nav lightbox-prev" onclick="navigatePhoto(-1)">
+        ‹
+      </button>
+      <div class="lightbox-content" id="lightbox-container">
+        <img id="lightbox-img" class="lightbox-img" src="" alt="Photo" />
+      </div>
+      <button class="lightbox-nav lightbox-next" onclick="navigatePhoto(1)">
+        ›
+      </button>
+      <div class="lightbox-controls">
+        <button class="lightbox-btn" onclick="zoomIn()">🔍 Zoom In</button>
+        <button class="lightbox-btn" onclick="zoomOut()">🔍 Zoom Out</button>
+        <button class="lightbox-btn" onclick="resetZoom()">↺ Reset</button>
+        <button class="lightbox-btn download" onclick="downloadCurrentPhoto()">
+          ⬇ Download
+        </button>
+      </div>
+    </div>
+
+    <script src="js/config.js?v=4"></script>
+    <script>
+      let currentClaim = null;
+      let currentUser = null;
+      let isAdmin = false;
+      let allAppraisers = [];
+      let photos = [];
+      let currentPhotoIndex = 0;
+      const urlParams = new URLSearchParams(window.location.search);
+      const claimId = urlParams.get("id");
+
+      async function handleLogout() {
+        await supabaseClient.auth.signOut();
+        window.location.href = "index.html";
+      }
+
+      (async function init() {
+        const {
+          data: { session },
+        } = await supabaseClient.auth.getSession();
+        if (!session) {
+          window.location.href = "index.html";
+          return;
+        }
+
+        currentUser = session.user;
+
+        const { data: profile } = await supabaseClient
+          .from("profiles")
+          .select("role")
+          .eq("user_id", currentUser.id)
+          .single();
+
+        isAdmin = profile?.role === "admin";
+
+        // Update navigation based on role
+        if (isAdmin) {
+          document.getElementById("nav-claims").style.display = "block";
+          document.getElementById("nav-my-claims").style.display = "none";
+          document.getElementById("nav-notifications").style.display = "none";
+          document.getElementById("nav-new-claim").style.display = "block";
+        } else {
+          document.getElementById("nav-claims").style.display = "none";
+          document.getElementById("nav-my-claims").style.display = "block";
+          document.getElementById("nav-notifications").style.display = "block";
+          document.getElementById("nav-new-claim").style.display = "none";
+          checkNotifications();
+        }
+
+        if (isAdmin) {
+          const { data, error } = await supabaseClient
+            .from("profiles")
+            .select("user_id, full_name, role")
+            .eq("role", "appraiser")
+            .order("full_name");
+
+          if (error) {
+            console.error("Error loading appraisers:", error);
+          } else {
+            console.log("Loaded appraisers:", data);
+          }
+
+          allAppraisers = data || [];
+        }
+
+        async function checkNotifications() {
+          try {
+            const { data: notifications, error } = await supabaseClient
+              .from("notifications")
+              .select("id")
+              .eq("user_id", currentUserId)
+              .eq("is_read", false);
+
+            if (error) throw error;
+
+            const unreadCount = (notifications || []).length;
+
+            if (unreadCount > 0) {
+              const badge = document.getElementById("notification-badge");
+              badge.textContent = unreadCount > 9 ? "9+" : unreadCount;
+              badge.style.display = "flex";
+            }
+          } catch (error) {
+            console.error("Error checking notifications:", error);
+          }
+        }
+
+        if (claimId) {
+          await loadClaim();
+          startAutoRefresh(); // Start auto-refreshing photos every 15 seconds
+        } else {
+          document.getElementById("claim-content").innerHTML =
+            '<div class="detail-card"><div style="text-align:center; color:#ef4444;">Invalid claim ID</div></div>';
+        }
+      })();
+
+      // Helper function to create notifications
+      async function createNotification(
+        userId,
+        claimId,
+        type,
+        message,
+        oldValue,
+        newValue
+      ) {
+        try {
+          const { error } = await supabaseClient.rpc("create_notification", {
+            p_user_id: userId,
+            p_claim_id: claimId,
+            p_type: type,
+            p_message: message,
+            p_old_value: oldValue,
+            p_new_value: newValue,
+          });
+
+          if (error) {
+            console.error("Error creating notification:", error);
+          }
+        } catch (error) {
+          console.error("Error creating notification:", error);
+        }
+      }
+
+      function formatDateTimeLocal(isoString) {
+        if (!isoString) return "";
+        const date = new Date(isoString);
+        // Format for datetime-local input: YYYY-MM-DDTHH:MM
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        const hours = String(date.getHours()).padStart(2, "0");
+        const minutes = String(date.getMinutes()).padStart(2, "0");
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+      }
+
+      async function loadClaim() {
+        try {
+          const { data, error } = await supabaseClient
+            .from("claims")
+            .select("*")
+            .eq("id", claimId)
+            .single();
+
+          if (error) throw error;
+          currentClaim = data;
+
+          // Load appraiser info if assigned
+          if (currentClaim.assigned_to) {
+            const { data: appraiserData } = await supabaseClient
+              .from("profiles")
+              .select("user_id, email")
+              .eq("user_id", currentClaim.assigned_to)
+              .single();
+            currentClaim.appraiser = appraiserData;
+          }
+
+          renderClaim();
+          await loadPhotos();
+        } catch (error) {
+          console.error("Error loading claim:", error);
+          document.getElementById("claim-content").innerHTML =
+            '<div class="detail-card"><div style="text-align:center; color:#ef4444;">Error loading claim</div></div>';
+        }
+      }
+
+      function renderClaim() {
+        document.getElementById(
+          "claim-title"
+        ).textContent = `Claim #${currentClaim.claim_number}`;
+
+        // Show Save & Exit button for admins
+        if (isAdmin) {
+          document.getElementById("save-exit-btn").style.display = "block";
+        }
+
+        const fullAddress = [
+          currentClaim.address_line1,
+          currentClaim.address_line2,
+          currentClaim.city,
+          currentClaim.state,
+          currentClaim.postal_code,
+        ]
+          .filter(Boolean)
+          .join(", ");
+
+        const mapUrl = fullAddress
+          ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+              fullAddress
+            )}`
+          : null;
+
+        let html = `
+        <div class="detail-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h4 style="margin:0;">👤 Customer Information</h4>
+            ${
+              isAdmin
+                ? `<button class="btn btn-primary" style="padding:6px 12px; font-size:12px;" onclick="toggleEditMode()">✏️ Edit Details</button>`
+                : ""
+            }
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Name:</span>
+            <span class="detail-value" id="view-customer-name">${
+              currentClaim.customer_name
+            }</span>
+            <input type="text" id="edit-customer-name" value="${
+              currentClaim.customer_name
+            }" style="display:none; flex:1; padding:8px; background:#1a202c; border:1px solid #4a5568; border-radius:4px; color:#e2e8f0;">
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Phone:</span>
+            <span class="detail-value" id="view-phone">${
+              currentClaim.phone
+                ? `<a href="tel:${currentClaim.phone}" style="color:#3b82f6;">${currentClaim.phone}</a>`
+                : "N/A"
+            }</span>
+            <input type="tel" id="edit-phone" value="${
+              currentClaim.phone || ""
+            }" style="display:none; flex:1; padding:8px; background:#1a202c; border:1px solid #4a5568; border-radius:4px; color:#e2e8f0;">
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Email:</span>
+            <span class="detail-value" id="view-email">${
+              currentClaim.email
+                ? `<a href="mailto:${currentClaim.email}" style="color:#3b82f6;">${currentClaim.email}</a>`
+                : "N/A"
+            }</span>
+            <input type="email" id="edit-email" value="${
+              currentClaim.email || ""
+            }" style="display:none; flex:1; padding:8px; background:#1a202c; border:1px solid #4a5568; border-radius:4px; color:#e2e8f0;">
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Firm Name:</span>
+            <span class="detail-value" id="view-firm-name">${
+              currentClaim.firm_name || "N/A"
+            }</span>
+            <input type="text" id="edit-firm-name" value="${
+              currentClaim.firm_name || ""
+            }" style="display:none; flex:1; padding:8px; background:#1a202c; border:1px solid #4a5568; border-radius:4px; color:#e2e8f0;">
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Address Line 1:</span>
+            <span class="detail-value" id="view-address-line1">${
+              currentClaim.address_line1 || "N/A"
+            }</span>
+            <input type="text" id="edit-address-line1" value="${
+              currentClaim.address_line1 || ""
+            }" style="display:none; flex:1; padding:8px; background:#1a202c; border:1px solid #4a5568; border-radius:4px; color:#e2e8f0;">
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Address Line 2:</span>
+            <span class="detail-value" id="view-address-line2">${
+              currentClaim.address_line2 || "N/A"
+            }</span>
+            <input type="text" id="edit-address-line2" value="${
+              currentClaim.address_line2 || ""
+            }" style="display:none; flex:1; padding:8px; background:#1a202c; border:1px solid #4a5568; border-radius:4px; color:#e2e8f0;">
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">City:</span>
+            <span class="detail-value" id="view-city">${
+              currentClaim.city || "N/A"
+            }</span>
+            <input type="text" id="edit-city" value="${
+              currentClaim.city || ""
+            }" style="display:none; flex:1; padding:8px; background:#1a202c; border:1px solid #4a5568; border-radius:4px; color:#e2e8f0;">
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">State:</span>
+            <span class="detail-value" id="view-state">${
+              currentClaim.state || "N/A"
+            }</span>
+            <input type="text" id="edit-state" value="${
+              currentClaim.state || ""
+            }" style="display:none; flex:1; padding:8px; background:#1a202c; border:1px solid #4a5568; border-radius:4px; color:#e2e8f0;">
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Postal Code:</span>
+            <span class="detail-value" id="view-postal-code">${
+              currentClaim.postal_code || "N/A"
+            }</span>
+            <input type="text" id="edit-postal-code" value="${
+              currentClaim.postal_code || ""
+            }" style="display:none; flex:1; padding:8px; background:#1a202c; border:1px solid #4a5568; border-radius:4px; color:#e2e8f0;">
+          </div>
+          ${
+            mapUrl
+              ? `
+            <div style="margin-top:12px;">
+              <a href="${mapUrl}" target="_blank" class="btn btn-map">📍 Open in Maps</a>
+            </div>
+          `
+              : ""
+          }
+          <div id="edit-actions" style="display:none; margin-top:16px; gap:8px;">
+            <button class="btn btn-complete" onclick="saveClaimDetails()">💾 Save Changes</button>
+            <button class="btn" style="background:#6b7280;" onclick="cancelEditMode()">❌ Cancel</button>
+          </div>
+        </div>
+
+        <div class="detail-card">
+          <h4>🚗 Vehicle Information</h4>
+          <div class="detail-row">
+            <span class="detail-label">VIN:</span>
+            <span class="detail-value" id="view-vin">${
+              currentClaim.vin || "N/A"
+            }</span>
+            <input type="text" id="edit-vin" value="${
+              currentClaim.vin || ""
+            }" style="display:none; flex:1; padding:8px; background:#1a202c; border:1px solid #4a5568; border-radius:4px; color:#e2e8f0;">
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Year:</span>
+            <span class="detail-value" id="view-vehicle-year">${
+              currentClaim.vehicle_year || "N/A"
+            }</span>
+            <input type="text" id="edit-vehicle-year" value="${
+              currentClaim.vehicle_year || ""
+            }" style="display:none; flex:1; padding:8px; background:#1a202c; border:1px solid #4a5568; border-radius:4px; color:#e2e8f0;">
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Make:</span>
+            <span class="detail-value" id="view-vehicle-make">${
+              currentClaim.vehicle_make || "N/A"
+            }</span>
+            <input type="text" id="edit-vehicle-make" value="${
+              currentClaim.vehicle_make || ""
+            }" style="display:none; flex:1; padding:8px; background:#1a202c; border:1px solid #4a5568; border-radius:4px; color:#e2e8f0;">
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Model:</span>
+            <span class="detail-value" id="view-vehicle-model">${
+              currentClaim.vehicle_model || "N/A"
+            }</span>
+            <input type="text" id="edit-vehicle-model" value="${
+              currentClaim.vehicle_model || ""
+            }" style="display:none; flex:1; padding:8px; background:#1a202c; border:1px solid #4a5568; border-radius:4px; color:#e2e8f0;">
+          </div>
+        </div>
+
+        <div class="detail-card">
+          <h4>📝 Accident Description / Notes</h4>
+          <div id="view-notes" style="white-space: pre-wrap; background:#1a202c; padding:16px; border-radius:6px; color:#e2e8f0;">
+            ${currentClaim.notes || "No notes added"}
+          </div>
+          <textarea id="edit-notes" style="display:none; width:100%; min-height:120px; padding:12px; background:#1a202c; border:1px solid #4a5568; border-radius:6px; color:#e2e8f0; font-family:inherit; resize:vertical;">${
+            currentClaim.notes || ""
+          }</textarea>
+        </div>
+`;
+
+        if (isAdmin) {
+          html += `
+        <div class="detail-card">
+          <h4>⚙️ Admin Controls</h4>
+          
+          <div style="margin-bottom:20px;">
+            <strong style="color:#e2e8f0;">Current Status:</strong>
+            <span class="status-badge status-${currentClaim.status}">${
+            currentClaim.status
+          }</span>
+          </div>
+
+          <div class="action-buttons">
+            <button class="btn btn-primary" onclick="updateStatus('SCHEDULED')">
+              📅 Mark Scheduled
+            </button>
+            <button class="btn btn-primary" onclick="updateStatus('IN_PROGRESS')">
+              🔧 Start Work
+            </button>
+            <button class="btn btn-complete" onclick="updateStatus('COMPLETED')">
+              ✅ Mark Complete
+            </button>
+            <button class="btn" style="background:#f59e0b;" onclick="updateStatus('CANCELED')">
+              ❌ Cancel Claim
+            </button>
+          </div>
+
+          <div style="margin-top:24px;">
+            <label style="display:block; margin-bottom:8px; font-weight:bold; color:#e2e8f0;">
+              👤 Assign Appraiser:
+            </label>
+            <select id="appraiser-select" onchange="assignAppraiser(this.value)">
+              <option value="">Unassigned</option>
+              ${allAppraisers
+                .map(
+                  (a) => `
+                <option value="${a.user_id}" ${
+                    currentClaim.assigned_to === a.user_id ? "selected" : ""
+                  }>
+                  ${a.full_name}
+                </option>
+              `
+                )
+                .join("")}
+            </select>
+          </div>
+
+          <div style="margin-top:24px;">
+            <label style="display:block; margin-bottom:8px; font-weight:bold; color:#e2e8f0;">
+              📅 Appointment Start:
+            </label>
+            <input type="datetime-local" id="apt-start" 
+              value="${
+                currentClaim.appointment_start
+                  ? formatDateTimeLocal(currentClaim.appointment_start)
+                  : ""
+              }"
+              onchange="updateAppointment('start', this.value)">
+          </div>
+
+          <div style="margin-top:16px;">
+            <label style="display:block; margin-bottom:8px; font-weight:bold; color:#e2e8f0;">
+              📅 Appointment End:
+            </label>
+            <input type="datetime-local" id="apt-end"
+              value="${
+                currentClaim.appointment_end
+                  ? formatDateTimeLocal(currentClaim.appointment_end)
+                  : ""
+              }"
+              onchange="updateAppointment('end', this.value)">
+          </div>
+        </div>
+        `;
+        } else {
+          html += `
+        <div class="detail-card">
+          <h4>📋 Claim Status</h4>
+          <div style="margin-bottom:16px;">
+            <strong style="color:#e2e8f0;">Status:</strong>
+            <span class="status-badge status-${currentClaim.status}">${
+            currentClaim.status
+          }</span>
+          </div>
+          ${
+            currentClaim.appointment_start
+              ? `
+            <div class="detail-row">
+              <span class="detail-label">Appointment Start:</span>
+              <span class="detail-value">${new Date(
+                currentClaim.appointment_start
+              ).toLocaleString()}</span>
+            </div>
+          `
+              : ""
+          }
+          ${
+            currentClaim.appointment_end
+              ? `
+            <div class="detail-row">
+              <span class="detail-label">Appointment End:</span>
+              <span class="detail-value">${new Date(
+                currentClaim.appointment_end
+              ).toLocaleString()}</span>
+            </div>
+          `
+              : ""
+          }
+        </div>
+        `;
+        }
+
+        html += `
+        <div class="detail-card">
+          <h4>📸 Photos (<span id="photo-count">0</span>)</h4>
+          <div style="display:flex; gap:10px; margin-bottom:16px;">
+            <input type="file" id="photo-input" accept="image/*" multiple style="display:none;" onchange="handlePhotoUpload(event)">
+            <label for="photo-input" class="btn btn-primary" style="flex:1; cursor:pointer; text-align:center; margin:0;">
+              📷 Upload Photos
+            </label>
+            <button class="btn btn-primary" id="refresh-photos-btn" onclick="refreshPhotosManually()" style="flex:1;">
+              🔄 Refresh Photos
+            </button>
+            <button class="btn btn-primary" onclick="downloadAllPhotos()" style="flex:1;">
+              📦 Download All as ZIP
+            </button>
+          </div>
+          <div id="photo-grid" class="photo-grid">
+            <div style="text-align:center; color:#a0aec0; padding:40px; grid-column:1/-1;">Loading photos...</div>
+          </div>
+        </div>
+      `;
+
+        // Add delete button at bottom for admin only
+        if (isAdmin) {
+          html += `
+        <div class="detail-card">
+          <div class="danger-zone">
+            <h5>⚠️ Danger Zone</h5>
+            <button class="btn btn-danger" onclick="deleteClaim()">
+              🗑️ Permanently Delete Claim
+            </button>
+            <p style="font-size:12px; color:#a0aec0; margin-top:8px;">
+              ⚠️ This action cannot be undone. All photos and data will be permanently deleted.
+            </p>
+          </div>
+        </div>
+      `;
+        }
+
+        document.getElementById("claim-content").innerHTML = html;
+      }
+
+      async function updateStatus(status) {
+        try {
+          const oldStatus = currentClaim.status;
+
+          const { error } = await supabaseClient
+            .from("claims")
+            .update({ status })
+            .eq("id", claimId);
+
+          if (error) throw error;
+
+          // Create notification for appraiser if assigned
+          if (currentClaim.assigned_to) {
+            await createNotification(
+              currentClaim.assigned_to,
+              claimId,
+              status === "CANCELED" ? "CANCELED" : "STATUS_CHANGED",
+              `Claim #${currentClaim.claim_number} status changed from ${oldStatus} to ${status}`,
+              oldStatus,
+              status
+            );
+          }
+
+          await loadClaim();
+          alert(`Status updated to ${status}`);
+        } catch (error) {
+          alert("Error updating status: " + error.message);
+        }
+      }
+
+      async function assignAppraiser(appraiserId) {
+        try {
+          const oldAppraiserId = currentClaim.assigned_to;
+
+          const { error } = await supabaseClient
+            .from("claims")
+            .update({ assigned_to: appraiserId || null })
+            .eq("id", claimId);
+
+          if (error) throw error;
+
+          // Create notification for newly assigned appraiser
+          if (appraiserId && appraiserId !== oldAppraiserId) {
+            await createNotification(
+              appraiserId,
+              claimId,
+              "ASSIGNED",
+              `You have been assigned to claim #${currentClaim.claim_number}`,
+              oldAppraiserId,
+              appraiserId
+            );
+          }
+
+          await loadClaim();
+          alert(
+            appraiserId
+              ? "Appraiser assigned successfully"
+              : "Appraiser unassigned"
+          );
+        } catch (error) {
+          alert("Error assigning appraiser: " + error.message);
+        }
+      }
+
+      async function updateAppointment(type, value) {
+        if (!value) return;
+
+        try {
+          const field =
+            type === "start" ? "appointment_start" : "appointment_end";
+
+          // Convert datetime-local value to ISO string maintaining the time
+          const dateValue = new Date(value).toISOString();
+
+          const { error } = await supabaseClient
+            .from("claims")
+            .update({ [field]: dateValue })
+            .eq("id", claimId);
+
+          if (error) throw error;
+          alert(`Appointment ${type} updated successfully`);
+          await loadClaim(); // Reload to show updated time
+        } catch (error) {
+          alert("Error updating appointment: " + error.message);
+        }
+      }
+
+      function toggleEditMode() {
+        // Hide view elements, show edit elements
+        const fields = [
+          "customer-name",
+          "phone",
+          "email",
+          "firm-name",
+          "address-line1",
+          "address-line2",
+          "city",
+          "state",
+          "postal-code",
+          "vin",
+          "vehicle-year",
+          "vehicle-make",
+          "vehicle-model",
+        ];
+
+        fields.forEach((field) => {
+          const viewEl = document.getElementById(`view-${field}`);
+          const editEl = document.getElementById(`edit-${field}`);
+          if (viewEl) viewEl.style.display = "none";
+          if (editEl) editEl.style.display = "block";
+        });
+
+        // Toggle notes
+        const viewNotes = document.getElementById("view-notes");
+        const editNotes = document.getElementById("edit-notes");
+        if (viewNotes) viewNotes.style.display = "none";
+        if (editNotes) editNotes.style.display = "block";
+
+        // Show save/cancel buttons
+        const editActions = document.getElementById("edit-actions");
+        if (editActions) editActions.style.display = "flex";
+      }
+
+      function cancelEditMode() {
+        // Show view elements, hide edit elements
+        const fields = [
+          "customer-name",
+          "phone",
+          "email",
+          "firm-name",
+          "address-line1",
+          "address-line2",
+          "city",
+          "state",
+          "postal-code",
+          "vin",
+          "vehicle-year",
+          "vehicle-make",
+          "vehicle-model",
+        ];
+
+        fields.forEach((field) => {
+          const viewEl = document.getElementById(`view-${field}`);
+          const editEl = document.getElementById(`edit-${field}`);
+          if (viewEl) viewEl.style.display = "block";
+          if (editEl) editEl.style.display = "none";
+        });
+
+        // Toggle notes
+        const viewNotes = document.getElementById("view-notes");
+        const editNotes = document.getElementById("edit-notes");
+        if (viewNotes) viewNotes.style.display = "block";
+        if (editNotes) editNotes.style.display = "none";
+
+        // Hide save/cancel buttons
+        const editActions = document.getElementById("edit-actions");
+        if (editActions) editActions.style.display = "none";
+      }
+
+      async function saveClaimDetails() {
+        try {
+          const updatedFields = {
+            customer_name: document.getElementById("edit-customer-name").value,
+            phone: document.getElementById("edit-phone").value,
+            email: document.getElementById("edit-email").value,
+            firm_name: document.getElementById("edit-firm-name").value,
+            address_line1: document.getElementById("edit-address-line1").value,
+            address_line2: document.getElementById("edit-address-line2").value,
+            city: document.getElementById("edit-city").value,
+            state: document.getElementById("edit-state").value,
+            postal_code: document.getElementById("edit-postal-code").value,
+            vin: document.getElementById("edit-vin").value,
+            vehicle_year: document.getElementById("edit-vehicle-year").value,
+            vehicle_make: document.getElementById("edit-vehicle-make").value,
+            vehicle_model: document.getElementById("edit-vehicle-model").value,
+            notes: document.getElementById("edit-notes").value,
+          };
+
+          const { error } = await supabaseClient
+            .from("claims")
+            .update(updatedFields)
+            .eq("id", claimId);
+
+          if (error) throw error;
+
+          // Create notification if claim is assigned
+          if (currentClaim.assigned_to) {
+            await createNotification(
+              currentClaim.assigned_to,
+              claimId,
+              "UPDATED",
+              `Claim #${currentClaim.claim_number} details have been updated`,
+              null,
+              null
+            );
+          }
+
+          alert("Claim details saved successfully!");
+          await loadClaim(); // Reload to show updated data
+          cancelEditMode();
+        } catch (error) {
+          alert("Error saving claim details: " + error.message);
+        }
+      }
+
+      async function deleteClaim() {
+        const confirmed = confirm(
+          `⚠️ WARNING: Are you sure you want to PERMANENTLY DELETE this claim?\n\n` +
+            `Claim #${currentClaim.claim_number}\n` +
+            `Customer: ${currentClaim.customer_name}\n\n` +
+            `This action CANNOT be undone and will delete:\n` +
+            `- The claim record\n` +
+            `- All associated photos\n` +
+            `- All related data\n\n` +
+            `Type "DELETE" in the next dialog to confirm.`
+        );
+
+        if (!confirmed) return;
+
+        const confirmText = prompt(
+          'Type "DELETE" to confirm permanent deletion:'
+        );
+        if (confirmText !== "DELETE") {
+          alert("Deletion cancelled - text did not match.");
+          return;
+        }
+
+        try {
+          if (photos.length > 0) {
+            const paths = photos.map((p) => `${claimId}/${p.name}`);
+            await supabaseClient.storage.from("claim-photos").remove(paths);
+          }
+
+          const { error } = await supabaseClient
+            .from("claims")
+            .delete()
+            .eq("id", claimId);
+
+          if (error) throw error;
+
+          alert("Claim permanently deleted.");
+          window.location.href = "admin.html";
+        } catch (error) {
+          alert("Error deleting claim: " + error.message);
+        }
+      }
+
+      async function loadPhotos() {
+        console.log("Loading photos for claim:", claimId);
+        try {
+          const { data, error } = await supabaseClient.storage
+            .from("claim-photos")
+            .list(`${claimId}/`, {
+              sortBy: { column: "created_at", order: "desc" },
+            });
+
+          if (error) {
+            console.error("Error from Supabase Storage:", error);
+            throw error;
+          }
+          photos = data || [];
+          console.log("Loaded photos:", photos.length);
+          console.log("Photo data:", data);
+          document.getElementById("photo-count").textContent = photos.length;
+          renderPhotos();
+        } catch (error) {
+          console.error("Error loading photos:", error);
+          const grid = document.getElementById("photo-grid");
+          if (grid)
+            grid.innerHTML =
+              '<div style="text-align:center; color:#a0aec0; padding:20px; grid-column:1/-1;">No photos yet</div>';
+        }
+      }
+
+      function renderPhotos() {
+        const grid = document.getElementById("photo-grid");
+        if (!grid) return;
+
+        if (photos.length === 0) {
+          grid.innerHTML =
+            '<div style="text-align:center; color:#a0aec0; padding:20px; grid-column:1/-1;">No photos yet. Upload some!</div>';
+          return;
+        }
+
+        grid.innerHTML = photos
+          .map((photo, index) => {
+            const { data } = supabaseClient.storage
+              .from("claim-photos")
+              .getPublicUrl(`${claimId}/${photo.name}`);
+
+            return `
+          <div class="photo-item" onclick="openLightbox(${index})">
+            <img src="${data.publicUrl}" alt="Claim photo" loading="lazy">
+            <button class="photo-delete" onclick="event.stopPropagation(); deletePhoto('${photo.name}')">✕</button>
+          </div>
+        `;
+          })
+          .join("");
+      }
+
+      async function refreshPhotosManually() {
+        const btn = document.getElementById("refresh-photos-btn");
+        if (!btn) return;
+
+        const originalText = btn.textContent;
+        btn.textContent = "🔄 Refreshing...";
+        btn.disabled = true;
+
+        try {
+          await loadPhotos();
+          btn.textContent = "✓ Refreshed!";
+          setTimeout(() => {
+            btn.textContent = originalText;
+          }, 1500);
+        } catch (error) {
+          console.error("Error refreshing photos:", error);
+          btn.textContent = "✗ Error";
+          setTimeout(() => {
+            btn.textContent = originalText;
+          }, 1500);
+        } finally {
+          btn.disabled = false;
+        }
+      }
+
+      async function handlePhotoUpload(event) {
+        console.log("handlePhotoUpload called");
+        const files = Array.from(event.target.files);
+        console.log("Files selected:", files.length);
+
+        if (files.length === 0) {
+          console.log("No files selected");
+          return;
+        }
+
+        // Find the upload button (it's now a label)
+        const uploadBtn = document.querySelector('label[for="photo-input"]');
+        const originalText = uploadBtn.textContent;
+        uploadBtn.textContent = "📤 Uploading...";
+        uploadBtn.style.pointerEvents = "none";
+
+        try {
+          // Check if imageCompression is available
+          if (typeof imageCompression === "undefined") {
+            throw new Error(
+              "Image compression library not loaded. Uploading without compression..."
+            );
+          }
+
+          console.log("Starting compression and upload");
+          const options = {
+            maxSizeMB: 1.5,
+            maxWidthOrHeight: 1600,
+            useWebWorker: true,
+          };
+
+          for (let i = 0; i < files.length; i++) {
+            uploadBtn.textContent = `📤 Uploading ${i + 1}/${files.length}...`;
+            const file = files[i];
+            console.log(
+              `Processing file ${i + 1}:`,
+              file.name,
+              file.size,
+              "bytes"
+            );
+
+            let fileToUpload = file;
+            try {
+              const compressedFile = await imageCompression(file, options);
+              console.log(
+                `Compressed from ${file.size} to ${compressedFile.size} bytes`
+              );
+              fileToUpload = compressedFile;
+            } catch (compressionError) {
+              console.warn(
+                "Compression failed, uploading original:",
+                compressionError
+              );
+              // Continue with original file if compression fails
+            }
+
+            const fileName = `${Date.now()}-${i}-${file.name}`;
+            const filePath = `${claimId}/${fileName}`;
+            console.log(`Uploading to: ${filePath}`);
+
+            const { data, error } = await supabaseClient.storage
+              .from("claim-photos")
+              .upload(filePath, fileToUpload);
+
+            if (error) {
+              console.error(`Upload error for file ${i + 1}:`, error);
+              throw error;
+            }
+            console.log(`File ${i + 1} uploaded successfully:`, data);
+          }
+
+          console.log("All files uploaded, reloading photos");
+          await loadPhotos();
+          alert(`${files.length} photo(s) uploaded successfully!`);
+        } catch (error) {
+          console.error("Error uploading photos:", error);
+          alert(
+            "Error uploading photos: " +
+              (error.message || JSON.stringify(error))
+          );
+        } finally {
+          uploadBtn.textContent = originalText;
+          uploadBtn.style.pointerEvents = "auto";
+          event.target.value = "";
+        }
+      }
+
+      async function deletePhoto(fileName) {
+        if (!confirm("Delete this photo? This cannot be undone.")) return;
+
+        try {
+          const { error } = await supabaseClient.storage
+            .from("claim-photos")
+            .remove([`${claimId}/${fileName}`]);
+
+          if (error) throw error;
+          await loadPhotos();
+          closeLightbox();
+        } catch (error) {
+          alert("Error deleting photo: " + error.message);
+        }
+      }
+
+      function openLightbox(index) {
+        currentPhotoIndex = index;
+        currentZoom = 1;
+        translateX = 0;
+        translateY = 0;
+        updateLightboxImage();
+        document.getElementById("lightbox").classList.add("active");
+      }
+
+      function closeLightbox() {
+        document.getElementById("lightbox").classList.remove("active");
+        resetZoom();
+      }
+
+      function navigatePhoto(direction) {
+        currentPhotoIndex =
+          (currentPhotoIndex + direction + photos.length) % photos.length;
+        currentZoom = 1;
+        translateX = 0;
+        translateY = 0;
+        updateLightboxImage();
+      }
+
+      function updateLightboxImage() {
+        const photo = photos[currentPhotoIndex];
+        const { data } = supabaseClient.storage
+          .from("claim-photos")
+          .getPublicUrl(`${claimId}/${photo.name}`);
+
+        document.getElementById("lightbox-img").src = data.publicUrl;
+      }
+
+      function downloadCurrentPhoto() {
+        const photo = photos[currentPhotoIndex];
+        const { data } = supabaseClient.storage
+          .from("claim-photos")
+          .getPublicUrl(`${claimId}/${photo.name}`);
+
+        const link = document.createElement("a");
+        link.href = data.publicUrl;
+        link.download = photo.name;
+        link.click();
+      }
+
+      // Zoom functionality
+      let currentZoom = 1;
+      let isDragging = false;
+      let startX,
+        startY,
+        translateX = 0,
+        translateY = 0;
+
+      function zoomIn() {
+        currentZoom = Math.min(currentZoom + 0.5, 5);
+        applyZoom();
+      }
+
+      function zoomOut() {
+        currentZoom = Math.max(currentZoom - 0.5, 1);
+        if (currentZoom === 1) {
+          translateX = 0;
+          translateY = 0;
+        }
+        applyZoom();
+      }
+
+      function resetZoom() {
+        currentZoom = 1;
+        translateX = 0;
+        translateY = 0;
+        applyZoom();
+      }
+
+      function applyZoom() {
+        const img = document.getElementById("lightbox-img");
+        img.style.transform = `scale(${currentZoom}) translate(${translateX}px, ${translateY}px)`;
+        img.style.cursor = currentZoom > 1 ? "move" : "default";
+      }
+
+      // Pan functionality when zoomed
+      document
+        .getElementById("lightbox-img")
+        .addEventListener("mousedown", (e) => {
+          if (currentZoom > 1) {
+            isDragging = true;
+            startX = e.clientX - translateX;
+            startY = e.clientY - translateY;
+            e.preventDefault();
+          }
+        });
+
+      document.addEventListener("mousemove", (e) => {
+        if (isDragging) {
+          translateX = e.clientX - startX;
+          translateY = e.clientY - startY;
+          applyZoom();
+        }
+      });
+
+      document.addEventListener("mouseup", () => {
+        isDragging = false;
+      });
+
+      // Download all photos as ZIP
+      async function downloadAllPhotos() {
+        if (photos.length === 0) {
+          alert("No photos to download");
+          return;
+        }
+
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = "📦 Preparing ZIP...";
+        btn.disabled = true;
+
+        try {
+          const zip = new JSZip();
+          const folder = zip.folder(`claim-${claimId}-photos`);
+
+          // Download all photos and add to ZIP
+          for (let i = 0; i < photos.length; i++) {
+            btn.textContent = `📦 Adding ${i + 1}/${photos.length}...`;
+            const photo = photos[i];
+            const { data } = supabaseClient.storage
+              .from("claim-photos")
+              .getPublicUrl(`${claimId}/${photo.name}`);
+
+            // Fetch the image as blob
+            const response = await fetch(data.publicUrl);
+            const blob = await response.blob();
+            folder.file(photo.name, blob);
+          }
+
+          btn.textContent = "📦 Creating ZIP...";
+          const content = await zip.generateAsync({ type: "blob" });
+
+          // Download the ZIP
+          const link = document.createElement("a");
+          link.href = URL.createObjectURL(content);
+          link.download = `claim-${claimId}-photos.zip`;
+          link.click();
+
+          btn.textContent = "✓ Downloaded!";
+          setTimeout(() => {
+            btn.textContent = originalText;
+          }, 2000);
+        } catch (error) {
+          console.error("Error downloading photos:", error);
+          alert("Error creating ZIP file: " + error.message);
+          btn.textContent = originalText;
+        } finally {
+          btn.disabled = false;
+        }
+      }
+
+      async function saveAndExit() {
+        // All changes are auto-saved as they happen
+        // This button just provides a clear exit point
+        alert("All changes have been saved!");
+        window.location.href = isAdmin ? "admin.html" : "my-claims.html";
+      }
+
+      // Auto-refresh photos every 15 seconds to show updates from other users
+      let photoRefreshInterval;
+      function startAutoRefresh() {
+        photoRefreshInterval = setInterval(() => {
+          loadPhotos();
+        }, 15000); // 15 seconds
+      }
+
+      // Clean up interval when page unloads
+      window.addEventListener("beforeunload", () => {
+        if (photoRefreshInterval) {
+          clearInterval(photoRefreshInterval);
+        }
+      });
+
+      document.addEventListener("keydown", (e) => {
+        const lightbox = document.getElementById("lightbox");
+        if (!lightbox.classList.contains("active")) return;
+
+        if (e.key === "Escape") closeLightbox();
+        if (e.key === "ArrowLeft") navigatePhoto(-1);
+        if (e.key === "ArrowRight") navigatePhoto(1);
+      });
+    </script>
+  </body>
+</html>

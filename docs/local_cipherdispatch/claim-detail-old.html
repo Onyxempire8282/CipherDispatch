@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Claim Cipher - Claim Detail</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
+    <style>
+      .detail-container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: #2d3748;
+        border-radius: 8px;
+        padding: 24px;
+        border: 1px solid #4a5568;
+      }
+      .detail-section {
+        margin-bottom: 24px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid #4a5568;
+      }
+      .detail-section:last-child {
+        border-bottom: none;
+      }
+      .detail-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+      .detail-label {
+        font-weight: bold;
+        color: #e2e8f0;
+      }
+      .detail-value {
+        color: #a0aec0;
+      }
+      .photo-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 12px;
+        margin-top: 16px;
+      }
+      .photo-item {
+        position: relative;
+        height: 150px;
+        border-radius: 8px;
+        overflow: hidden;
+        cursor: pointer;
+      }
+      .photo-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .photo-delete {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        background: #ef4444;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 28px;
+        height: 28px;
+        cursor: pointer;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+      }
+      .upload-btn {
+        display: inline-block;
+        padding: 12px 24px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        margin-top: 12px;
+      }
+      .map-link {
+        display: inline-block;
+        padding: 12px 24px;
+        background: #3b82f6;
+        color: white;
+        text-decoration: none;
+        border-radius: 6px;
+        font-weight: bold;
+        margin-top: 12px;
+      }
+      /* Lightbox */
+      .lightbox {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.95);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+      }
+      .lightbox.active {
+        display: flex;
+      }
+      .lightbox-content {
+        max-width: 90%;
+        max-height: 90vh;
+        position: relative;
+      }
+      .lightbox-img {
+        max-width: 100%;
+        max-height: 90vh;
+        object-fit: contain;
+      }
+      .lightbox-close {
+        position: absolute;
+        top: -40px;
+        right: 0;
+        background: #ef4444;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 8px 16px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+      .lightbox-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 12px 20px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 20px;
+      }
+      .lightbox-prev {
+        left: 20px;
+      }
+      .lightbox-next {
+        right: 20px;
+      }
+      .lightbox-download {
+        position: absolute;
+        bottom: -50px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #10b981;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 10px 24px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      style="
+        min-height: 100vh;
+        background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+        padding: 16px;
+        box-sizing: border-box;
+      "
+    >
+      <div class="topbar">
+        <div class="left">
+          <button
+            onclick="history.back()"
+            style="
+              padding: 8px 16px;
+              background: #4a5568;
+              color: white;
+              border: none;
+              border-radius: 4px;
+              cursor: pointer;
+              font-weight: bold;
+            "
+          >
+            ← Back
+          </button>
+          <h3 id="claim-title">Claim Details</h3>
+        </div>
+      </div>
+
+      <div class="detail-container">
+        <div id="claim-content">
+          <div style="text-align: center; color: #a0aec0; padding: 40px">
+            Loading claim...
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lightbox -->
+    <div id="lightbox" class="lightbox">
+      <div class="lightbox-content">
+        <button class="lightbox-close" onclick="closeLightbox()">
+          ✕ Close
+        </button>
+        <button class="lightbox-nav lightbox-prev" onclick="navigatePhoto(-1)">
+          ‹
+        </button>
+        <img id="lightbox-img" class="lightbox-img" src="" alt="Photo" />
+        <button class="lightbox-nav lightbox-next" onclick="navigatePhoto(1)">
+          ›
+        </button>
+        <button class="lightbox-download" onclick="downloadCurrentPhoto()">
+          ⬇ Download
+        </button>
+      </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script>
+      let currentClaim = null;
+      let currentUser = null;
+      let isAdmin = false;
+      let allAppraisers = [];
+      let photos = [];
+      let currentPhotoIndex = 0;
+      const urlParams = new URLSearchParams(window.location.search);
+      const claimId = urlParams.get("id");
+
+      // Check authentication
+      supabaseClient.auth.getSession().then(async ({ data: { session } }) => {
+        if (!session) {
+          window.location.href = "index.html";
+          return;
+        }
+        currentUser = session.user;
+        
+        // Check if user is admin
+        const { data: profile } = await supabaseClient
+          .from("profiles")
+          .select("role")
+          .eq("id", currentUser.id)
+          .single();
+        
+        isAdmin = profile?.role === "admin";
+        
+        // Load appraisers if admin
+        if (isAdmin) {
+          await loadAppraisers();
+        }
+        
+        if (claimId) {
+          loadClaim();
+        } else {
+          document.getElementById("claim-content").innerHTML =
+            '<div style="text-align:center; color:#ef4444; padding:40px;">Invalid claim ID</div>';
+        }
+      });
+
+      async function loadAppraisers() {
+        try {
+          const { data, error } = await supabaseClient
+            .from("profiles")
+            .select("id, email, role")
+            .eq("role", "appraiser")
+            .order("email");
+          
+          if (error) throw error;
+          allAppraisers = data || [];
+        } catch (error) {
+          console.error("Error loading appraisers:", error);
+        }
+      }
+
+      async function loadClaim() {
+        try {
+          const { data, error } = await supabaseClient
+            .from("claims")
+            .select("*")
+            .eq("id", claimId)
+            .single();
+
+          if (error) throw error;
+          currentClaim = data;
+          renderClaim();
+          loadPhotos();
+        } catch (error) {
+          console.error("Error loading claim:", error);
+          document.getElementById("claim-content").innerHTML =
+            '<div style="text-align:center; color:#ef4444; padding:40px;">Error loading claim</div>';
+        }
+      }
+
+      function renderClaim() {
+        document.getElementById(
+          "claim-title"
+        ).textContent = `Claim #${currentClaim.claim_number}`;
+
+        const fullAddress = [
+          currentClaim.address,
+          currentClaim.city,
+          currentClaim.state,
+          currentClaim.zip,
+        ]
+          .filter(Boolean)
+          .join(", ");
+
+        const mapUrl = fullAddress
+          ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+              fullAddress
+            )}`
+          : null;
+
+        document.getElementById("claim-content").innerHTML = `
+        <div class="detail-section">
+          <h3 style="margin-top:0; color:#e2e8f0;">Customer Information</h3>
+          <div class="detail-row">
+            <span class="detail-label">Name:</span>
+            <span class="detail-value">${currentClaim.customer_name}</span>
+          </div>
+          ${
+            currentClaim.address
+              ? `
+            <div class="detail-row">
+              <span class="detail-label">Address:</span>
+              <span class="detail-value">${fullAddress}</span>
+            </div>
+            ${
+              mapUrl
+                ? `<a href="${mapUrl}" target="_blank" class="map-link">📍 Open in Maps</a>`
+                : ""
+            }
+          `
+              : ""
+          }
+        </div>
+
+        <div class="detail-section">
+          <h3 style="color:#e2e8f0;">Vehicle Information</h3>
+          <div class="detail-row">
+            <span class="detail-label">VIN:</span>
+            <span class="detail-value">${currentClaim.vin || "N/A"}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Year:</span>
+            <span class="detail-value">${
+              currentClaim.vehicle_year || "N/A"
+            }</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Make:</span>
+            <span class="detail-value">${
+              currentClaim.vehicle_make || "N/A"
+            }</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Model:</span>
+            <span class="detail-value">${
+              currentClaim.vehicle_model || "N/A"
+            }</span>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h3 style="color:#e2e8f0;">Appointment</h3>
+          <div class="detail-row">
+            <span class="detail-label">Status:</span>
+            <span class="detail-value">${currentClaim.status}</span>
+          </div>
+          ${
+            currentClaim.appointment_start
+              ? `
+            <div class="detail-row">
+              <span class="detail-label">Start:</span>
+              <span class="detail-value">${new Date(
+                currentClaim.appointment_start
+              ).toLocaleString()}</span>
+            </div>
+          `
+              : '<div class="detail-value">No appointment scheduled</div>'
+          }
+        </div>
+
+        ${
+          currentClaim.notes
+            ? `
+          <div class="detail-section">
+            <h3 style="color:#e2e8f0;">Notes</h3>
+            <div class="detail-value">${currentClaim.notes}</div>
+          </div>
+        `
+            : ""
+        }
+
+        <div class="detail-section">
+          <h3 style="color:#e2e8f0;">Photos</h3>
+          <input type="file" id="photo-input" accept="image/*" multiple style="display:none;" onchange="handlePhotoUpload(event)">
+          <button class="upload-btn" onclick="document.getElementById('photo-input').click()">📷 Upload Photos</button>
+          <div id="photo-grid" class="photo-grid">
+            <div style="text-align:center; color:#a0aec0; padding:20px;">Loading photos...</div>
+          </div>
+        </div>
+      `;
+      }
+
+      async function loadPhotos() {
+        try {
+          const { data, error } = await supabaseClient.storage
+            .from("claim-photos")
+            .list(`${claimId}/`, {
+              sortBy: { column: "created_at", order: "desc" },
+            });
+
+          if (error) throw error;
+
+          photos = data || [];
+          renderPhotos();
+        } catch (error) {
+          console.error("Error loading photos:", error);
+          document.getElementById("photo-grid").innerHTML =
+            '<div style="text-align:center; color:#a0aec0; padding:20px;">No photos yet</div>';
+        }
+      }
+
+      function renderPhotos() {
+        if (photos.length === 0) {
+          document.getElementById("photo-grid").innerHTML =
+            '<div style="text-align:center; color:#a0aec0; padding:20px;">No photos yet</div>';
+          return;
+        }
+
+        document.getElementById("photo-grid").innerHTML = photos
+          .map((photo, index) => {
+            const { data } = supabaseClient.storage
+              .from("claim-photos")
+              .getPublicUrl(`${claimId}/${photo.name}`);
+
+            return `
+          <div class="photo-item" onclick="openLightbox(${index})">
+            <img src="${data.publicUrl}" alt="Claim photo">
+            <button class="photo-delete" onclick="event.stopPropagation(); deletePhoto('${photo.name}')">✕</button>
+          </div>
+        `;
+          })
+          .join("");
+      }
+
+      async function handlePhotoUpload(event) {
+        const files = Array.from(event.target.files);
+        if (files.length === 0) return;
+
+        const uploadBtn = event.target.previousElementSibling;
+        uploadBtn.textContent = "Uploading...";
+        uploadBtn.disabled = true;
+
+        try {
+          const options = {
+            maxSizeMB: 1.5,
+            maxWidthOrHeight: 1600,
+            useWebWorker: true,
+          };
+
+          for (const file of files) {
+            const compressedFile = await imageCompression(file, options);
+            const fileName = `${Date.now()}-${file.name}`;
+            const filePath = `${claimId}/${fileName}`;
+
+            const { error } = await supabaseClient.storage
+              .from("claim-photos")
+              .upload(filePath, compressedFile);
+
+            if (error) throw error;
+          }
+
+          await loadPhotos();
+        } catch (error) {
+          console.error("Error uploading photos:", error);
+          alert("Error uploading photos: " + error.message);
+        } finally {
+          uploadBtn.textContent = "📷 Upload Photos";
+          uploadBtn.disabled = false;
+          event.target.value = "";
+        }
+      }
+
+      async function deletePhoto(fileName) {
+        if (!confirm("Delete this photo?")) return;
+
+        try {
+          const { error } = await supabaseClient.storage
+            .from("claim-photos")
+            .remove([`${claimId}/${fileName}`]);
+
+          if (error) throw error;
+          await loadPhotos();
+        } catch (error) {
+          console.error("Error deleting photo:", error);
+          alert("Error deleting photo: " + error.message);
+        }
+      }
+
+      function openLightbox(index) {
+        currentPhotoIndex = index;
+        updateLightboxImage();
+        document.getElementById("lightbox").classList.add("active");
+      }
+
+      function closeLightbox() {
+        document.getElementById("lightbox").classList.remove("active");
+      }
+
+      function navigatePhoto(direction) {
+        currentPhotoIndex =
+          (currentPhotoIndex + direction + photos.length) % photos.length;
+        updateLightboxImage();
+      }
+
+      function updateLightboxImage() {
+        const photo = photos[currentPhotoIndex];
+        const { data } = supabaseClient.storage
+          .from("claim-photos")
+          .getPublicUrl(`${claimId}/${photo.name}`);
+
+        document.getElementById("lightbox-img").src = data.publicUrl;
+      }
+
+      function downloadCurrentPhoto() {
+        const photo = photos[currentPhotoIndex];
+        const { data } = supabaseClient.storage
+          .from("claim-photos")
+          .getPublicUrl(`${claimId}/${photo.name}`);
+
+        const link = document.createElement("a");
+        link.href = data.publicUrl;
+        link.download = photo.name;
+        link.click();
+      }
+
+      // Close lightbox with Escape key
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeLightbox();
+        if (e.key === "ArrowLeft") navigatePhoto(-1);
+        if (e.key === "ArrowRight") navigatePhoto(1);
+      });
+
+      // Close lightbox when clicking outside image
+      document.getElementById("lightbox").addEventListener("click", (e) => {
+        if (e.target.id === "lightbox") closeLightbox();
+      });
+    </script>
+  </body>
+</html>
