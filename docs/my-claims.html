@@ -4,6 +4,13 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Aggressive cache busting -->
+    <meta
+      http-equiv="Cache-Control"
+      content="no-cache, no-store, must-revalidate"
+    />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <meta
       http-equiv="Cache-Control"
       content="no-cache, no-store, must-revalidate"
@@ -80,8 +87,61 @@
       </div>
     </div>
 
-    <script src="js/config.js?v=4"></script>
+    <script src="js/config.js?v=7&t=20251212"></script>
     <script>
+      // FORCE CACHE CLEAR WITH TIMESTAMP
+      const FORCE_REFRESH_TIMESTAMP = "20251212-19:30";
+      const lastRefresh = localStorage.getItem("lastRefresh");
+
+      if (lastRefresh !== FORCE_REFRESH_TIMESTAMP) {
+        console.log("FORCING CACHE REFRESH DUE TO TIMESTAMP CHANGE");
+        localStorage.setItem("lastRefresh", FORCE_REFRESH_TIMESTAMP);
+        // Clear everything and reload
+        if ("serviceWorker" in navigator) {
+          navigator.serviceWorker.getRegistrations().then((regs) => {
+            regs.forEach((reg) => reg.unregister());
+          });
+        }
+        caches
+          .keys()
+          .then((names) => {
+            names.forEach((name) => caches.delete(name));
+          })
+          .then(() => {
+            window.location.reload(true);
+          });
+        return;
+      }
+      // AGGRESSIVE cache and service worker clearing
+      if ("serviceWorker" in navigator) {
+        // Unregister ALL service workers
+        navigator.serviceWorker
+          .getRegistrations()
+          .then(function (registrations) {
+            for (let registration of registrations) {
+              console.log("Unregistering service worker:", registration);
+              registration.unregister();
+            }
+          });
+        // Clear ALL caches
+        caches
+          .keys()
+          .then(function (cacheNames) {
+            console.log("Clearing caches:", cacheNames);
+            return Promise.all(
+              cacheNames.map(function (cacheName) {
+                console.log("Deleting cache:", cacheName);
+                return caches.delete(cacheName);
+              })
+            );
+          })
+          .then(() => {
+            console.log("All caches cleared, forcing page reload...");
+            // Force reload after cache clear
+            setTimeout(() => window.location.reload(true), 1000);
+          });
+      }
+
       let currentUserId = null;
 
       // Check authentication
@@ -124,13 +184,49 @@
 
       async function loadMyClaims() {
         try {
+          console.log("Loading claims for user:", currentUserId);
+
+          // First, let's check the user's profile and role
+          console.log("Checking user profile...");
+          const { data: profileData, error: profileError } =
+            await supabaseClient
+              .from("profiles")
+              .select("*")
+              .eq("user_id", currentUserId)
+              .single();
+
+          if (profileError) {
+            console.error("Profile error:", profileError);
+          } else {
+            console.log("User profile:", profileData);
+          }
+
+          // Try a simple claims query without assigned_to filter first
+          console.log("Testing basic claims access...");
+          const { data: testData, error: testError } = await supabaseClient
+            .from("claims")
+            .select("id, claim_number, status")
+            .limit(1);
+
+          if (testError) {
+            console.error("Basic claims access failed:", testError);
+            throw new Error(`Cannot access claims table: ${testError.message}`);
+          } else {
+            console.log("Basic claims access works:", testData);
+          }
+
+          // Now try the assigned_to query
+          console.log("Trying assigned_to query...");
           const { data, error } = await supabaseClient
             .from("claims")
             .select("*")
-            .eq("assigned_to", currentUserId)
-            .order("appointment_start", { ascending: true });
+            .eq("assigned_to", currentUserId);
 
-          if (error) throw error;
+          if (error) {
+            console.error("Supabase error:", error);
+            throw error;
+          }
+          console.log("Claims loaded:", data);
           renderClaims(data || []);
         } catch (error) {
           console.error("Error loading claims:", error);

@@ -1,23 +1,6 @@
-// DISABLED SERVICE WORKER - NO CACHING OR FETCH INTERCEPTION
-console.log("Service worker disabled - no caching");
+// COMPLETELY DISABLED SERVICE WORKER
+// This file exists only to prevent 404 errors, but does nothing
 
-self.addEventListener("install", (event) => {
-  console.log("SW install - forcing activation");
-  self.skipWaiting();
-});
+console.log("Service worker completely disabled - no functionality");
 
-self.addEventListener("activate", (event) => {
-  console.log("SW activate - clearing ALL caches");
-  event.waitUntil(
-    caches
-      .keys()
-      .then((cacheNames) => {
-        return Promise.all(
-          cacheNames.map((cacheName) => caches.delete(cacheName))
-        );
-      })
-      .then(() => self.clients.claim())
-  );
-});
-
-// NO FETCH HANDLER - all requests go direct to network
+// No event listeners - service worker is inert

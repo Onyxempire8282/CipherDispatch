@@ -28,13 +28,13 @@
         }
       }
 
-      // Register service worker for aggressive cache control
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker
-          .register("/CipherDispatch/sw.js")
-          .then(() => console.log("Service Worker registered"))
-          .catch((err) => console.log("SW registration failed", err));
-      }
+      // DISABLED - Service worker causing cache issues
+      // if ("serviceWorker" in navigator) {
+      //   navigator.serviceWorker
+      //     .register("/CipherDispatch/sw.js")
+      //     .then(() => console.log("Service Worker registered"))
+      //     .catch((err) => console.log("SW registration failed", err));
+      // }
     </script>
   </head>
   <body>

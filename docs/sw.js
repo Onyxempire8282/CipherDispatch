@@ -1,47 +1,6 @@
-// Simple service worker to prevent caching issues
-const CACHE_VERSION = "v4";
+// COMPLETELY DISABLED SERVICE WORKER
+// This file exists only to prevent 404 errors, but does nothing
 
-self.addEventListener("install", (event) => {
-  // Force the waiting service worker to become the active service worker
-  self.skipWaiting();
-});
+console.log("Service worker completely disabled - no functionality");
 
-self.addEventListener("activate", (event) => {
-  // Delete all old caches
-  event.waitUntil(
-    caches
-      .keys()
-      .then((cacheNames) => {
-        return Promise.all(
-          cacheNames.map((cacheName) => {
-            if (cacheName !== CACHE_VERSION) {
-              return caches.delete(cacheName);
-            }
-          })
-        );
-      })
-      .then(() => self.clients.claim())
-  );
-});
-
-// Network-first strategy: always try to get fresh content
-self.addEventListener("fetch", (event) => {
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Clone the response
-        const responseToCache = response.clone();
-
-        // Cache the fresh response
-        caches.open(CACHE_VERSION).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
-
-        return response;
-      })
-      .catch(() => {
-        // If network fails, try cache
-        return caches.match(event.request);
-      })
-  );
-});
+// No event listeners - service worker is inert
