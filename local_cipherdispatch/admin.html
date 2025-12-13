@@ -72,6 +72,632 @@
 
     <script src="js/config.js?v=8&t=20251213"></script>
     <script>
+      console.log("=== ADMIN PAGE DEBUG START ===");
+      console.log("Service workers disabled - using direct network calls");
+      console.log("supabaseClient defined?", typeof supabaseClient !== 'undefined');
+
+      let showArchived = false;
+      let allClaims = [];
+
+      // Check authentication immediately
+      async function checkAuth() {
+        console.log("Checking authentication...");
+        try {
+          const { data, error } = await supabaseClient.auth.getSession();
+          console.log("Session check result:", data);
+          console.log("Session error:", error);
+          
+          if (error) {
+            console.error("Auth error:", error);
+            alert("Authentication error. Please log in again.");
+            window.location.href = "index.html";
+            return false;
+          }
+          
+          if (!data || !data.session) {
+            console.warn("No active session found. Redirecting to login...");
+            window.location.href = "index.html";
+            return false;
+          }
+          
+          console.log("Session valid! User:", data.session.user.email);
+          return true;
+        } catch (err) {
+          console.error("Exception in checkAuth:", err);
+          alert("Error checking authentication. Please log in again.");
+          window.location.href = "index.html";
+          return false;
+        }
+      }
+
+      // Initialize page
+      async function initPage() {
+        console.log("Initializing page...");
+        const isAuthenticated = await checkAuth();
+        
+        if (!isAuthenticated) {
+          console.log("Not authenticated, stopping initialization");
+          return;
+        }
+        
+        console.log("Authenticated! Setting up event listeners and loading claims...");
+        setupEventListeners();
+        await loadClaims();
+      }
+
+      // Setup event listeners
+      function setupEventListeners() {
+        console.log("Setting up event listeners...");
+        
+        const toggleBtn = document.getElementById("toggle-archived");
+        const downloadBtn = document.getElementById("download-csv");
+        
+        if (toggleBtn) {
+          toggleBtn.addEventListener("click", () => {
+            console.log("Toggle archived clicked");
+            showArchived = !showArchived;
+            toggleBtn.textContent = showArchived
+              ? "📋 View Active"
+              : "📦 View Archived";
+            document.getElementById("view-title").textContent = showArchived
+              ? "Archived Claims"
+              : "Active Claims";
+            downloadBtn.style.display = showArchived ? "block" : "none";
+            renderClaims();
+          });
+        } else {
+          console.error("Toggle button not found!");
+        }
+        
+        if (downloadBtn) {
+          downloadBtn.addEventListener("click", () => {
+            console.log("Download CSV clicked");
+            downloadCSV();
+          });
+        } else {
+          console.error("Download button not found!");
+        }
+      }
+
+      async function handleLogout() {
+        console.log("Logout clicked");
+        try {
+          await supabaseClient.auth.signOut();
+          console.log("Signed out successfully");
+          window.location.href = "index.html";
+        } catch (err) {
+          console.error("Logout error:", err);
+          alert("Error logging out: " + err.message);
+        }
+      }
+
+      async function loadClaims() {
+        try {
+          console.log("=== LOADING CLAIMS ===");
+          
+          document.getElementById("claims-container").innerHTML =
+            '<div style="text-align: center; color: #a0aec0; padding: 40px">Loading claims...</div>';
+          
+          let data;
+          try {
+            console.log("Attempting explicit select...");
+            const res = await supabaseClient
+              .from("claims")
+              .select(
+                `id,claim_number,customer_name,phone,email,vin,vehicle_year,vehicle_make,vehicle_model,address_line1,address_line2,city,state,postal_code,status,assigned_to,appointment_start,appointment_end,notes,created_at,firm_name`
+              )
+              .order("appointment_start", { ascending: true });
+
+            console.log("Select response:", res);
+            
+            if (res.error) {
+              console.error("Select error:", res.error);
+              throw res.error;
+            }
+            
+            data = res.data;
+            console.log("Explicit select succeeded:", data?.length, "claims");
+          } catch (err) {
+            console.warn("Explicit claims select failed. Falling back to select('*'):", err);
+            const res2 = await supabaseClient
+              .from("claims")
+              .select("*")
+              .order("appointment_start", { ascending: true });
+              
+            if (res2.error) {
+              console.error("Fallback select failed:", res2.error);
+              throw res2.error;
+            }
+            data = res2.data;
+            console.log("Fallback select succeeded:", data?.length, "claims");
+          }
+
+          allClaims = data || [];
+          console.log("Total claims loaded:", allClaims.length);
+          
+          if (allClaims.length === 0) {
+            console.warn("No claims found in database");
+            document.getElementById("claims-container").innerHTML =
+              '<div style="text-align: center; color: #a0aec0; padding: 40px">No claims found. Click "➕ New Claim" to create one.</div>';
+            renderClaims();
+            return;
+          }
+
+          // Load appraiser names
+          for (const claim of allClaims) {
+            claim.photoCount = 0;
+
+            if (claim.assigned_to) {
+              try {
+                const { data: appraiserData } = await supabaseClient
+                  .from("profiles")
+                  .select("full_name")
+                  .eq("user_id", claim.assigned_to)
+                  .single();
+                claim.appraiser = appraiserData;
+              } catch (err) {
+                console.warn(`Could not load appraiser for claim ${claim.id}:`, err);
+              }
+            }
+          }
+
+          console.log("Rendering claims...");
+          renderClaims();
+          loadPhotoCounts();
+        } catch (error) {
+          console.error("=== ERROR LOADING CLAIMS ===");
+          console.error("Error details:", error);
+          console.error("Error message:", error.message);
+          console.error("Error code:", error.code);
+
+          if (
+            error.message?.includes("JWT") ||
+            error.code === "PGRST301" ||
+            error.message?.includes("401")
+          ) {
+            alert("Your session has expired. Please log in again.");
+            window.location.href = "index.html";
+            return;
+          }
+
+          document.getElementById("claims-container").innerHTML =
+            `<div style="text-align:center; color:#ef4444; padding:40px;">
+              <div style="font-size:24px; margin-bottom:16px;">⚠️ Error Loading Claims</div>
+              <div style="margin-bottom:16px;">${error.message || 'Unknown error'}</div>
+              <button onclick="location.reload()" style="background:#3b82f6; color:white; padding:12px 24px; border:none; border-radius:8px; cursor:pointer; font-size:16px;">
+                🔄 Retry
+              </button>
+            </div>`;
+        }
+      }
+
+      async function loadPhotoCounts() {
+        console.log("Loading photo counts...");
+        const photoPromises = allClaims.map(async (claim) => {
+          try {
+            const { data: photoData, error: photoError } =
+              await supabaseClient.storage
+                .from("claim-photos")
+                .list(`${claim.id}/`);
+
+            if (!photoError && photoData) {
+              claim.photoCount = photoData.length;
+            }
+          } catch (error) {
+            // Silently fail
+          }
+        });
+
+        await Promise.all(photoPromises);
+        renderClaims();
+      }
+
+      function renderClaims() {
+        console.log("Rendering claims, total:", allClaims.length);
+        
+        const scheduledCount = allClaims.filter(
+          (c) => c.status === "SCHEDULED"
+        ).length;
+        const inProgressCount = allClaims.filter(
+          (c) => c.status === "IN_PROGRESS"
+        ).length;
+        const completedCount = allClaims.filter(
+          (c) => c.status === "COMPLETED"
+        ).length;
+        const canceledCount = allClaims.filter(
+          (c) => c.status === "CANCELED"
+        ).length;
+
+        document.getElementById("status-summary").innerHTML = `
+          <div style="background:#2d3748; padding:16px 24px; border-radius:8px; border:2px solid #3b82f6;">
+            <div style="font-size:24px; font-weight:bold; color:#3b82f6;">${scheduledCount}</div>
+            <div style="color:#e2e8f0; font-size:14px;">📅 Scheduled</div>
+          </div>
+          <div style="background:#2d3748; padding:16px 24px; border-radius:8px; border:2px solid #f59e0b;">
+            <div style="font-size:24px; font-weight:bold; color:#f59e0b;">${inProgressCount}</div>
+            <div style="color:#e2e8f0; font-size:14px;">⚙️ In Progress</div>
+          </div>
+          <div style="background:#2d3748; padding:16px 24px; border-radius:8px; border:2px solid #10b981;">
+            <div style="font-size:24px; font-weight:bold; color:#10b981;">${completedCount}</div>
+            <div style="color:#e2e8f0; font-size:14px;">✅ Completed</div>
+          </div>
+          <div style="background:#2d3748; padding:16px 24px; border-radius:8px; border:2px solid #ef4444;">
+            <div style="font-size:24px; font-weight:bold; color:#ef4444;">${canceledCount}</div>
+            <div style="color:#e2e8f0; font-size:14px;">❌ Canceled</div>
+          </div>
+        `;
+
+        const filteredClaims = allClaims.filter((claim) =>
+          showArchived
+            ? claim.status === "COMPLETED"
+            : claim.status !== "COMPLETED"
+        );
+
+        console.log("Filtered claims to display:", filteredClaims.length);
+
+        const groupedClaims = groupClaimsByDate(filteredClaims);
+
+        let html = "";
+        for (const [dateGroup, claims] of Object.entries(groupedClaims)) {
+          html += `
+            <div style="margin-bottom:24px;">
+              <h3 style="color:#e2e8f0; margin-bottom:12px; padding-left:4px;">${dateGroup}</h3>
+              <div style="display:grid; gap:16px; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));">
+                ${claims
+                  .map(
+                    (claim) => `
+                  <div class="claim-card" style="position:relative;">
+                    ${
+                      showArchived
+                        ? `
+                      <button
+                        onclick="deleteArchivedClaim('${claim.id}', '${claim.claim_number}', event)"
+                        class="top-right-delete"
+                        title="Delete this claim permanently"
+                      >
+                        🗑️ Delete
+                      </button>
+                    `
+                        : ""
+                    }
+                    <a href="claim-detail.html?id=${
+                      claim.id
+                    }" style="text-decoration:none; color:inherit; display:block;">
+                      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <span class="status ${getStatusClass(claim.status)}">${
+                      claim.status
+                    }</span>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                          <span style="font-size:12px; color:#cbd5e1; font-weight:600; white-space:nowrap; max-width:220px; overflow:hidden; text-overflow:ellipsis;">
+                            ${
+                              claim.firm_name ? `Firm: ${claim.firm_name}` : ""
+                            }${
+                      claim.firm_name && claim.city
+                        ? ` — ${claim.city}`
+                        : claim.city
+                        ? `${claim.city}`
+                        : ""
+                    }
+                          </span>
+                          ${
+                            claim.photoCount > 0
+                              ? `<span style="background:#10b981; color:white; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:bold;">📸 ${claim.photoCount}</span>`
+                              : ""
+                          }
+                          <span style="background:#667eea; color:white; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:bold;">
+                            ✏️ Edit
+                          </span>
+                        </div>
+                      </div>
+                      <h4>#${claim.claim_number}</h4>
+                      <section>
+                        <div class="title">Customer</div>
+                        <div class="content">${claim.customer_name}</div>
+                      </section>
+                      <section>
+                        <div class="title">📅 Appointment</div>
+                        <div class="content">${formatAppointment(claim)}</div>
+                      </section>
+                      <section>
+                        <div class="title">🚗 Vehicle Info</div>
+                        <div class="content">${claim.vehicle_year || ""} ${
+                      claim.vehicle_make || ""
+                    } ${claim.vehicle_model || ""}</div>
+                      </section>
+                      <section>
+                        <div class="content"><strong>👤 Assigned:</strong> ${
+                          claim.appraiser?.full_name || "Unassigned"
+                        }</div>
+                      </section>
+                    </a>
+                  </div>
+                `
+                  )
+                  .join("")}
+              </div>
+            </div>
+          `;
+        }
+
+        if (html === "") {
+          html = '<div style="text-align: center; color: #a0aec0; padding: 40px">No claims to display in this view.</div>';
+        }
+
+        document.getElementById("claims-container").innerHTML = html;
+      }
+
+      function groupClaimsByDate(claims) {
+        const groups = {};
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        const nextWeek = new Date(today);
+        nextWeek.setDate(nextWeek.getDate() + 7);
+
+        claims.forEach((claim) => {
+          let dateKey;
+
+          if (!claim.appointment_start) {
+            dateKey = "No Appointment Set";
+          } else {
+            const aptDate = new Date(claim.appointment_start);
+            aptDate.setHours(0, 0, 0, 0);
+
+            const fullDate = aptDate.toLocaleDateString("en-US", {
+              month: "long",
+              day: "numeric",
+              year: "numeric",
+            });
+
+            if (claim.status === "COMPLETED") {
+              dateKey = "Completed";
+            } else if (aptDate.getTime() === today.getTime()) {
+              dateKey = `Today (${fullDate})`;
+            } else if (aptDate.getTime() === tomorrow.getTime()) {
+              dateKey = `Tomorrow (${fullDate})`;
+            } else if (aptDate < today) {
+              dateKey = `Overdue (${fullDate})`;
+            } else if (aptDate < nextWeek) {
+              dateKey = `This Week (${fullDate})`;
+            } else {
+              dateKey = fullDate;
+            }
+          }
+
+          if (!groups[dateKey]) {
+            groups[dateKey] = [];
+          }
+          groups[dateKey].push(claim);
+        });
+
+        const sortOrder = ["Overdue", "Today", "Tomorrow", "This Week"];
+        const sortedGroups = {};
+
+        sortOrder.forEach((key) => {
+          Object.keys(groups).forEach((groupKey) => {
+            if (groupKey.startsWith(key)) {
+              sortedGroups[groupKey] = groups[groupKey];
+            }
+          });
+        });
+
+        Object.keys(groups)
+          .sort()
+          .forEach((key) => {
+            if (
+              !sortOrder.includes(key) &&
+              key !== "No Appointment Set" &&
+              key !== "Completed"
+            ) {
+              sortedGroups[key] = groups[key];
+            }
+          });
+
+        if (groups["No Appointment Set"])
+          sortedGroups["No Appointment Set"] = groups["No Appointment Set"];
+        if (groups["Completed"])
+          sortedGroups["Completed"] = groups["Completed"];
+
+        return sortedGroups;
+      }
+
+      function getStatusClass(status) {
+        const map = {
+          COMPLETED: "completed",
+          IN_PROGRESS: "in-progress",
+          SCHEDULED: "scheduled",
+          CANCELED: "canceled",
+          NONE: "none",
+        };
+        return map[status] || "none";
+      }
+
+      function formatAppointment(claim) {
+        if (!claim.appointment_start) return "No appointment scheduled";
+
+        const date = new Date(claim.appointment_start);
+
+        const options = {
+          weekday: "short",
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        };
+
+        return `Start: ${date.toLocaleString("en-US", options)}`;
+      }
+
+      function downloadCSV() {
+        const completedClaims = allClaims.filter(
+          (c) => c.status === "COMPLETED"
+        );
+
+        if (completedClaims.length === 0) {
+          alert("No completed claims to download");
+          return;
+        }
+
+        const headers = [
+          "Claim Number",
+          "Customer Name",
+          "Phone",
+          "Email",
+          "VIN",
+          "Vehicle Year",
+          "Vehicle Make",
+          "Vehicle Model",
+          "Address Line 1",
+          "Address Line 2",
+          "City",
+          "State",
+          "Postal Code",
+          "Status",
+          "Assigned To",
+          "Appointment Start",
+          "Appointment End",
+          "Notes",
+          "Created At",
+        ];
+
+        const rows = completedClaims.map((claim) =>
+          [
+            claim.claim_number || "",
+            claim.customer_name || "",
+            claim.phone || "",
+            claim.email || "",
+            claim.vin || "",
+            claim.vehicle_year || "",
+            claim.vehicle_make || "",
+            claim.vehicle_model || "",
+            claim.address_line1 || "",
+            claim.address_line2 || "",
+            claim.city || "",
+            claim.state || "",
+            claim.postal_code || "",
+            claim.status || "",
+            claim.appraiser?.full_name || "Unassigned",
+            claim.appointment_start || "",
+            claim.appointment_end || "",
+            claim.notes || "",
+            claim.created_at || "",
+          ]
+            .map((field) => `"${String(field).replace(/"/g, '""')}"`)
+            .join(",")
+        );
+
+        const csv = [headers.join(","), ...rows].join("\n");
+
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute(
+          "download",
+          `completed_claims_${new Date().toISOString().split("T")[0]}.csv`
+        );
+        link.style.visibility = "hidden";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      async function deleteArchivedClaim(claimId, claimNumber, event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const confirmed = confirm(
+          `⚠️ WARNING: Are you sure you want to PERMANENTLY DELETE this claim?\n\n` +
+            `Claim #${claimNumber}\n\n` +
+            `This action CANNOT be undone and will delete:\n` +
+            `- The claim record\n` +
+            `- All associated photos\n` +
+            `- All related notifications\n\n` +
+            `Click OK to confirm permanent deletion.`
+        );
+
+        if (!confirmed) return;
+
+        try {
+          const { data: photoList } = await supabaseClient.storage
+            .from("claim-photos")
+            .list(`${claimId}/`);
+
+          if (photoList && photoList.length > 0) {
+            const paths = photoList.map((p) => `${claimId}/${p.name}`);
+            await supabaseClient.storage.from("claim-photos").remove(paths);
+          }
+
+          const { error } = await supabaseClient
+            .from("claims")
+            .delete()
+            .eq("id", claimId);
+
+          if (error) throw error;
+
+          alert(`Claim #${claimNumber} has been permanently deleted.`);
+
+          await loadClaims();
+        } catch (error) {
+          console.error("Error deleting claim:", error);
+          alert("Error deleting claim: " + error.message);
+        }
+      }
+
+      // Start the application
+      initPage();
+    </script>
+  </body>
+</html>
+        min-height: 100vh;
+        background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+        padding: 16px;
+        box-sizing: border-box;
+      "
+    >
+      <div class="topbar">
+        <div class="left">
+          <h3 id="view-title">Active Claims</h3>
+        </div>
+        <div class="right">
+          <button id="toggle-archived" class="toggle-archived">
+            📦 View Archived
+          </button>
+          <button
+            id="download-csv"
+            class="toggle-archived"
+            style="display: none; background: #10b981"
+          >
+            📥 Download CSV
+          </button>
+        </div>
+      </div>
+
+      <div
+        id="status-summary"
+        style="
+          display: flex;
+          gap: 16px;
+          margin: 16px 0;
+          justify-content: center;
+          flex-wrap: wrap;
+        "
+      ></div>
+
+      <div id="claims-container">
+        <div style="text-align: center; color: #a0aec0; padding: 40px">
+          Loading claims...
+        </div>
+      </div>
+    </div>
+
+    <script src="js/config.js?v=8&t=20251213"></script>
+    <script>
       console.log("Service workers disabled - using direct network calls");
 
       let showArchived = false;
@@ -91,14 +717,13 @@
       }
 
       // Wait for DOM to load before adding event listeners
-      document.addEventListener("DOMContentLoaded", function() {
+      document.addEventListener("DOMContentLoaded", function () {
         document
           .getElementById("toggle-archived")
           .addEventListener("click", () => {
             showArchived = !showArchived;
-            document.getElementById("toggle-archived").textContent = showArchived
-              ? "📋 View Active"
-              : "📦 View Archived";
+            document.getElementById("toggle-archived").textContent =
+              showArchived ? "📋 View Active" : "📦 View Archived";
             document.getElementById("view-title").textContent = showArchived
               ? "Archived Claims"
               : "Active Claims";
@@ -108,9 +733,11 @@
             renderClaims();
           });
 
-        document.getElementById("download-csv").addEventListener("click", () => {
-          downloadCSV();
-        });
+        document
+          .getElementById("download-csv")
+          .addEventListener("click", () => {
+            downloadCSV();
+          });
       });
 
       async function loadClaims() {
