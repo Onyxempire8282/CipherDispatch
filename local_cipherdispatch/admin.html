@@ -4,13 +4,6 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- Aggressive cache busting -->
-    <meta
-      http-equiv="Cache-Control"
-      content="no-cache, no-store, must-revalidate"
-    />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
     <meta
       http-equiv="Cache-Control"
       content="no-cache, no-store, must-revalidate"
@@ -22,7 +15,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   </head>
   <body>
-    <!-- Navigation Menu -->
     <nav class="nav-menu">
       <div class="nav-left">
         <span class="nav-brand">⚡ Claim Cipher</span>
@@ -80,13 +72,11 @@
 
     <script src="js/config.js?v=8&t=20251213"></script>
     <script>
-      // Service workers completely disabled
       console.log("Service workers disabled - using direct network calls");
 
       let showArchived = false;
       let allClaims = [];
 
-      // Check authentication
       supabaseClient.auth.getSession().then(({ data: { session } }) => {
         if (!session) {
           window.location.href = "index.html";
@@ -100,30 +90,32 @@
         window.location.href = "index.html";
       }
 
-      document
-        .getElementById("toggle-archived")
-        .addEventListener("click", () => {
-          showArchived = !showArchived;
-          document.getElementById("toggle-archived").textContent = showArchived
-            ? "📋 View Active"
-            : "📦 View Archived";
-          document.getElementById("view-title").textContent = showArchived
-            ? "Archived Claims"
-            : "Active Claims";
-          document.getElementById("download-csv").style.display = showArchived
-            ? "block"
-            : "none";
-          renderClaims();
-        });
+      // Wait for DOM to load before adding event listeners
+      document.addEventListener("DOMContentLoaded", function() {
+        document
+          .getElementById("toggle-archived")
+          .addEventListener("click", () => {
+            showArchived = !showArchived;
+            document.getElementById("toggle-archived").textContent = showArchived
+              ? "📋 View Active"
+              : "📦 View Archived";
+            document.getElementById("view-title").textContent = showArchived
+              ? "Archived Claims"
+              : "Active Claims";
+            document.getElementById("download-csv").style.display = showArchived
+              ? "block"
+              : "none";
+            renderClaims();
+          });
 
-      document.getElementById("download-csv").addEventListener("click", () => {
-        downloadCSV();
+        document.getElementById("download-csv").addEventListener("click", () => {
+          downloadCSV();
+        });
       });
 
       async function loadClaims() {
         try {
           console.log("Loading claims...");
-          // Try an explicit select including firm_name and city; fall back to select("*")
           let data;
           try {
             const res = await supabaseClient
@@ -153,10 +145,9 @@
             console.log("Fallback select succeeded:", data?.length, "claims");
           }
 
-          // Load appraiser info for each claim
           allClaims = data || [];
           for (const claim of allClaims) {
-            claim.photoCount = 0; // Initialize to 0
+            claim.photoCount = 0;
 
             if (claim.assigned_to) {
               const { data: appraiserData } = await supabaseClient
@@ -168,15 +159,11 @@
             }
           }
 
-          // Render immediately with photo counts at 0
           renderClaims();
-
-          // Load photo counts in background (lazy load)
           loadPhotoCounts();
         } catch (error) {
           console.error("Error loading claims:", error);
 
-          // Check if it's an authentication error
           if (
             error.message?.includes("JWT") ||
             error.code === "PGRST301" ||
@@ -193,7 +180,6 @@
       }
 
       async function loadPhotoCounts() {
-        // Load photo counts in parallel for better performance
         const photoPromises = allClaims.map(async (claim) => {
           try {
             const { data: photoData, error: photoError } =
@@ -205,19 +191,15 @@
               claim.photoCount = photoData.length;
             }
           } catch (error) {
-            // Silently fail - photo count stays at 0
+            // Silently fail
           }
         });
 
-        // Wait for all photo counts to load
         await Promise.all(photoPromises);
-
-        // Re-render to show photo counts
         renderClaims();
       }
 
       function renderClaims() {
-        // Calculate status counts
         const scheduledCount = allClaims.filter(
           (c) => c.status === "SCHEDULED"
         ).length;
@@ -231,7 +213,6 @@
           (c) => c.status === "CANCELED"
         ).length;
 
-        // Update status summary
         document.getElementById("status-summary").innerHTML = `
           <div style="background:#2d3748; padding:16px 24px; border-radius:8px; border:2px solid #3b82f6;">
             <div style="font-size:24px; font-weight:bold; color:#3b82f6;">${scheduledCount}</div>
@@ -285,50 +266,52 @@
                     <a href="claim-detail.html?id=${
                       claim.id
                     }" style="text-decoration:none; color:inherit; display:block;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                      <span class="status ${getStatusClass(claim.status)}">${
+                      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <span class="status ${getStatusClass(claim.status)}">${
                       claim.status
                     }</span>
-                      <div style="display:flex; gap:8px; align-items:center;">
-                        <span style="font-size:12px; color:#cbd5e1; font-weight:600; white-space:nowrap; max-width:220px; overflow:hidden; text-overflow:ellipsis;">
-                          ${claim.firm_name ? `Firm: ${claim.firm_name}` : ""}${
+                        <div style="display:flex; gap:8px; align-items:center;">
+                          <span style="font-size:12px; color:#cbd5e1; font-weight:600; white-space:nowrap; max-width:220px; overflow:hidden; text-overflow:ellipsis;">
+                            ${
+                              claim.firm_name ? `Firm: ${claim.firm_name}` : ""
+                            }${
                       claim.firm_name && claim.city
                         ? ` — ${claim.city}`
                         : claim.city
                         ? `${claim.city}`
                         : ""
                     }
-                        </span>
-                        ${
-                          claim.photoCount > 0
-                            ? `<span style="background:#10b981; color:white; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:bold;">📸 ${claim.photoCount}</span>`
-                            : ""
-                        }
-                        <span style="background:#667eea; color:white; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:bold;">
-                          ✏️ Edit
-                        </span>
+                          </span>
+                          ${
+                            claim.photoCount > 0
+                              ? `<span style="background:#10b981; color:white; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:bold;">📸 ${claim.photoCount}</span>`
+                              : ""
+                          }
+                          <span style="background:#667eea; color:white; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:bold;">
+                            ✏️ Edit
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                    <h4>#${claim.claim_number}</h4>
-                    <section>
-                      <div class="title">Customer</div>
-                      <div class="content">${claim.customer_name}</div>
-                    </section>
-                    <section>
-                      <div class="title">📅 Appointment</div>
-                      <div class="content">${formatAppointment(claim)}</div>
-                    </section>
-                    <section>
-                      <div class="title">🚗 Vehicle Info</div>
-                      <div class="content">${claim.vehicle_year || ""} ${
+                      <h4>#${claim.claim_number}</h4>
+                      <section>
+                        <div class="title">Customer</div>
+                        <div class="content">${claim.customer_name}</div>
+                      </section>
+                      <section>
+                        <div class="title">📅 Appointment</div>
+                        <div class="content">${formatAppointment(claim)}</div>
+                      </section>
+                      <section>
+                        <div class="title">🚗 Vehicle Info</div>
+                        <div class="content">${claim.vehicle_year || ""} ${
                       claim.vehicle_make || ""
                     } ${claim.vehicle_model || ""}</div>
-                    </section>
-                    <section>
-                      <div class="content"><strong>👤 Assigned:</strong> ${
-                        claim.appraiser?.full_name || "Unassigned"
-                      }</div>
-                    </section>
+                      </section>
+                      <section>
+                        <div class="content"><strong>👤 Assigned:</strong> ${
+                          claim.appraiser?.full_name || "Unassigned"
+                        }</div>
+                      </section>
                     </a>
                   </div>
                 `
@@ -389,11 +372,9 @@
           groups[dateKey].push(claim);
         });
 
-        // Sort groups by priority
         const sortOrder = ["Overdue", "Today", "Tomorrow", "This Week"];
         const sortedGroups = {};
 
-        // Add priority groups (match keys that start with these)
         sortOrder.forEach((key) => {
           Object.keys(groups).forEach((groupKey) => {
             if (groupKey.startsWith(key)) {
@@ -402,7 +383,6 @@
           });
         });
 
-        // Add other dated groups
         Object.keys(groups)
           .sort()
           .forEach((key) => {
@@ -415,7 +395,6 @@
             }
           });
 
-        // Add No Appointment and Completed at the end
         if (groups["No Appointment Set"])
           sortedGroups["No Appointment Set"] = groups["No Appointment Set"];
         if (groups["Completed"])
@@ -438,10 +417,8 @@
       function formatAppointment(claim) {
         if (!claim.appointment_start) return "No appointment scheduled";
 
-        // Parse the ISO string and display the exact time stored
         const date = new Date(claim.appointment_start);
 
-        // Format date and time without timezone conversion
         const options = {
           weekday: "short",
           year: "numeric",
@@ -465,7 +442,6 @@
           return;
         }
 
-        // CSV headers
         const headers = [
           "Claim Number",
           "Customer Name",
@@ -488,7 +464,6 @@
           "Created At",
         ];
 
-        // Convert claims to CSV rows
         const rows = completedClaims.map((claim) =>
           [
             claim.claim_number || "",
@@ -515,10 +490,8 @@
             .join(",")
         );
 
-        // Combine headers and rows
         const csv = [headers.join(","), ...rows].join("\n");
 
-        // Create download link
         const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
         const link = document.createElement("a");
         const url = URL.createObjectURL(blob);
@@ -550,7 +523,6 @@
         if (!confirmed) return;
 
         try {
-          // Delete all photos for this claim first
           const { data: photoList } = await supabaseClient.storage
             .from("claim-photos")
             .list(`${claimId}/`);
@@ -560,7 +532,6 @@
             await supabaseClient.storage.from("claim-photos").remove(paths);
           }
 
-          // Delete the claim (notifications will cascade delete automatically)
           const { error } = await supabaseClient
             .from("claims")
             .delete()
@@ -570,7 +541,6 @@
 
           alert(`Claim #${claimNumber} has been permanently deleted.`);
 
-          // Reload claims to update the view
           await loadClaims();
         } catch (error) {
           console.error("Error deleting claim:", error);
