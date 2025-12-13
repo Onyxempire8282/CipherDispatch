@@ -91,14 +91,13 @@
       }
 
       // Wait for DOM to load before adding event listeners
-      document.addEventListener("DOMContentLoaded", function() {
+      document.addEventListener("DOMContentLoaded", function () {
         document
           .getElementById("toggle-archived")
           .addEventListener("click", () => {
             showArchived = !showArchived;
-            document.getElementById("toggle-archived").textContent = showArchived
-              ? "📋 View Active"
-              : "📦 View Archived";
+            document.getElementById("toggle-archived").textContent =
+              showArchived ? "📋 View Active" : "📦 View Archived";
             document.getElementById("view-title").textContent = showArchived
               ? "Archived Claims"
               : "Active Claims";
@@ -108,9 +107,11 @@
             renderClaims();
           });
 
-        document.getElementById("download-csv").addEventListener("click", () => {
-          downloadCSV();
-        });
+        document
+          .getElementById("download-csv")
+          .addEventListener("click", () => {
+            downloadCSV();
+          });
       });
 
       async function loadClaims() {
