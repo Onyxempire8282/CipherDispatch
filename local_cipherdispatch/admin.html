@@ -78,28 +78,11 @@
       </div>
     </div>
 
-    <script src="js/config.js?v=7&t=20251212"></script>
+    <script src="js/config.js?v=8&t=20251213"></script>
     <script>
-      // FORCE CACHE CLEAR WITH TIMESTAMP
-      const FORCE_REFRESH_TIMESTAMP = "20251212-19:30";
-      const lastRefresh = localStorage.getItem('lastRefresh');
+      // Service workers completely disabled
+      console.log("Service workers disabled - using direct network calls");
 
-      if (lastRefresh !== FORCE_REFRESH_TIMESTAMP) {
-        console.log('FORCING CACHE REFRESH DUE TO TIMESTAMP CHANGE');
-        localStorage.setItem('lastRefresh', FORCE_REFRESH_TIMESTAMP);
-        // Clear everything and reload
-        if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.getRegistrations().then(regs => {
-            regs.forEach(reg => reg.unregister());
-          });
-        }
-        caches.keys().then(names => {
-          names.forEach(name => caches.delete(name));
-        }).then(() => {
-          window.location.reload(true);
-        });
-        return;
-      }
       let showArchived = false;
       let allClaims = [];
 
@@ -139,6 +122,7 @@
 
       async function loadClaims() {
         try {
+          console.log("Loading claims...");
           // Try an explicit select including firm_name and city; fall back to select("*")
           let data;
           try {
@@ -146,10 +130,12 @@
               .from("claims")
               .select(
                 `id,claim_number,customer_name,phone,email,vin,vehicle_year,vehicle_make,vehicle_model,address_line1,address_line2,city,state,postal_code,status,assigned_to,appointment_start,appointment_end,notes,created_at,firm_name`
-              );
+              )
+              .order("appointment_start", { ascending: true });
 
             if (res.error) throw res.error;
             data = res.data;
+            console.log("Explicit select succeeded:", data?.length, "claims");
           } catch (err) {
             console.warn(
               "Explicit claims select failed (maybe missing column). Falling back to select('*'):",
@@ -157,9 +143,14 @@
             );
             const res2 = await supabaseClient
               .from("claims")
-              .select("*");
-            if (res2.error) throw res2.error;
+              .select("*")
+              .order("appointment_start", { ascending: true });
+            if (res2.error) {
+              console.error("Fallback select failed:", res2.error);
+              throw res2.error;
+            }
             data = res2.data;
+            console.log("Fallback select succeeded:", data?.length, "claims");
           }
 
           // Load appraiser info for each claim
