@@ -1,5 +1,5 @@
 // Simple service worker to prevent caching issues
-const CACHE_VERSION = "v1.1"; // Increment to force cache refresh
+const CACHE_VERSION = "v2.0"; // Force complete refresh
 
 self.addEventListener("install", (event) => {
   // Force the waiting service worker to become the active service worker

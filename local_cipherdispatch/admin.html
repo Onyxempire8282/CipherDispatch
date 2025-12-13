@@ -4,6 +4,10 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Aggressive cache busting -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <meta
       http-equiv="Cache-Control"
       content="no-cache, no-store, must-revalidate"
@@ -119,8 +123,7 @@
               .from("claims")
               .select(
                 `id,claim_number,customer_name,phone,email,vin,vehicle_year,vehicle_make,vehicle_model,address_line1,address_line2,city,state,postal_code,status,assigned_to,appointment_start,appointment_end,notes,created_at,firm_name`
-              )
-              .order("appointment_start", { ascending: true });
+              );
 
             if (res.error) throw res.error;
             data = res.data;
@@ -131,8 +134,7 @@
             );
             const res2 = await supabaseClient
               .from("claims")
-              .select("*")
-              .order("appointment_start", { ascending: true });
+              .select("*");
             if (res2.error) throw res2.error;
             data = res2.data;
           }
