@@ -252,6 +252,21 @@
         `;
 
         const filteredClaims = allClaims.filter((claim) =>
+          showArchived
+            ? claim.status === "COMPLETED"
+            : claim.status !== "COMPLETED"
+        );
+
+        const groupedClaims = groupClaimsByDate(filteredClaims);
+
+        let html = "";
+        for (const [dateGroup, claims] of Object.entries(groupedClaims)) {
+          html += `
+            <div style="margin-bottom:24px;">
+              <h3 style="color:#e2e8f0; margin-bottom:12px; padding-left:4px;">${dateGroup}</h3>
+              <div style="display:grid; gap:16px; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));">
+                ${claims
+                  .map(
                     (claim) => `
                   <div class="claim-card" style="position:relative;">
                     ${
@@ -270,26 +285,7 @@
                     <a href="claim-detail.html?id=${
                       claim.id
                     }" style="text-decoration:none; color:inherit; display:block;">
-                    <div class="card-header">
-                      <span class="status ${getStatusClass(claim.status)}">${claim.status}</span>
-                      <div class="card-meta">
-                        <span class="card-meta__firm-city">${claim.firm_name ? `Firm: ${claim.firm_name}` : ""}${claim.firm_name && claim.city ? ` — ${claim.city}` : claim.city ? `${claim.city}` : ""}</span>
-                        ${
-                          claim.photoCount > 0
-                            ? `<span class="badge badge-photo">📸 ${claim.photoCount}</span>`
-                            : ""
-                        }
-                        <span class="badge badge-edit">✏️ Edit</span>
-                      </div>
-                    </div>
-                      </button>
-                    `
-                        : ""
-                    }
-                    <a href="claim-detail.html?id=${
-                      claim.id
-                    }" style="text-decoration:none; color:inherit; display:block;">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                       <span class="status ${getStatusClass(claim.status)}">${
                       claim.status
                     }</span>
