@@ -20,7 +20,9 @@ const router = createBrowserRouter([
   { path: "/admin/claims/new", element: <AdminNewClaim /> },
   { path: "/my-claims", element: <MyClaims /> },
   { path: "/claim/:id", element: <ClaimDetail /> },
-]);
+], {
+  basename: "/CipherDispatch"
+});
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

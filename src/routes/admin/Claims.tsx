@@ -97,7 +97,7 @@ export default function AdminClaims() {
           // Handle redirect in React context
           setError(`${errorResponse.message} Redirecting to login...`);
           setTimeout(() => {
-            window.location.href = "/";
+            window.location.href = "/CipherDispatch/";
           }, 2000);
           return;
         }

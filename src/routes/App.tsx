@@ -5,6 +5,7 @@ import { useNavigate, Link } from "react-router-dom";
 type Profile = { user_id: string; role: "admin" | "appraiser" };
 
 export default function App() {
+  console.log("GITHUB PAGES BASENAME ACTIVE");
   const nav = useNavigate();
   const [p, setP] = useState<Profile | null>(null);
 

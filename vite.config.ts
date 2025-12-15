@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
-  base: "/cipherlogin/",
+  base: "/CipherDispatch/",
   plugins: [
     react(),
     VitePWA({
@@ -11,7 +11,7 @@ export default defineConfig({
       manifest: {
         name: "Auto Appraisal",
         short_name: "Appraisal",
-        start_url: "/",
+        start_url: "/CipherDispatch/",
         display: "standalone",
         background_color: "#ffffff",
         icons: [],
