@@ -4,13 +4,6 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- Aggressive cache busting -->
-    <meta
-      http-equiv="Cache-Control"
-      content="no-cache, no-store, must-revalidate"
-    />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
     <meta
       http-equiv="Cache-Control"
       content="no-cache, no-store, must-revalidate"
@@ -18,11 +11,10 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     <title>Claim Cipher - Admin Claims</title>
-    <link rel="stylesheet" href="styles.css?v=4" />
+    <link rel="stylesheet" href="styles.css?v=17" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   </head>
   <body>
-    <!-- Navigation Menu -->
     <nav class="nav-menu">
       <div class="nav-left">
         <span class="nav-brand">⚡ Claim Cipher</span>
@@ -47,6 +39,9 @@
           <h3 id="view-title">Active Claims</h3>
         </div>
         <div class="right">
+          <button id="toggle-view" class="toggle-archived">
+            📅 Monthly Calendar
+          </button>
           <button id="toggle-archived" class="toggle-archived">
             📦 View Archived
           </button>
@@ -76,34 +71,259 @@
           Loading claims...
         </div>
       </div>
+
+      <!-- Monthly Calendar View Container -->
+      <div id="calendar-container" style="display: none">
+        <div class="monthly-calendar-layout">
+          <!-- Backlog Column -->
+          <div
+            class="backlog-column"
+            ondragover="handleBacklogDragOver(event)"
+            ondragleave="handleBacklogDragLeave(event)"
+            ondrop="handleBacklogDrop(event)"
+          >
+            <div class="backlog-header">
+              <h3 class="column-header">📋 Needs Scheduling</h3>
+              <div class="backlog-count" id="backlog-count">0 claims</div>
+            </div>
+            <div id="backlog-claims" class="claims-column">
+              <!-- Unscheduled claims will be rendered here -->
+            </div>
+          </div>
+
+          <!-- Monthly Calendar Grid -->
+          <div class="calendar-main">
+            <div class="calendar-header">
+              <button id="prev-month" class="calendar-nav">‹</button>
+              <h3 id="calendar-title" class="calendar-month-title">
+                December 2024
+              </h3>
+              <button id="next-month" class="calendar-nav">›</button>
+            </div>
+            <div id="monthly-calendar" class="monthly-grid">
+              <!-- Monthly calendar will be rendered here -->
+            </div>
+          </div>
+
+          <!-- Firm Legend Panel -->
+          <div class="firm-legend-panel">
+            <div class="legend-header">
+              <h3 class="legend-title">🏢 Firm Key</h3>
+              <button id="toggle-legend" class="legend-toggle">−</button>
+            </div>
+            <div id="firm-legend" class="legend-content">
+              <!-- Firm legend will be rendered here -->
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <script src="js/config.js?v=7&t=20251212"></script>
+    <script src="js/config.js?v=15"></script>
     <script>
-      // FORCE CACHE CLEAR WITH TIMESTAMP
-      const FORCE_REFRESH_TIMESTAMP = "20251212-19:30";
-      const lastRefresh = localStorage.getItem('lastRefresh');
+      console.log("Service workers disabled - using direct network calls");
 
-      if (lastRefresh !== FORCE_REFRESH_TIMESTAMP) {
-        console.log('FORCING CACHE REFRESH DUE TO TIMESTAMP CHANGE');
-        localStorage.setItem('lastRefresh', FORCE_REFRESH_TIMESTAMP);
-        // Clear everything and reload
-        if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.getRegistrations().then(regs => {
-            regs.forEach(reg => reg.unregister());
-          });
-        }
-        caches.keys().then(names => {
-          names.forEach(name => caches.delete(name));
-        }).then(() => {
-          window.location.reload(true);
-        });
-        return;
+      // ===== FIRM COLOR MAPPING =====
+      const FIRM_COLORS = {
+        Sedgwick: "#9CA3AF", // Gray for Sedgwick
+        ACD: "#F59E0B", // Amber for ACD
+        ClaimSolution: "#8B5CF6", // Violet for ClaimSolution
+        CCS: "#EF4444", // Red for CCS
+        Doan: "#10B981", // Emerald for Doan
+        Legacy: "#3B82F6", // Blue for Legacy (was Sedgwick's color)
+        AMA: "#FACC15", // Yellow for AMA
+        IANET: "#92400E", // Brown for IANET
+        ATeam: "#06B6D4", // Cyan for ATeam
+        HEA: "#6366F1", // Indigo for HEA
+        Frontline: "#1F2937", // Dark Gray for Frontline
+      };
+
+      // ===== PLANNER NOTES FUNCTIONALITY =====
+      function escapeHtml(text) {
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
       }
+
+      function createPlannerNoteTooltip() {
+        const tooltip = document.createElement("div");
+        tooltip.id = "planner-note-tooltip";
+        tooltip.style.cssText = `
+          position: fixed;
+          background: rgba(26, 32, 44, 0.98);
+          border: 1px solid #4a5568;
+          border-radius: 6px;
+          padding: 12px;
+          max-width: 300px;
+          font-size: 12px;
+          color: #e2e8f0;
+          z-index: 10000;
+          pointer-events: none;
+          opacity: 0;
+          transform: translateY(10px);
+          transition: all 0.2s ease;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+          backdrop-filter: blur(8px);
+          white-space: pre-wrap;
+          word-wrap: break-word;
+        `;
+        document.body.appendChild(tooltip);
+        return tooltip;
+      }
+
+      function showPlannerNoteTooltip(event, note, firmColor) {
+        let tooltip = document.getElementById("planner-note-tooltip");
+        if (!tooltip) {
+          tooltip = createPlannerNoteTooltip();
+        }
+
+        const truncatedNote =
+          note.length > 200 ? note.substring(0, 197) + "..." : note;
+        const escapedNote = escapeHtml(truncatedNote);
+        tooltip.innerHTML = `
+          <div style="border-left: 3px solid ${firmColor}; padding-left: 8px;">
+            <div style="font-weight: bold; margin-bottom: 4px; color: ${firmColor};">📝 Planner Note</div>
+            <div>${escapedNote}</div>
+          </div>
+        `;
+
+        const rect = event.target.getBoundingClientRect();
+        const tooltipRect = tooltip.getBoundingClientRect();
+
+        let left = rect.left + rect.width / 2 - 300 / 2;
+        let top = rect.top - tooltipRect.height - 10;
+
+        // Adjust if tooltip goes off screen
+        if (left < 10) left = 10;
+        if (left + 300 > window.innerWidth - 10) left = window.innerWidth - 310;
+        if (top < 10) top = rect.bottom + 10;
+
+        tooltip.style.left = left + "px";
+        tooltip.style.top = top + "px";
+        tooltip.style.opacity = "1";
+        tooltip.style.transform = "translateY(0)";
+      }
+
+      function hidePlannerNoteTooltip() {
+        const tooltip = document.getElementById("planner-note-tooltip");
+        if (tooltip) {
+          tooltip.style.opacity = "0";
+          tooltip.style.transform = "translateY(10px)";
+        }
+      }
+
+      function getPlannerNote(claim) {
+        // Use 'notes' field as planner note for now, can be separated later if needed
+        return claim.notes || claim.planner_note || "";
+      }
+
+      function hasPlannerNote(claim) {
+        const note = getPlannerNote(claim);
+        return note && note.trim().length > 0;
+      }
+
+      function getFirmColor(firmName) {
+        if (!firmName) return "#9CA3AF"; // Default gray for unknown
+        // Handle variations and partial matches
+        const normalizedFirm = firmName.trim();
+        for (const [key, color] of Object.entries(FIRM_COLORS)) {
+          if (normalizedFirm.includes(key) || key.includes(normalizedFirm)) {
+            return color;
+          }
+        }
+        return "#9CA3AF"; // Default gray for unknown firms
+      }
+
       let showArchived = false;
+      let showCalendarView = false;
+      let legendCollapsed = false;
+      let selectedDayData = null; // For day detail view
+
+      // ===== CALENDAR DAY EXPANSION CONSTANTS =====
+      const MAX_VISIBLE_PER_DAY = 3;
+
+      function formatDateForDisplay(dateStr) {
+        const date = new Date(dateStr + "T00:00:00");
+        return date.toLocaleDateString("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+      }
+
+      function openDayDetailView(dateStr, daysClaims) {
+        selectedDayData = { date: dateStr, claims: daysClaims };
+        const formattedDate = formatDateForDisplay(dateStr);
+
+        const modal = document.createElement("div");
+        modal.id = "day-detail-modal";
+        modal.className = "day-detail-modal";
+        modal.innerHTML = `
+          <div class="day-detail-overlay" onclick="closeDayDetailView()"></div>
+          <div class="day-detail-drawer">
+            <div class="day-detail-header">
+              <h3>${formattedDate}</h3>
+              <div class="day-detail-meta">
+                <span class="claim-count">${daysClaims.length} claim${
+          daysClaims.length !== 1 ? "s" : ""
+        }</span>
+                <button class="close-day-detail" onclick="closeDayDetailView()">✕</button>
+              </div>
+            </div>
+            <div class="day-detail-content">
+              ${
+                daysClaims.length > 0
+                  ? daysClaims
+                      .map((claim) => renderFullClaimCard(claim, true))
+                      .join("")
+                  : '<div class="no-claims-message">No claims scheduled for this day</div>'
+              }
+            </div>
+          </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Add animation class after a short delay for smooth entrance
+        setTimeout(() => modal.classList.add("active"), 10);
+
+        // Add escape key listener
+        document.addEventListener("keydown", handleDayDetailEscape);
+      }
+
+      function closeDayDetailView() {
+        const modal = document.getElementById("day-detail-modal");
+        if (modal) {
+          modal.classList.remove("active");
+          setTimeout(() => {
+            modal.remove();
+            selectedDayData = null;
+          }, 300);
+        }
+        document.removeEventListener("keydown", handleDayDetailEscape);
+      }
+
+      function handleDayDetailEscape(event) {
+        if (event.key === "Escape") {
+          closeDayDetailView();
+        }
+      }
+
+      function openDayDetailViewFromCalendar(dateStr) {
+        // Find claims for this date from the already loaded data
+        const daysClaims = allClaims.filter((claim) => {
+          if (!claim.appointment_start) return false;
+          const claimDate = new Date(claim.appointment_start)
+            .toISOString()
+            .split("T")[0];
+          return claimDate === dateStr;
+        });
+
+        openDayDetailView(dateStr, daysClaims);
+      }
       let allClaims = [];
 
-      // Check authentication
       supabaseClient.auth.getSession().then(({ data: { session } }) => {
         if (!session) {
           window.location.href = "index.html";
@@ -117,39 +337,78 @@
         window.location.href = "index.html";
       }
 
-      document
-        .getElementById("toggle-archived")
-        .addEventListener("click", () => {
-          showArchived = !showArchived;
-          document.getElementById("toggle-archived").textContent = showArchived
-            ? "📋 View Active"
-            : "📦 View Archived";
-          document.getElementById("view-title").textContent = showArchived
-            ? "Archived Claims"
+      // Wait for DOM to load before adding event listeners
+      document.addEventListener("DOMContentLoaded", function () {
+        document.getElementById("toggle-view").addEventListener("click", () => {
+          showCalendarView = !showCalendarView;
+          document.getElementById("toggle-view").textContent = showCalendarView
+            ? "📋 List View"
+            : "📅 Monthly Calendar";
+          document.getElementById("view-title").textContent = showCalendarView
+            ? "Monthly Scheduling Calendar"
             : "Active Claims";
-          document.getElementById("download-csv").style.display = showArchived
-            ? "block"
-            : "none";
-          renderClaims();
+
+          // Toggle between containers
+          document.getElementById("claims-container").style.display =
+            showCalendarView ? "none" : "block";
+          document.getElementById("calendar-container").style.display =
+            showCalendarView ? "block" : "none";
+
+          if (showCalendarView) {
+            renderCalendarView();
+            console.log(
+              "Calendar view rendered, currentCalendarDate:",
+              currentCalendarDate
+            );
+          } else {
+            renderClaims();
+          }
         });
 
-      document.getElementById("download-csv").addEventListener("click", () => {
-        downloadCSV();
+        document
+          .getElementById("toggle-archived")
+          .addEventListener("click", () => {
+            showArchived = !showArchived;
+            document.getElementById("toggle-archived").textContent =
+              showArchived ? "📋 View Active" : "📦 View Archived";
+            document.getElementById("view-title").textContent = showArchived
+              ? "Archived Claims"
+              : showCalendarView
+              ? "Monthly Scheduling Calendar"
+              : "Active Claims";
+            document.getElementById("download-csv").style.display = showArchived
+              ? "block"
+              : "none";
+
+            if (showCalendarView) {
+              renderCalendarView();
+            } else {
+              renderClaims();
+            }
+          });
+
+        document
+          .getElementById("download-csv")
+          .addEventListener("click", () => {
+            downloadCSV();
+          });
       });
 
       async function loadClaims() {
         try {
-          // Try an explicit select including firm_name and city; fall back to select("*")
+          console.log("Loading claims...");
           let data;
           try {
             const res = await supabaseClient
               .from("claims")
               .select(
                 `id,claim_number,customer_name,phone,email,vin,vehicle_year,vehicle_make,vehicle_model,address_line1,address_line2,city,state,postal_code,status,assigned_to,appointment_start,appointment_end,notes,created_at,firm_name`
-              );
+              )
+              .order("appointment_start", { ascending: true });
 
             if (res.error) throw res.error;
             data = res.data;
+            console.log("Explicit select succeeded:", data?.length, "claims");
           } catch (err) {
             console.warn(
               "Explicit claims select failed (maybe missing column). Falling back to select('*'):",
@@ -157,15 +416,19 @@
             );
             const res2 = await supabaseClient
               .from("claims")
-              .select("*");
-            if (res2.error) throw res2.error;
+              .select("*")
+              .order("appointment_start", { ascending: true });
+            if (res2.error) {
+              console.error("Fallback select failed:", res2.error);
+              throw res2.error;
+            }
             data = res2.data;
+            console.log("Fallback select succeeded:", data?.length, "claims");
           }
 
-          // Load appraiser info for each claim
           allClaims = data || [];
           for (const claim of allClaims) {
-            claim.photoCount = 0; // Initialize to 0
+            claim.photoCount = 0;
 
             if (claim.assigned_to) {
               const { data: appraiserData } = await supabaseClient
@@ -177,15 +440,11 @@
             }
           }
 
-          // Render immediately with photo counts at 0
           renderClaims();
-
-          // Load photo counts in background (lazy load)
           loadPhotoCounts();
         } catch (error) {
           console.error("Error loading claims:", error);
 
-          // Check if it's an authentication error
           if (
             error.message?.includes("JWT") ||
             error.code === "PGRST301" ||
@@ -202,7 +461,6 @@
       }
 
       async function loadPhotoCounts() {
-        // Load photo counts in parallel for better performance
         const photoPromises = allClaims.map(async (claim) => {
           try {
             const { data: photoData, error: photoError } =
@@ -214,19 +472,15 @@
               claim.photoCount = photoData.length;
             }
           } catch (error) {
-            // Silently fail - photo count stays at 0
+            // Silently fail
           }
         });
 
-        // Wait for all photo counts to load
         await Promise.all(photoPromises);
-
-        // Re-render to show photo counts
         renderClaims();
       }
 
       function renderClaims() {
-        // Calculate status counts
         const scheduledCount = allClaims.filter(
           (c) => c.status === "SCHEDULED"
         ).length;
@@ -240,7 +494,6 @@
           (c) => c.status === "CANCELED"
         ).length;
 
-        // Update status summary
         document.getElementById("status-summary").innerHTML = `
           <div style="background:#2d3748; padding:16px 24px; border-radius:8px; border:2px solid #3b82f6;">
             <div style="font-size:24px; font-weight:bold; color:#3b82f6;">${scheduledCount}</div>
@@ -261,8 +514,36 @@
         `;
 
         const filteredClaims = allClaims.filter((claim) =>
+          showArchived
+            ? claim.status === "COMPLETED"
+            : claim.status !== "COMPLETED"
+        );
+
+        const groupedClaims = groupClaimsByDate(filteredClaims);
+
+        let html = "";
+        for (const [dateGroup, claims] of Object.entries(groupedClaims)) {
+          html += `
+            <div style="margin-bottom:24px;">
+              <h3 style="color:#e2e8f0; margin-bottom:12px; padding-left:4px;">${dateGroup}</h3>
+              <div style="display:grid; gap:16px; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));">
+                ${claims
+                  .map(
                     (claim) => `
-                  <div class="claim-card" style="position:relative;">
+                  <div 
+                    class="claim-card" 
+                    style="position:relative; cursor:grab;" 
+                    draggable="true"
+                    data-claim-id="${claim.id}"
+                    data-customer-name="${claim.customer_name || ""}"
+                    data-address-line1="${claim.address_line1 || ""}"
+                    data-address-line2="${claim.address_line2 || ""}"
+                    data-city="${claim.city || ""}"
+                    data-state="${claim.state || ""}"
+                    data-zip="${claim.postal_code || ""}"
+                    ondragstart="handleClaimDragStart(event)"
+                    ondragend="handleClaimDragEnd(event)"
+                  >
                     ${
                       showArchived
                         ? `
@@ -279,69 +560,52 @@
                     <a href="claim-detail.html?id=${
                       claim.id
                     }" style="text-decoration:none; color:inherit; display:block;">
-                    <div class="card-header">
-                      <span class="status ${getStatusClass(claim.status)}">${claim.status}</span>
-                      <div class="card-meta">
-                        <span class="card-meta__firm-city">${claim.firm_name ? `Firm: ${claim.firm_name}` : ""}${claim.firm_name && claim.city ? ` — ${claim.city}` : claim.city ? `${claim.city}` : ""}</span>
-                        ${
-                          claim.photoCount > 0
-                            ? `<span class="badge badge-photo">📸 ${claim.photoCount}</span>`
-                            : ""
-                        }
-                        <span class="badge badge-edit">✏️ Edit</span>
-                      </div>
-                    </div>
-                      </button>
-                    `
-                        : ""
-                    }
-                    <a href="claim-detail.html?id=${
-                      claim.id
-                    }" style="text-decoration:none; color:inherit; display:block;">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                      <span class="status ${getStatusClass(claim.status)}">${
+                      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <span class="status ${getStatusClass(claim.status)}">${
                       claim.status
                     }</span>
-                      <div style="display:flex; gap:8px; align-items:center;">
-                        <span style="font-size:12px; color:#cbd5e1; font-weight:600; white-space:nowrap; max-width:220px; overflow:hidden; text-overflow:ellipsis;">
-                          ${claim.firm_name ? `Firm: ${claim.firm_name}` : ""}${
+                        <div style="display:flex; gap:8px; align-items:center;">
+                          <span style="font-size:12px; color:#cbd5e1; font-weight:600; white-space:nowrap; max-width:220px; overflow:hidden; text-overflow:ellipsis;">
+                            ${
+                              claim.firm_name ? `Firm: ${claim.firm_name}` : ""
+                            }${
                       claim.firm_name && claim.city
                         ? ` — ${claim.city}`
                         : claim.city
                         ? `${claim.city}`
                         : ""
                     }
-                        </span>
-                        ${
-                          claim.photoCount > 0
-                            ? `<span style="background:#10b981; color:white; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:bold;">📸 ${claim.photoCount}</span>`
-                            : ""
-                        }
-                        <span style="background:#667eea; color:white; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:bold;">
-                          ✏️ Edit
-                        </span>
+                          </span>
+                          ${
+                            claim.photoCount > 0
+                              ? `<span style="background:#10b981; color:white; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:bold;">📸 ${claim.photoCount}</span>`
+                              : ""
+                          }
+                          <span style="background:#667eea; color:white; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:bold;">
+                            ✏️ Edit
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                    <h4>#${claim.claim_number}</h4>
-                    <section>
-                      <div class="title">Customer</div>
-                      <div class="content">${claim.customer_name}</div>
-                    </section>
-                    <section>
-                      <div class="title">📅 Appointment</div>
-                      <div class="content">${formatAppointment(claim)}</div>
-                    </section>
-                    <section>
-                      <div class="title">🚗 Vehicle Info</div>
-                      <div class="content">${claim.vehicle_year || ""} ${
+                      <h4>#${claim.claim_number}</h4>
+                      <section>
+                        <div class="title">Customer</div>
+                        <div class="content">${claim.customer_name}</div>
+                      </section>
+                      <section>
+                        <div class="title">📅 Appointment</div>
+                        <div class="content">${formatAppointment(claim)}</div>
+                      </section>
+                      <section>
+                        <div class="title">🚗 Vehicle Info</div>
+                        <div class="content">${claim.vehicle_year || ""} ${
                       claim.vehicle_make || ""
                     } ${claim.vehicle_model || ""}</div>
-                    </section>
-                    <section>
-                      <div class="content"><strong>👤 Assigned:</strong> ${
-                        claim.appraiser?.full_name || "Unassigned"
-                      }</div>
-                    </section>
+                      </section>
+                      <section>
+                        <div class="content"><strong>👤 Assigned:</strong> ${
+                          claim.appraiser?.full_name || "Unassigned"
+                        }</div>
+                      </section>
                     </a>
                   </div>
                 `
@@ -353,6 +617,683 @@
         }
 
         document.getElementById("claims-container").innerHTML = html;
+      }
+
+      // ===== CALENDAR VIEW FUNCTIONS =====
+
+      let currentCalendarDate = new Date();
+
+      function renderCalendarView() {
+        const unscheduledClaims = allClaims.filter(
+          (claim) => !claim.appointment_start && claim.status !== "COMPLETED"
+        );
+
+        const scheduledClaims = allClaims.filter(
+          (claim) => claim.appointment_start && claim.status !== "COMPLETED"
+        );
+
+        // Render backlog column with full claim cards
+        renderBacklogColumn(unscheduledClaims);
+
+        // Render monthly calendar grid
+        renderMonthlyCalendar(scheduledClaims);
+
+        // Render firm legend
+        renderFirmLegend();
+
+        // Setup calendar navigation
+        setupCalendarNavigation();
+      }
+
+      function renderBacklogColumn(claims) {
+        const html = claims
+          .map((claim) => renderMinimalBacklogCard(claim))
+          .join("");
+
+        document.getElementById("backlog-claims").innerHTML =
+          html || '<div class="empty-state">No claims need scheduling</div>';
+
+        // Update backlog count
+        document.getElementById("backlog-count").textContent = `${
+          claims.length
+        } claim${claims.length !== 1 ? "s" : ""}`;
+      }
+
+      function renderMonthlyCalendar(scheduledClaims) {
+        const year = currentCalendarDate.getFullYear();
+        const month = currentCalendarDate.getMonth();
+
+        // Update calendar title
+        const monthNames = [
+          "January",
+          "February",
+          "March",
+          "April",
+          "May",
+          "June",
+          "July",
+          "August",
+          "September",
+          "October",
+          "November",
+          "December",
+        ];
+        document.getElementById(
+          "calendar-title"
+        ).textContent = `${monthNames[month]} ${year}`;
+
+        // Get first day of month and number of days
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const daysInMonth = lastDay.getDate();
+        const startingDayOfWeek = firstDay.getDay(); // 0 = Sunday
+
+        let html = `
+          <div class="calendar-weekdays">
+            <div class="weekday-header">Sun</div>
+            <div class="weekday-header">Mon</div>
+            <div class="weekday-header">Tue</div>
+            <div class="weekday-header">Wed</div>
+            <div class="weekday-header">Thu</div>
+            <div class="weekday-header">Fri</div>
+            <div class="weekday-header">Sat</div>
+          </div>
+          <div class="calendar-days">
+        `;
+
+        // Add empty cells for days before month starts
+        for (let i = 0; i < startingDayOfWeek; i++) {
+          html += '<div class="calendar-day empty"></div>';
+        }
+
+        // Add days of the month
+        for (let day = 1; day <= daysInMonth; day++) {
+          const date = new Date(year, month, day);
+          const dateStr = date.toISOString().split("T")[0];
+          const isToday = date.toDateString() === new Date().toDateString();
+
+          // Filter claims for this day
+          const daysClaims = scheduledClaims.filter((claim) => {
+            if (!claim.appointment_start) return false;
+            const claimDate = new Date(claim.appointment_start)
+              .toISOString()
+              .split("T")[0];
+            return claimDate === dateStr;
+          });
+
+          // Limit visible claims and calculate hidden count
+          const visibleClaims = daysClaims.slice(0, MAX_VISIBLE_PER_DAY);
+          const hiddenCount = daysClaims.length - visibleClaims.length;
+
+          html += `
+            <div class="calendar-day ${isToday ? "today" : ""}" 
+                 data-date="${dateStr}"
+                 onclick="openDayDetailViewFromCalendar('${dateStr}')"
+                 ondragover="handleCalendarDragOver(event)"
+                 ondragleave="handleCalendarDragLeave(event)"
+                 ondrop="handleCalendarDrop(event)">
+              <div class="day-number">${day}</div>
+              <div class="day-claims-count">${
+                daysClaims.length > 0
+                  ? daysClaims.length +
+                    " claim" +
+                    (daysClaims.length > 1 ? "s" : "")
+                  : ""
+              }</div>
+              <div class="day-claims-container">
+                ${visibleClaims
+                  .map((claim) => renderCompactClaimCard(claim))
+                  .join("")}
+              </div>
+              ${
+                hiddenCount > 0
+                  ? `<div class="more-claims-indicator" onclick="event.stopPropagation(); openDayDetailView('${dateStr}', ${JSON.stringify(
+                      daysClaims
+                    ).replace(/"/g, "&quot;")})">
+                  + ${hiddenCount} more
+                </div>`
+                  : ""
+              }
+              <div class="drop-hint">Drop to schedule</div>
+            </div>
+          `;
+        }
+
+        html += "</div>";
+        document.getElementById("monthly-calendar").innerHTML = html;
+      }
+
+      function renderFullClaimCard(claim, isDraggable = true) {
+        // Use existing card structure with firm display prominently shown
+        const firmColor = getFirmColor(claim.firm_name);
+        const plannerNote = getPlannerNote(claim);
+        const hasPlannerNoteIcon = hasPlannerNote(claim);
+
+        return `
+          <div 
+            class="claim-card" 
+            style="position:relative; cursor:${
+              isDraggable ? "grab" : "pointer"
+            }; border-left: 4px solid ${firmColor};" 
+            ${isDraggable ? 'draggable="true"' : ""}
+            data-claim-id="${claim.id}"
+            data-customer-name="${claim.customer_name || ""}"
+            data-address-line1="${claim.address_line1 || ""}"
+            data-address-line2="${claim.address_line2 || ""}"
+            data-city="${claim.city || ""}"
+            data-state="${claim.state || ""}"
+            data-zip="${claim.postal_code || ""}"
+            ${
+              isDraggable
+                ? `
+              ondragstart="handleClaimDragStart(event)"
+              ondragend="handleClaimDragEnd(event)"
+            `
+                : ""
+            }
+            onclick="window.open('claim-detail.html?id=${claim.id}', '_blank')"
+          >
+            <a href="claim-detail.html?id=${
+              claim.id
+            }" style="text-decoration:none; color:inherit; display:block;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <span class="status ${getStatusClass(claim.status)}">${
+          claim.status || "UNSCHEDULED"
+        }</span>
+                <div style="display:flex; gap:8px; align-items:center;">
+                  ${
+                    hasPlannerNoteIcon
+                      ? `
+                    <span class="planner-note-icon" 
+                          style="background: ${firmColor}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: help;"
+                          onmouseenter="showPlannerNoteTooltip(event, '${plannerNote
+                            .replace(/'/g, "&#39;")
+                            .replace(/"/g, "&quot;")
+                            .replace(/\n/g, "\\n")}', '${firmColor}')"
+                          onmouseleave="hidePlannerNoteTooltip()"
+                          onclick="event.stopPropagation()">
+                      📝 Note
+                    </span>
+                  `
+                      : ""
+                  }
+                  ${
+                    claim.firm_name
+                      ? `
+                    <span class="firm-badge" style="background-color: ${getFirmColor(
+                      claim.firm_name
+                    )}; color: white;">Firm: ${claim.firm_name}${
+                          claim.city ? " — " + claim.city : ""
+                        }</span>
+                  `
+                      : ""
+                  }
+                  ${
+                    claim.photoCount > 0
+                      ? `
+                    <span style="background:#10b981; color:white; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:bold;">📸 ${claim.photoCount}</span>
+                  `
+                      : ""
+                  }
+                  <span style="background:#667eea; color:white; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:bold;">
+                    ✏️ Edit
+                  </span>
+                </div>
+              </div>
+              <h4>#${claim.claim_number}</h4>
+              <section>
+                <div class="title">Customer</div>
+                <div class="content">${claim.customer_name}</div>
+              </section>
+              <section>
+                <div class="title">📅 Appointment</div>
+                <div class="content">${formatAppointment(claim)}</div>
+              </section>
+              <section>
+                <div class="title">🚗 Vehicle Info</div>
+                <div class="content">${claim.vehicle_year || ""} ${
+          claim.vehicle_make || ""
+        } ${claim.vehicle_model || ""}</div>
+              </section>
+              <section>
+                <div class="content"><strong>👤 Assigned:</strong> ${
+                  claim.appraiser?.full_name || "Unassigned"
+                }</div>
+              </section>
+            </a>
+          </div>
+        `;
+      }
+
+      function renderCompactClaimCard(claim) {
+        const timeDisplay = claim.appointment_start
+          ? new Date(claim.appointment_start).toLocaleTimeString("en-US", {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            })
+          : "";
+
+        const firmColor = getFirmColor(claim.firm_name);
+        const plannerNote = getPlannerNote(claim);
+        const hasPlannerNoteIcon = hasPlannerNote(claim);
+
+        return `
+          <div 
+            class="claim-card claim-card-compact" 
+            draggable="true"
+            data-claim-id="${claim.id}"
+            data-customer-name="${claim.customer_name || ""}"
+            data-address-line1="${claim.address_line1 || ""}"
+            data-address-line2="${claim.address_line2 || ""}"
+            data-city="${claim.city || ""}"
+            data-state="${claim.state || ""}"
+            data-zip="${claim.postal_code || ""}"
+            ondragstart="handleClaimDragStart(event)"
+            ondragend="handleClaimDragEnd(event)"
+            onclick="event.stopPropagation(); window.open('claim-detail.html?id=${
+              claim.id
+            }', '_blank')"
+            style="cursor: grab; border-left: 4px solid ${firmColor};"
+          >
+            <!-- HEADER ROW: Same structure as full cards -->
+            <div class="claim-card-header">
+              <div class="header-left">
+                <span class="status-pill ${getStatusClass(claim.status)}">${
+          claim.status || "UNSCHEDULED"
+        }</span>
+                ${
+                  claim.firm_name
+                    ? `<span class="firm-pill" style="background-color: ${firmColor};">${claim.firm_name}</span>`
+                    : ""
+                }
+              </div>
+              <div class="header-right">
+                ${
+                  hasPlannerNoteIcon
+                    ? `<button class="icon-btn planner-note-btn" onmouseenter="showPlannerNoteTooltip(event, '${plannerNote
+                        .replace(/'/g, "&#39;")
+                        .replace(/"/g, "&quot;")
+                        .replace(
+                          /\n/g,
+                          "\\n"
+                        )}', '${firmColor}')" onmouseleave="hidePlannerNoteTooltip()" onclick="event.stopPropagation()">📝</button>`
+                    : ""
+                }
+                <button class="icon-btn edit-btn" onclick="event.stopPropagation()">✏️</button>
+              </div>
+            </div>
+            
+            <!-- IDENTITY SECTION: Compact version -->
+            <div class="claim-identity claim-identity-compact">
+              <div class="claim-number">#${claim.claim_number}</div>
+              <div class="customer-name">${claim.customer_name}</div>
+            </div>
+            
+            <!-- DETAILS SECTION: Minimal for compact -->
+            <div class="claim-details claim-details-compact">
+              ${
+                timeDisplay
+                  ? `<div class="detail-row"><span class="detail-icon">🕰️</span><span class="detail-text">${timeDisplay}</span></div>`
+                  : ""
+              }
+              <div class="detail-row">
+                <span class="detail-icon">🚗</span>
+                <span class="detail-text">${claim.vehicle_year || ""} ${
+          claim.vehicle_make || ""
+        } ${claim.vehicle_model || ""}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderMinimalBacklogCard(claim) {
+        const firmColor = getFirmColor(claim.firm_name);
+
+        return `
+          <div 
+            class="claim-card" 
+            draggable="true"
+            data-claim-id="${claim.id}"
+            data-customer-name="${claim.customer_name || ""}"
+            data-address-line1="${claim.address_line1 || ""}"
+            data-address-line2="${claim.address_line2 || ""}"
+            data-city="${claim.city || ""}"
+            data-state="${claim.state || ""}"
+            data-zip="${claim.postal_code || ""}"
+            ondragstart="handleClaimDragStart(event)"
+            ondragend="handleClaimDragEnd(event)"
+            onclick="event.stopPropagation(); window.open('claim-detail.html?id=${
+              claim.id
+            }', '_blank')"
+            style="cursor: grab;"
+          >
+            <div class="customer-name">${claim.customer_name}</div>
+            <div class="status-pill ${getStatusClass(claim.status)}">${
+          claim.status || "UNSCHEDULED"
+        }</div>
+            <div class="city-info">${claim.city || ""}</div>
+            <div class="firm-badge" style="background-color: ${firmColor};"></div>
+          </div>
+        `;
+      }
+
+      function setupCalendarNavigation() {
+        document.getElementById("prev-month").onclick = () => {
+          currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+          renderCalendarView();
+        };
+
+        document.getElementById("next-month").onclick = () => {
+          currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+          renderCalendarView();
+        };
+
+        // Setup firm legend toggle
+        document.getElementById("toggle-legend").onclick = () => {
+          legendCollapsed = !legendCollapsed;
+          const legendContent = document.getElementById("firm-legend");
+          const toggleButton = document.getElementById("toggle-legend");
+
+          if (legendCollapsed) {
+            legendContent.style.display = "none";
+            toggleButton.textContent = "+";
+          } else {
+            legendContent.style.display = "block";
+            toggleButton.textContent = "−";
+          }
+        };
+      }
+
+      function renderFirmLegend() {
+        const firms = Object.keys(FIRM_COLORS);
+        const firmDisplayNames = {
+          ClaimSolution: "ClaimSolution (CS)",
+          ATeam: "ATeam",
+          IANET: "IANET",
+          HEA: "HEA",
+        };
+
+        const html = firms
+          .map((firm) => {
+            const displayName = firmDisplayNames[firm] || firm;
+            const color = FIRM_COLORS[firm];
+            return `
+            <div class="legend-item">
+              <div class="legend-color-indicator" style="background-color: ${color}"></div>
+              <span class="legend-firm-name">${displayName}</span>
+            </div>
+          `;
+          })
+          .join("");
+
+        document.getElementById("firm-legend").innerHTML = html;
+      }
+
+      // ===== BACKLOG DRAG AND DROP HANDLERS =====
+
+      function handleBacklogDragOver(event) {
+        // Only proceed if we're in calendar view and dragging a claim
+        if (!showCalendarView) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+        event.dataTransfer.dropEffect = "move";
+
+        console.log("Backlog drag over");
+
+        // Add visual feedback
+        const backlogColumn = event.currentTarget;
+        backlogColumn.classList.add("drag-over");
+      }
+
+      function handleBacklogDragLeave(event) {
+        // Remove visual feedback
+        const backlogColumn = event.currentTarget;
+        backlogColumn.classList.remove("drag-over");
+      }
+
+      async function handleBacklogDrop(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        console.log("Backlog drop handler called");
+
+        const backlogColumn = event.currentTarget;
+        backlogColumn.classList.remove("drag-over");
+
+        const claimId = event.dataTransfer.getData("text/claim-id");
+
+        console.log("Drop data:", { claimId });
+
+        if (!claimId) {
+          console.error("Missing claim ID for backlog drop");
+          showNotification("❌ Missing data for unscheduling", "error");
+          return;
+        }
+
+        // Find the claim to check if it's currently scheduled
+        const claim = allClaims.find((c) => c.id === claimId);
+        if (!claim) {
+          console.error("Claim not found in local data");
+          showNotification("❌ Claim not found", "error");
+          return;
+        }
+
+        // Only allow unscheduling if the claim is currently scheduled
+        if (!claim.appointment_start) {
+          console.log("Claim is already unscheduled");
+          showNotification("ℹ️ Claim is already unscheduled", "info");
+          return;
+        }
+
+        try {
+          // Check authentication first
+          const {
+            data: { session },
+            error: authError,
+          } = await supabaseClient.auth.getSession();
+
+          if (authError) {
+            console.error("Authentication error:", authError);
+            showNotification(
+              "❌ Authentication error - please log in again",
+              "error"
+            );
+            window.location.href = "index.html";
+            return;
+          }
+
+          if (!session) {
+            console.error("No active session");
+            showNotification(
+              "❌ Session expired - please log in again",
+              "error"
+            );
+            window.location.href = "index.html";
+            return;
+          }
+
+          console.log("Session valid, updating claim:", claimId);
+
+          // Update claim in Supabase to unschedule it
+          const { error } = await supabaseClient
+            .from("claims")
+            .update({
+              appointment_start: null,
+              appointment_end: null,
+              status: "IN_PROGRESS", // Set to unscheduled status
+            })
+            .eq("id", claimId);
+
+          if (error) {
+            console.error("Error unscheduling claim:", error);
+            console.error("Error details:", error.message, error.code);
+
+            // More specific error handling
+            if (error.code === "PGRST116") {
+              showNotification("❌ Database permission denied", "error");
+            } else if (error.code === "PGRST301") {
+              showNotification(
+                "❌ Session expired - please refresh and log in again",
+                "error"
+              );
+              window.location.href = "index.html";
+            } else {
+              showNotification(`❌ Database error: ${error.message}`, "error");
+            }
+            return;
+          }
+
+          // Update local data
+          if (claim) {
+            claim.appointment_start = null;
+            claim.appointment_end = null;
+            claim.status = "IN_PROGRESS";
+          }
+
+          showNotification(
+            `✅ Moved ${claim.customer_name} back to backlog`,
+            "success"
+          );
+
+          // Re-render the calendar view to reflect changes
+          renderCalendarView();
+        } catch (error) {
+          console.error("Error unscheduling claim:", error);
+          showNotification(
+            `❌ Failed to unschedule: ${error.message}`,
+            "error"
+          );
+        }
+      }
+
+      // ===== CALENDAR DRAG AND DROP HANDLERS =====
+
+      function handleCalendarDragOver(event) {
+        // Only proceed if we're in calendar view
+        if (!showCalendarView) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+        event.dataTransfer.dropEffect = "move";
+
+        console.log("Calendar drag over");
+
+        // Add visual feedback
+        const daySlot = event.currentTarget;
+        daySlot.classList.add("drag-over");
+      }
+
+      function handleCalendarDragLeave(event) {
+        // Remove visual feedback
+        const daySlot = event.currentTarget;
+        daySlot.classList.remove("drag-over");
+      }
+
+      async function handleCalendarDrop(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        console.log("Calendar drop handler called");
+
+        const daySlot = event.currentTarget;
+        daySlot.classList.remove("drag-over");
+
+        const claimId = event.dataTransfer.getData("text/claim-id");
+        const dateStr = daySlot.getAttribute("data-date");
+
+        console.log("Drop data:", { claimId, dateStr });
+
+        if (!claimId || !dateStr) {
+          console.error("Missing claim ID or date for calendar drop");
+          showNotification("❌ Missing data for scheduling", "error");
+          return;
+        }
+
+        // Set default time to 9:00 AM for new appointments
+        const appointmentDate = new Date(dateStr + "T09:00:00");
+        const appointmentEnd = new Date(appointmentDate);
+        appointmentEnd.setHours(appointmentEnd.getHours() + 2); // 2-hour appointment
+
+        try {
+          // Check authentication first
+          const {
+            data: { session },
+            error: authError,
+          } = await supabaseClient.auth.getSession();
+
+          if (authError) {
+            console.error("Authentication error:", authError);
+            showNotification(
+              "❌ Authentication error - please log in again",
+              "error"
+            );
+            window.location.href = "index.html";
+            return;
+          }
+
+          if (!session) {
+            console.error("No active session");
+            showNotification(
+              "❌ Session expired - please log in again",
+              "error"
+            );
+            window.location.href = "index.html";
+            return;
+          }
+
+          console.log("Session valid, scheduling claim:", claimId);
+
+          // Update claim in Supabase
+          const { error } = await supabaseClient
+            .from("claims")
+            .update({
+              appointment_start: appointmentDate.toISOString(),
+              appointment_end: appointmentEnd.toISOString(),
+              status: "SCHEDULED",
+            })
+            .eq("id", claimId);
+
+          if (error) {
+            console.error("Error updating claim appointment:", error);
+            console.error("Error details:", error.message, error.code);
+
+            // More specific error handling
+            if (error.code === "PGRST116") {
+              showNotification("❌ Database permission denied", "error");
+            } else if (error.code === "PGRST301") {
+              showNotification(
+                "❌ Session expired - please refresh and log in again",
+                "error"
+              );
+              window.location.href = "index.html";
+            } else {
+              showNotification(`❌ Database error: ${error.message}`, "error");
+            }
+            return;
+          }
+
+          // Update local data
+          const claim = allClaims.find((c) => c.id === claimId);
+          if (claim) {
+            claim.appointment_start = appointmentDate.toISOString();
+            claim.appointment_end = appointmentEnd.toISOString();
+            claim.status = "SCHEDULED";
+          }
+
+          showNotification(
+            `✅ Scheduled for ${appointmentDate.toLocaleDateString()}`,
+            "success"
+          );
+
+          // Re-render the calendar view
+          renderCalendarView();
+        } catch (error) {
+          console.error("Error scheduling appointment:", error);
+          showNotification(`❌ Failed to schedule: ${error.message}`, "error");
+        }
       }
 
       function groupClaimsByDate(claims) {
@@ -402,11 +1343,9 @@
           groups[dateKey].push(claim);
         });
 
-        // Sort groups by priority
         const sortOrder = ["Overdue", "Today", "Tomorrow", "This Week"];
         const sortedGroups = {};
 
-        // Add priority groups (match keys that start with these)
         sortOrder.forEach((key) => {
           Object.keys(groups).forEach((groupKey) => {
             if (groupKey.startsWith(key)) {
@@ -415,7 +1354,6 @@
           });
         });
 
-        // Add other dated groups
         Object.keys(groups)
           .sort()
           .forEach((key) => {
@@ -428,7 +1366,6 @@
             }
           });
 
-        // Add No Appointment and Completed at the end
         if (groups["No Appointment Set"])
           sortedGroups["No Appointment Set"] = groups["No Appointment Set"];
         if (groups["Completed"])
@@ -451,10 +1388,8 @@
       function formatAppointment(claim) {
         if (!claim.appointment_start) return "No appointment scheduled";
 
-        // Parse the ISO string and display the exact time stored
         const date = new Date(claim.appointment_start);
 
-        // Format date and time without timezone conversion
         const options = {
           weekday: "short",
           year: "numeric",
@@ -478,7 +1413,6 @@
           return;
         }
 
-        // CSV headers
         const headers = [
           "Claim Number",
           "Customer Name",
@@ -501,7 +1435,6 @@
           "Created At",
         ];
 
-        // Convert claims to CSV rows
         const rows = completedClaims.map((claim) =>
           [
             claim.claim_number || "",
@@ -528,10 +1461,8 @@
             .join(",")
         );
 
-        // Combine headers and rows
         const csv = [headers.join(","), ...rows].join("\n");
 
-        // Create download link
         const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
         const link = document.createElement("a");
         const url = URL.createObjectURL(blob);
@@ -563,7 +1494,6 @@
         if (!confirmed) return;
 
         try {
-          // Delete all photos for this claim first
           const { data: photoList } = await supabaseClient.storage
             .from("claim-photos")
             .list(`${claimId}/`);
@@ -573,7 +1503,6 @@
             await supabaseClient.storage.from("claim-photos").remove(paths);
           }
 
-          // Delete the claim (notifications will cascade delete automatically)
           const { error } = await supabaseClient
             .from("claims")
             .delete()
@@ -583,12 +1512,265 @@
 
           alert(`Claim #${claimNumber} has been permanently deleted.`);
 
-          // Reload claims to update the view
           await loadClaims();
         } catch (error) {
           console.error("Error deleting claim:", error);
           alert("Error deleting claim: " + error.message);
         }
+      }
+
+      // ===== DRAG AND DROP FUNCTIONALITY =====
+
+      function handleClaimDragStart(event) {
+        event.stopPropagation();
+        console.log("Drag started for claim card");
+
+        // Add visual feedback
+        event.target.classList.add("dragging");
+
+        // Show drag hint
+        showDragHint();
+
+        // Extract claim data from data attributes
+        const claimData = {
+          claimId: event.target.getAttribute("data-claim-id"),
+          customerName: event.target.getAttribute("data-customer-name"),
+          address: event.target.getAttribute("data-address-line1"),
+          address2: event.target.getAttribute("data-address-line2"),
+          city: event.target.getAttribute("data-city"),
+          state: event.target.getAttribute("data-state"),
+          zip: event.target.getAttribute("data-zip"),
+        };
+
+        // Set transfer data as JSON string
+        event.dataTransfer.setData(
+          "application/json",
+          JSON.stringify(claimData)
+        );
+        event.dataTransfer.setData(
+          "text/plain",
+          `Claim Cipher Dispatch - Claim ID: ${claimData.claimId} - ${claimData.customerName}`
+        );
+        event.dataTransfer.setData("text/claim-id", claimData.claimId);
+
+        // Set drag effect
+        event.dataTransfer.effectAllowed = showCalendarView ? "move" : "copy";
+
+        console.log("Drag data set:", claimData);
+        console.log("Claim ID set in dataTransfer:", claimData.claimId);
+
+        // Optional: Add a custom drag image
+        try {
+          // Create a custom drag image showing claim info
+          const dragImage = document.createElement("div");
+          dragImage.className = "drag-image";
+          dragImage.style.cssText = `
+            position: absolute;
+            top: -1000px;
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 12px;
+            border-radius: 8px;
+            border: 2px solid #667eea;
+            font-size: 14px;
+            font-family: system-ui;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+          `;
+          dragImage.innerHTML = `🚚 Claim: ${claimData.customerName} - ${claimData.city}, ${claimData.state}`;
+          document.body.appendChild(dragImage);
+          event.dataTransfer.setDragImage(dragImage, 10, 10);
+
+          // Clean up drag image after a short delay
+          setTimeout(() => {
+            if (document.body.contains(dragImage)) {
+              document.body.removeChild(dragImage);
+            }
+          }, 100);
+        } catch (err) {
+          console.log("Custom drag image failed, using default:", err);
+        }
+      }
+
+      function handleClaimDragEnd(event) {
+        console.log("Drag ended for claim card");
+
+        // Remove visual feedback
+        event.target.classList.remove("dragging");
+
+        // Hide drag hint
+        hideDragHint();
+      }
+
+      function showDragHint() {
+        // Remove any existing hint
+        hideDragHint();
+
+        const hint = document.createElement("div");
+        hint.id = "drag-hint";
+        hint.className = "drag-drop-hint";
+        hint.innerHTML =
+          "🚚 Drag this claim to the Claim Cipher Auto Router application";
+        document.body.appendChild(hint);
+      }
+
+      function hideDragHint() {
+        const existingHint = document.getElementById("drag-hint");
+        if (existingHint) {
+          document.body.removeChild(existingHint);
+        }
+      }
+
+      // Global drag event handlers for better UX
+      document.addEventListener("DOMContentLoaded", function () {
+        document.addEventListener("dragover", function (event) {
+          // Allow drop by preventing default, but only if not on calendar
+          if (
+            event.dataTransfer.types.includes("application/json") &&
+            !event.target.closest(".calendar-day")
+          ) {
+            event.preventDefault();
+          }
+        });
+
+        document.addEventListener("drop", function (event) {
+          // Only handle drops outside of calendar days
+          if (event.target.closest(".calendar-day")) {
+            return; // Let calendar handle its own drops
+          }
+
+          // Prevent default handling and get data
+          event.preventDefault();
+
+          try {
+            const jsonData = event.dataTransfer.getData("application/json");
+            if (jsonData) {
+              const claimData = JSON.parse(jsonData);
+              console.log("Claim dropped:", claimData);
+
+              // Show confirmation that data was received
+              const notification = document.createElement("div");
+              notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #10b981;
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                font-weight: bold;
+                z-index: 10000;
+                font-size: 14px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+              `;
+              notification.innerHTML = `✅ Claim data ready for Claim Cipher Auto Router`;
+              document.body.appendChild(notification);
+
+              setTimeout(() => {
+                if (document.body.contains(notification)) {
+                  document.body.removeChild(notification);
+                }
+              }, 3000);
+            }
+          } catch (err) {
+            console.log("Drop event handling error:", err);
+          }
+        });
+      });
+
+      // ===== DEMO/TEST FUNCTIONS =====
+
+      // Function to test drag and drop data format
+      window.testDragDropData = function () {
+        const sampleClaimData = {
+          claimId: "test-123",
+          customerName: "John Doe",
+          address: "123 Main St",
+          address2: "Apt 4B",
+          city: "Anytown",
+          state: "CA",
+          zip: "12345",
+        };
+
+        console.log("Sample drag data that would be transferred:");
+        console.log("JSON format:", JSON.stringify(sampleClaimData, null, 2));
+        console.log(
+          "Text format:",
+          `Claim Cipher Dispatch - Claim ID: ${sampleClaimData.claimId} - ${sampleClaimData.customerName}`
+        );
+
+        return sampleClaimData;
+      };
+
+      // Function to simulate a successful drag and drop for testing
+      window.simulateDragDrop = function () {
+        const testData = window.testDragDropData();
+
+        // Show the same success notification that would appear on drop
+        const notification = document.createElement("div");
+        notification.style.cssText = `
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: #10b981;
+          color: white;
+          padding: 12px 20px;
+          border-radius: 8px;
+          font-weight: bold;
+          z-index: 10000;
+          font-size: 14px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        `;
+        notification.innerHTML = `✅ Test: Claim data ready for Claim Cipher Auto Router`;
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+          if (document.body.contains(notification)) {
+            document.body.removeChild(notification);
+          }
+        }, 3000);
+
+        console.log("Simulated successful drag and drop with data:", testData);
+      };
+
+      // ===== NOTIFICATION FUNCTION =====
+
+      function showNotification(message, type = "success") {
+        const notification = document.createElement("div");
+        const bgColor =
+          type === "error"
+            ? "#ef4444"
+            : type === "info"
+            ? "#3b82f6"
+            : "#10b981";
+
+        notification.style.cssText = `
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: ${bgColor};
+          color: white;
+          padding: 12px 20px;
+          border-radius: 8px;
+          font-weight: bold;
+          z-index: 10000;
+          font-size: 14px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+          animation: slideInRight 0.3s ease-out;
+        `;
+        notification.innerHTML = message;
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+          if (document.body.contains(notification)) {
+            notification.style.animation = "slideOutRight 0.3s ease-in";
+            setTimeout(() => {
+              if (document.body.contains(notification)) {
+                document.body.removeChild(notification);
+              }
+            }, 300);
+          }
+        }, 3000);
       }
     </script>
   </body>
