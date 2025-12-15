@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { Link, useNavigate } from "react-router-dom";
+import { FIRM_COLORS } from "../../constants/firmColors";
 import "leaflet/dist/leaflet.css";
 
 type Claim = {
@@ -22,6 +23,7 @@ type Claim = {
   assigned_to?: string | null;
   appointment_start?: string;
   appointment_end?: string;
+  firm_name?: string;
 };
 
 const throttle = (() => {
@@ -421,6 +423,27 @@ export default function NewClaim() {
             />
           </div>
         </div>
+
+        <h4 style={{ color: "#e2e8f0", marginTop: 16 }}>Firm</h4>
+        <select
+          value={form.firm_name || ""}
+          onChange={(e) => setForm({ ...form, firm_name: e.target.value || undefined })}
+          style={{
+            padding: 12,
+            fontSize: 16,
+            border: "1px solid #4a5568",
+            borderRadius: 6,
+            background: "#2d3748",
+            color: "#e2e8f0",
+          }}
+        >
+          <option value="">No Firm</option>
+          {Object.keys(FIRM_COLORS).map((firm) => (
+            <option key={firm} value={firm}>
+              {firm}
+            </option>
+          ))}
+        </select>
 
         <h4 style={{ color: "#e2e8f0", marginTop: 16 }}>Assignment</h4>
         <select

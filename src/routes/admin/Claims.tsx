@@ -5,6 +5,8 @@ import {
   initializeSupabaseAuthz,
   getSupabaseAuthz,
 } from "../../lib/supabaseAuthz";
+import { getFirmColor } from "../../constants/firmColors";
+import { downloadClaimsCSV } from "../../utils/csvExport";
 
 type Claim = {
   id: string;
@@ -18,6 +20,9 @@ type Claim = {
   assigned_to?: string;
   appointment_start?: string;
   appointment_end?: string;
+  firm_name?: string;
+  notes?: string;
+  created_at?: string;
   profiles?: {
     full_name?: string;
   } | null;
@@ -70,7 +75,7 @@ export default function AdminClaims() {
       let query = supabase
         .from("claims")
         .select(
-          "id,claim_number,customer_name,status,vin,vehicle_year,vehicle_make,vehicle_model,assigned_to,appointment_start,appointment_end,profiles:assigned_to(full_name)"
+          "id,claim_number,customer_name,status,vin,vehicle_year,vehicle_make,vehicle_model,assigned_to,appointment_start,appointment_end,firm_name,notes,created_at,profiles:assigned_to(full_name)"
         )
         .order("created_at", { ascending: false });
 
@@ -259,6 +264,22 @@ export default function AdminClaims() {
           >
             {showArchived ? "← View Active Claims" : "📦 View Archived"}
           </button>
+          {showArchived && (
+            <button
+              onClick={() => downloadClaimsCSV(rows)}
+              style={{
+                padding: "8px 16px",
+                background: "#10b981",
+                color: "white",
+                border: "none",
+                borderRadius: 4,
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+            >
+              📥 Download CSV
+            </button>
+          )}
           <Link
             to="/admin/claims/new"
             style={{
@@ -287,6 +308,7 @@ export default function AdminClaims() {
             to={`/claim/${r.id}`}
             style={{
               border: "1px solid #4a5568",
+              borderLeft: `4px solid ${getFirmColor(r.firm_name)}`,
               borderRadius: 8,
               padding: 16,
               background: "#2d3748",
@@ -316,25 +338,59 @@ export default function AdminClaims() {
               >
                 #{r.claim_number}
               </div>
-              <div
-                style={{
-                  display: "inline-block",
-                  padding: "4px 12px",
-                  borderRadius: 4,
-                  fontSize: 11,
-                  fontWeight: "bold",
-                  background:
-                    r.status === "COMPLETED"
-                      ? "#4CAF50"
-                      : r.status === "IN_PROGRESS"
-                      ? "#FF9800"
-                      : r.status === "SCHEDULED"
-                      ? "#2196F3"
-                      : "#9E9E9E",
-                  color: "white",
-                }}
-              >
-                {r.status}
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <div
+                  style={{
+                    display: "inline-block",
+                    padding: "4px 12px",
+                    borderRadius: 4,
+                    fontSize: 11,
+                    fontWeight: "bold",
+                    background:
+                      r.status === "COMPLETED"
+                        ? "#4CAF50"
+                        : r.status === "IN_PROGRESS"
+                        ? "#FF9800"
+                        : r.status === "SCHEDULED"
+                        ? "#2196F3"
+                        : "#9E9E9E",
+                    color: "white",
+                  }}
+                >
+                  {r.status}
+                </div>
+                {r.firm_name && (
+                  <div
+                    style={{
+                      display: "inline-block",
+                      padding: "4px 12px",
+                      borderRadius: 4,
+                      fontSize: 11,
+                      fontWeight: "bold",
+                      background: getFirmColor(r.firm_name),
+                      color: "white",
+                    }}
+                  >
+                    {r.firm_name}
+                  </div>
+                )}
+                {r.notes && (
+                  <div
+                    style={{
+                      display: "inline-block",
+                      padding: "4px 8px",
+                      borderRadius: 4,
+                      fontSize: 11,
+                      fontWeight: "bold",
+                      background: "rgba(102, 126, 234, 0.2)",
+                      color: "#667eea",
+                      border: "1px solid #667eea",
+                    }}
+                    title={r.notes.substring(0, 100) + (r.notes.length > 100 ? "..." : "")}
+                  >
+                    📝 Note
+                  </div>
+                )}
               </div>
             </div>
 
