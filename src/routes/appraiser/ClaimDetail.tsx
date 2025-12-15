@@ -10,6 +10,7 @@ export default function ClaimDetail() {
   const [claim, setClaim] = useState<any>(null);
   const [photos, setPhotos] = useState<any[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [users, setUsers] = useState<any[]>([]);
 
   const load = async () => {
     const { data } = await supabase
@@ -28,6 +29,14 @@ export default function ClaimDetail() {
 
   useEffect(() => {
     load();
+    // Load users for assignment dropdown
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, role")
+        .order("full_name");
+      setUsers(data || []);
+    })();
   }, [id]);
 
   const onPhoto = async (e: any) => {
@@ -290,6 +299,45 @@ export default function ClaimDetail() {
               })
             }
           />
+        </div>
+
+        <div>
+          <h4>Assignment</h4>
+          <div style={{ marginBottom: 16 }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: 8,
+                fontWeight: "bold",
+                color: "#333",
+              }}
+            >
+              Assign to Appraiser:
+            </label>
+            <select
+              value={claim.assigned_to || ""}
+              onChange={(e) =>
+                update({ assigned_to: e.target.value || null })
+              }
+              style={{
+                padding: 12,
+                fontSize: 16,
+                border: "1px solid #4a5568",
+                borderRadius: 6,
+                background: "#2d3748",
+                color: "#e2e8f0",
+                width: "100%",
+                maxWidth: 400,
+              }}
+            >
+              <option value="">Unassigned</option>
+              {users.map((u) => (
+                <option key={u.user_id} value={u.user_id}>
+                  {u.full_name || u.user_id} ({u.role})
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div>

@@ -66,11 +66,11 @@ export default function AdminClaims() {
         `Loading claims for ${userInfo?.role}: ${userInfo?.fullName}`
       );
 
-      // Create base query
+      // Create base query with profile join to get appraiser name
       let query = supabase
         .from("claims")
         .select(
-          "id,claim_number,customer_name,status,vin,vehicle_year,vehicle_make,vehicle_model,assigned_to,appointment_start,appointment_end"
+          "id,claim_number,customer_name,status,vin,vehicle_year,vehicle_make,vehicle_model,assigned_to,appointment_start,appointment_end,profiles:assigned_to(full_name)"
         )
         .order("created_at", { ascending: false });
 
@@ -431,7 +431,7 @@ export default function AdminClaims() {
             >
               <div style={{ color: "#a0aec0" }}>
                 <strong>👤 Assigned:</strong>{" "}
-                {r.assigned_to ? "Yes" : "Unassigned"}
+                {r.profiles?.full_name || (r.assigned_to ? "Unknown User" : "Unassigned")}
               </div>
             </div>
           </Link>
