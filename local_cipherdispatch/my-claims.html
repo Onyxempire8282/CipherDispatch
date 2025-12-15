@@ -88,21 +88,58 @@
     </div>
 
     <script src="js/config.js?v=7&t=20251212"></script>
+    <script src="js/authz.js?v=1"></script>
     <script>
       // Service workers completely disabled
       console.log("Service workers disabled - using direct network calls");
 
       let currentUserId = null;
 
-      // Check authentication
+      // Initialize authorization and load claims
+      async function initializePage() {
+        try {
+          // Initialize authorization helper
+          await initializeSupabaseAuthz(supabaseClient);
+
+          const userInfo = window.supabaseAuthz.getCurrentUser();
+          console.log("Authorization initialized for user:", userInfo);
+
+          currentUserId = userInfo.id;
+
+          // Load claims and notifications
+          await loadMyClaims();
+          await checkNotifications();
+        } catch (error) {
+          console.error("Page initialization failed:", error);
+
+          // Show error state instead of infinite loading
+          document.getElementById(
+            "claims-container"
+          ).innerHTML = `<div style="text-align:center; color:#ef4444; padding:40px;">
+              <h3>Unable to load page</h3>
+              <p>${error.message}</p>
+              <button onclick="window.location.reload()" style="background:#ef4444; color:white; border:none; padding:12px 24px; border-radius:6px; cursor:pointer; margin-top:12px;">Retry</button>
+            </div>`;
+
+          // Redirect to login if authentication failed
+          if (
+            error.message.includes("session") ||
+            error.message.includes("Authentication")
+          ) {
+            setTimeout(() => {
+              window.location.href = "index.html";
+            }, 2000);
+          }
+        }
+      }
+
+      // Check authentication and start initialization
       supabaseClient.auth.getSession().then(({ data: { session } }) => {
         if (!session) {
           window.location.href = "index.html";
           return;
         }
-        currentUserId = session.user.id;
-        loadMyClaims();
-        checkNotifications();
+        initializePage();
       });
 
       async function handleLogout() {
@@ -134,66 +171,53 @@
 
       async function loadMyClaims() {
         try {
-          console.log("Loading claims for user:", currentUserId);
+          console.log("Loading claims with role-aware scoping...");
 
-          // First, let's check the user's profile and role
-          console.log("Checking user profile...");
-          const { data: profileData, error: profileError } =
-            await supabaseClient
-              .from("profiles")
-              .select("*")
-              .eq("user_id", currentUserId)
-              .single();
-
-          if (profileError) {
-            console.error("Profile error:", profileError);
-          } else {
-            console.log("User profile:", profileData);
+          if (!window.supabaseAuthz || !window.supabaseAuthz.initialized) {
+            throw new Error("Authorization not initialized");
           }
 
-          // Try a simple claims query without assigned_to filter first
-          console.log("Testing basic claims access...");
-          const { data: testData, error: testError } = await supabaseClient
-            .from("claims")
-            .select("id, claim_number, status")
-            .limit(1);
+          const userInfo = window.supabaseAuthz.getCurrentUser();
+          console.log("Loading claims for user:", userInfo);
 
-          if (testError) {
-            console.error("Basic claims access failed:", testError);
-            throw new Error(`Cannot access claims table: ${testError.message}`);
-          } else {
-            console.log("Basic claims access works:", testData);
-          }
+          // Create base query
+          let query = supabaseClient.from("claims").select("*");
 
-          // Now try the assigned_to query
-          console.log("Trying assigned_to query...");
-          const { data, error } = await supabaseClient
-            .from("claims")
-            .select("*")
-            .eq("assigned_to", currentUserId);
+          // Apply role-based scoping - this handles appraiser vs admin automatically
+          query = window.supabaseAuthz.scopedClaimsQuery(query);
+
+          const { data, error } = await query;
 
           if (error) {
-            console.error("Supabase error:", error);
-            throw error;
+            console.error("Error loading claims:", error);
+
+            // Use centralized error handling
+            const errorResponse = window.supabaseAuthz.handleAuthError(error);
+
+            if (errorResponse.shouldRedirect) {
+              alert(errorResponse.message);
+              window.location.href = "index.html";
+              return;
+            }
+
+            throw new Error(errorResponse.message);
           }
-          console.log("Claims loaded:", data);
+
+          console.log(
+            `Loaded ${data?.length || 0} claims for ${userInfo.role}`
+          );
           renderClaims(data || []);
         } catch (error) {
           console.error("Error loading claims:", error);
 
-          // Check if it's an authentication error
-          if (
-            error.message?.includes("JWT") ||
-            error.code === "PGRST301" ||
-            error.message?.includes("401")
-          ) {
-            alert("Your session has expired. Please log in again.");
-            window.location.href = "index.html";
-            return;
-          }
-
-          document.getElementById("claims-container").innerHTML =
-            '<div style="text-align:center; color:#ef4444; padding:40px;">Error loading claims. Please refresh the page.</div>';
+          // Show error state with retry option
+          document.getElementById(
+            "claims-container"
+          ).innerHTML = `<div style="text-align:center; color:#ef4444; padding:40px;">
+              <h3>Unable to load claims</h3>
+              <p>${error.message}</p>
+              <button onclick="loadMyClaims()" style="background:#ef4444; color:white; border:none; padding:12px 24px; border-radius:6px; cursor:pointer; margin-top:12px;">Retry</button>
+            </div>`;
         }
       }
 

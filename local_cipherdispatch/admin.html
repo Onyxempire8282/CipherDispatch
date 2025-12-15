@@ -120,6 +120,7 @@
     </div>
 
     <script src="js/config.js?v=15"></script>
+    <script src="js/authz.js?v=1"></script>
     <script>
       console.log("Service workers disabled - using direct network calls");
 
@@ -324,12 +325,48 @@
       }
       let allClaims = [];
 
+      // Initialize authorization on page load
+      async function initializePage() {
+        try {
+          // Initialize authorization helper
+          await initializeSupabaseAuthz(supabaseClient);
+
+          console.log("Authorization initialized successfully");
+          console.log("User role:", window.supabaseAuthz.getCurrentUser());
+
+          // Load claims with proper scoping
+          await loadClaims();
+        } catch (error) {
+          console.error("Page initialization failed:", error);
+
+          // Show error state instead of infinite loading
+          document.getElementById(
+            "claims-container"
+          ).innerHTML = `<div style="text-align:center; color:#ef4444; padding:40px;">
+              <h3>Unable to load page</h3>
+              <p>${error.message}</p>
+              <button onclick="window.location.reload()" style="background:#ef4444; color:white; border:none; padding:12px 24px; border-radius:6px; cursor:pointer; margin-top:12px;">Retry</button>
+            </div>`;
+
+          // Redirect to login if authentication failed
+          if (
+            error.message.includes("session") ||
+            error.message.includes("Authentication")
+          ) {
+            setTimeout(() => {
+              window.location.href = "index.html";
+            }, 2000);
+          }
+        }
+      }
+
+      // Start initialization when session is ready
       supabaseClient.auth.getSession().then(({ data: { session } }) => {
         if (!session) {
           window.location.href = "index.html";
           return;
         }
-        loadClaims();
+        initializePage();
       });
 
       async function handleLogout() {
@@ -396,83 +433,157 @@
 
       async function loadClaims() {
         try {
-          console.log("Loading claims...");
+          console.log("Loading claims with role-aware scoping...");
+
+          if (!window.supabaseAuthz || !window.supabaseAuthz.initialized) {
+            throw new Error("Authorization not initialized");
+          }
+
+          const userInfo = window.supabaseAuthz.getCurrentUser();
+          console.log("Loading claims for user:", userInfo);
+
           let data;
           try {
-            const res = await supabaseClient
+            // Create base query
+            let query = supabaseClient
               .from("claims")
               .select(
                 `id,claim_number,customer_name,phone,email,vin,vehicle_year,vehicle_make,vehicle_model,address_line1,address_line2,city,state,postal_code,status,assigned_to,appointment_start,appointment_end,notes,created_at,firm_name`
               )
               .order("appointment_start", { ascending: true });
 
+            // Apply role-based scoping
+            query = window.supabaseAuthz.scopedClaimsQuery(query);
+
+            const res = await query;
+
             if (res.error) throw res.error;
             data = res.data;
-            console.log("Explicit select succeeded:", data?.length, "claims");
+            console.log(
+              `Scoped query succeeded (${userInfo.role}):`,
+              data?.length,
+              "claims"
+            );
           } catch (err) {
             console.warn(
-              "Explicit claims select failed (maybe missing column). Falling back to select('*'):",
+              "Explicit claims select failed (maybe missing column). Trying fallback with select('*'):",
               err
             );
-            const res2 = await supabaseClient
+
+            // Fallback query with scoping
+            let fallbackQuery = supabaseClient
               .from("claims")
               .select("*")
               .order("appointment_start", { ascending: true });
+
+            fallbackQuery =
+              window.supabaseAuthz.scopedClaimsQuery(fallbackQuery);
+
+            const res2 = await fallbackQuery;
             if (res2.error) {
               console.error("Fallback select failed:", res2.error);
               throw res2.error;
             }
             data = res2.data;
-            console.log("Fallback select succeeded:", data?.length, "claims");
+            console.log(
+              `Fallback scoped query succeeded (${userInfo.role}):`,
+              data?.length,
+              "claims"
+            );
           }
 
           allClaims = data || [];
+
+          // Load appraiser names for assigned claims
           for (const claim of allClaims) {
             claim.photoCount = 0;
 
             if (claim.assigned_to) {
-              const { data: appraiserData } = await supabaseClient
-                .from("profiles")
-                .select("full_name")
-                .eq("user_id", claim.assigned_to)
-                .single();
-              claim.appraiser = appraiserData;
+              try {
+                const { data: appraiserData, error: appraiserError } =
+                  await supabaseClient
+                    .from("profiles")
+                    .select("full_name")
+                    .eq("user_id", claim.assigned_to)
+                    .single();
+
+                if (!appraiserError && appraiserData) {
+                  claim.appraiser = appraiserData;
+                }
+              } catch (err) {
+                console.warn(
+                  "Could not load appraiser data for claim",
+                  claim.id,
+                  err
+                );
+                claim.appraiser = { full_name: "Unknown" };
+              }
             }
           }
 
           renderClaims();
-          loadPhotoCounts();
+
+          // Only load photo counts for authorized claims
+          await loadPhotoCounts();
         } catch (error) {
           console.error("Error loading claims:", error);
 
-          if (
-            error.message?.includes("JWT") ||
-            error.code === "PGRST301" ||
-            error.message?.includes("401")
-          ) {
-            alert("Your session has expired. Please log in again.");
+          // Use centralized error handling
+          const errorResponse = window.supabaseAuthz
+            ? window.supabaseAuthz.handleAuthError(error)
+            : { shouldRedirect: true, message: error.message };
+
+          if (errorResponse.shouldRedirect) {
+            alert(errorResponse.message);
             window.location.href = "index.html";
             return;
           }
 
-          document.getElementById("claims-container").innerHTML =
-            '<div style="text-align:center; color:#ef4444; padding:40px;">Error loading claims. Please refresh the page.</div>';
+          // Show error state with retry option
+          document.getElementById(
+            "claims-container"
+          ).innerHTML = `<div style="text-align:center; color:#ef4444; padding:40px;">
+              <h3>Unable to load claims</h3>
+              <p>${errorResponse.message}</p>
+              <button onclick="loadClaims()" style="background:#ef4444; color:white; border:none; padding:12px 24px; border-radius:6px; cursor:pointer; margin-top:12px;">Retry</button>
+            </div>`;
         }
       }
 
       async function loadPhotoCounts() {
+        if (!window.supabaseAuthz || !window.supabaseAuthz.initialized) {
+          console.warn("Authorization not initialized, skipping photo counts");
+          return;
+        }
+
+        // Only load photo counts for claims the user can access
         const photoPromises = allClaims.map(async (claim) => {
           try {
+            // Check if user can access this claim's photos
+            if (!window.supabaseAuthz.canAccessClaim(claim)) {
+              console.log("Access denied to photos for claim", claim.id);
+              claim.photoCount = 0;
+              return;
+            }
+
+            const photoPath = window.supabaseAuthz.getScopedPhotoPath(claim.id);
+            if (!photoPath) {
+              claim.photoCount = 0;
+              return;
+            }
+
             const { data: photoData, error: photoError } =
-              await supabaseClient.storage
-                .from("claim-photos")
-                .list(`${claim.id}/`);
+              await supabaseClient.storage.from("claim-photos").list(photoPath);
 
             if (!photoError && photoData) {
               claim.photoCount = photoData.length;
+            } else if (photoError) {
+              console.warn("Photo count error for claim", claim.id, photoError);
+              claim.photoCount = 0;
             }
           } catch (error) {
-            // Silently fail
+            console.warn("Photo count failed for claim", claim.id, error);
+            claim.photoCount = 0;
           }
         });
 
