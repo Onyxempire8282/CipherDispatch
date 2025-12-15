@@ -358,6 +358,8 @@ export default function ClaimDetail() {
                     ? "#FF9800"
                     : claim.status === "SCHEDULED"
                     ? "#2196F3"
+                    : claim.status === "CANCELED"
+                    ? "#ef4444"
                     : "#9E9E9E",
                 color: "white",
               }}
@@ -407,6 +409,24 @@ export default function ClaimDetail() {
               }}
             >
               ✅ Mark Complete
+            </button>
+            <button
+              onClick={() => {
+                if (confirm("Cancel this claim? This will mark it as CANCELED and remove it from active claims.")) {
+                  update({ status: "CANCELED" });
+                }
+              }}
+              style={{
+                padding: "8px 16px",
+                background: "#ef4444",
+                color: "white",
+                border: "none",
+                borderRadius: 4,
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+            >
+              ❌ Cancel Claim
             </button>
           </div>
 

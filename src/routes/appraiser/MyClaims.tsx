@@ -73,8 +73,8 @@ export default function MyClaims() {
         // Show active claims only
         query = query.or("status.is.null,status.in.(SCHEDULED,IN_PROGRESS)");
       } else {
-        // Show completed claims
-        query = query.eq("status", "COMPLETED");
+        // Show completed and canceled claims
+        query = query.or("status.eq.COMPLETED,status.eq.CANCELED");
       }
 
       query = query.order("appointment_start");

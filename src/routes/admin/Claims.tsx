@@ -84,11 +84,11 @@ export default function AdminClaims() {
 
       // Then apply status filtering
       if (!showArchived) {
-        // Show all claims except completed ones (active claims)
+        // Show all claims except completed/canceled ones (active claims)
         query = query.or("status.is.null,status.in.(SCHEDULED,IN_PROGRESS)");
       } else {
-        // Show completed claims as "archived"
-        query = query.eq("status", "COMPLETED");
+        // Show completed and canceled claims as "archived"
+        query = query.or("status.eq.COMPLETED,status.eq.CANCELED");
       }
 
       const { data, error: queryError } = await query;
@@ -215,6 +215,15 @@ export default function AdminClaims() {
     );
   }
 
+  // Calculate status counts
+  const statusCounts = rows.reduce((acc, claim) => {
+    const status = claim.status || "UNASSIGNED";
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const unassignedCount = rows.filter((r) => !r.assigned_to).length;
+
   return (
     <div
       style={{
@@ -223,6 +232,92 @@ export default function AdminClaims() {
         padding: 16,
       }}
     >
+      {/* Status Summary Cards */}
+      {!showArchived && (
+        <div
+          style={{
+            display: "flex",
+            gap: 16,
+            marginBottom: 24,
+            justifyContent: "center",
+            flexWrap: "wrap",
+          }}
+        >
+          <div
+            style={{
+              background: "#2d3748",
+              border: "1px solid #4a5568",
+              borderLeft: "4px solid #2196F3",
+              borderRadius: 8,
+              padding: "16px 24px",
+              minWidth: 150,
+              textAlign: "center",
+            }}
+          >
+            <div style={{ fontSize: 28, fontWeight: "bold", color: "#2196F3" }}>
+              {statusCounts.SCHEDULED || 0}
+            </div>
+            <div style={{ fontSize: 12, color: "#a0aec0", marginTop: 4 }}>
+              📅 Scheduled
+            </div>
+          </div>
+          <div
+            style={{
+              background: "#2d3748",
+              border: "1px solid #4a5568",
+              borderLeft: "4px solid #FF9800",
+              borderRadius: 8,
+              padding: "16px 24px",
+              minWidth: 150,
+              textAlign: "center",
+            }}
+          >
+            <div style={{ fontSize: 28, fontWeight: "bold", color: "#FF9800" }}>
+              {statusCounts.IN_PROGRESS || 0}
+            </div>
+            <div style={{ fontSize: 12, color: "#a0aec0", marginTop: 4 }}>
+              🔧 In Progress
+            </div>
+          </div>
+          <div
+            style={{
+              background: "#2d3748",
+              border: "1px solid #4a5568",
+              borderLeft: "4px solid #9E9E9E",
+              borderRadius: 8,
+              padding: "16px 24px",
+              minWidth: 150,
+              textAlign: "center",
+            }}
+          >
+            <div style={{ fontSize: 28, fontWeight: "bold", color: "#9E9E9E" }}>
+              {unassignedCount}
+            </div>
+            <div style={{ fontSize: 12, color: "#a0aec0", marginTop: 4 }}>
+              👤 Unassigned
+            </div>
+          </div>
+          <div
+            style={{
+              background: "#2d3748",
+              border: "1px solid #4a5568",
+              borderLeft: "4px solid #4CAF50",
+              borderRadius: 8,
+              padding: "16px 24px",
+              minWidth: 150,
+              textAlign: "center",
+            }}
+          >
+            <div style={{ fontSize: 28, fontWeight: "bold", color: "#4CAF50" }}>
+              {statusCounts.COMPLETED || 0}
+            </div>
+            <div style={{ fontSize: 12, color: "#a0aec0", marginTop: 4 }}>
+              ✅ Completed
+            </div>
+          </div>
+        </div>
+      )}
+
       <div
         style={{
           display: "flex",
@@ -353,6 +448,8 @@ export default function AdminClaims() {
                         ? "#FF9800"
                         : r.status === "SCHEDULED"
                         ? "#2196F3"
+                        : r.status === "CANCELED"
+                        ? "#ef4444"
                         : "#9E9E9E",
                     color: "white",
                   }}
