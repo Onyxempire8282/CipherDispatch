@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { Link } from "react-router-dom";
-import { initializeSupabaseAuthz, getSupabaseAuthz } from "../../lib/supabaseAuthz";
+import {
+  initializeSupabaseAuthz,
+  getSupabaseAuthz,
+} from "../../lib/supabaseAuthz";
 
 type Claim = {
   id: string;
@@ -24,12 +27,12 @@ export default function MyClaims() {
 
   const initializeAuth = async () => {
     try {
-      console.log('Initializing authorization for MyClaims component...');
+      console.log("Initializing authorization for MyClaims component...");
       await initializeSupabaseAuthz(supabase);
       setAuthzInitialized(true);
-      console.log('Authorization initialized successfully');
+      console.log("Authorization initialized successfully");
     } catch (err: any) {
-      console.error('Authorization initialization failed:', err);
+      console.error("Authorization initialization failed:", err);
       setError(err.message);
       setLoading(false);
     }
@@ -37,7 +40,7 @@ export default function MyClaims() {
 
   const load = async () => {
     if (!authzInitialized) {
-      console.log('Authorization not ready, skipping load');
+      console.log("Authorization not ready, skipping load");
       return;
     }
 
@@ -47,11 +50,13 @@ export default function MyClaims() {
 
       const authz = getSupabaseAuthz();
       if (!authz || !authz.isInitialized) {
-        throw new Error('Authorization not properly initialized');
+        throw new Error("Authorization not properly initialized");
       }
 
       const userInfo = authz.getCurrentUser();
-      console.log(`Loading my claims for ${userInfo?.role}: ${userInfo?.fullName}`);
+      console.log(
+        `Loading my claims for ${userInfo?.role}: ${userInfo?.fullName}`
+      );
 
       // Create base query
       let query = supabase
@@ -75,10 +80,10 @@ export default function MyClaims() {
       query = query.order("appointment_start");
 
       const { data, error: queryError } = await query;
-      
+
       if (queryError) {
         console.error("Error loading my claims:", queryError);
-        
+
         // Use centralized error handling
         const errorResponse = authz.handleAuthError(queryError);
         if (errorResponse.shouldRedirect) {
@@ -89,13 +94,14 @@ export default function MyClaims() {
           }, 2000);
           return;
         }
-        
+
         throw new Error(errorResponse.message);
       }
 
-      console.log(`Loaded ${data?.length || 0} my claims for ${userInfo?.role}`);
+      console.log(
+        `Loaded ${data?.length || 0} my claims for ${userInfo?.role}`
+      );
       setRows(data || []);
-      
     } catch (err: any) {
       console.error("Error in load function:", err);
       setError(err.message);
@@ -111,7 +117,7 @@ export default function MyClaims() {
   useEffect(() => {
     if (authzInitialized) {
       load();
-      
+
       // Set up real-time subscription with proper scoping
       const authz = getSupabaseAuthz();
       if (authz?.isInitialized) {
@@ -121,12 +127,12 @@ export default function MyClaims() {
             "postgres_changes",
             { event: "*", schema: "public", table: "claims" },
             () => {
-              console.log('Real-time update received, reloading my claims...');
+              console.log("Real-time update received, reloading my claims...");
               load();
             }
           )
           .subscribe();
-          
+
         return () => {
           supabase.removeChannel(ch);
         };
@@ -142,12 +148,12 @@ export default function MyClaims() {
           minHeight: "100vh",
           background: "linear-gradient(135deg, #1a202c 0%, #2d3748 100%)",
           padding: 16,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
         }}
       >
-        <div style={{ color: '#e2e8f0', fontSize: '18px' }}>
+        <div style={{ color: "#e2e8f0", fontSize: "18px" }}>
           Loading your claims...
         </div>
       </div>
@@ -162,32 +168,34 @@ export default function MyClaims() {
           minHeight: "100vh",
           background: "linear-gradient(135deg, #1a202c 0%, #2d3748 100%)",
           padding: 16,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
         }}
       >
-        <div style={{ 
-          color: '#ef4444', 
-          fontSize: '18px', 
-          textAlign: 'center',
-          background: '#2d3748',
-          padding: '24px',
-          borderRadius: '8px',
-          border: '2px solid #ef4444'
-        }}>
+        <div
+          style={{
+            color: "#ef4444",
+            fontSize: "18px",
+            textAlign: "center",
+            background: "#2d3748",
+            padding: "24px",
+            borderRadius: "8px",
+            border: "2px solid #ef4444",
+          }}
+        >
           <h3>Unable to load your claims</h3>
           <p>{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             style={{
-              background: '#ef4444',
-              color: 'white',
-              border: 'none',
-              padding: '12px 24px',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              marginTop: '12px'
+              background: "#ef4444",
+              color: "white",
+              border: "none",
+              padding: "12px 24px",
+              borderRadius: "6px",
+              cursor: "pointer",
+              marginTop: "12px",
             }}
           >
             Retry
@@ -196,11 +204,6 @@ export default function MyClaims() {
       </div>
     );
   }
-      .subscribe();
-    return () => {
-      supabase.removeChannel(ch);
-    };
-  }, [showCompleted]);
 
   return (
     <div

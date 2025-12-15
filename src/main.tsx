@@ -13,16 +13,19 @@ import "leaflet/dist/leaflet.css";
 
 registerSW();
 
-const router = createBrowserRouter([
-  { path: "/", element: <App /> },
-  { path: "/login", element: <Login /> },
-  { path: "/admin/claims", element: <AdminClaims /> },
-  { path: "/admin/claims/new", element: <AdminNewClaim /> },
-  { path: "/my-claims", element: <MyClaims /> },
-  { path: "/claim/:id", element: <ClaimDetail /> },
-], {
-  basename: "/CipherDispatch"
-});
+const router = createBrowserRouter(
+  [
+    { path: "/", element: <App /> },
+    { path: "/login", element: <Login /> },
+    { path: "/admin/claims", element: <AdminClaims /> },
+    { path: "/admin/claims/new", element: <AdminNewClaim /> },
+    { path: "/my-claims", element: <MyClaims /> },
+    { path: "/claim/:id", element: <ClaimDetail /> },
+  ],
+  {
+    basename: "/CipherDispatch",
+  }
+);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
