@@ -1,6 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { getFirmColor } from '../../constants/firmColors';
+
+interface Appraiser {
+  user_id: string;
+  full_name: string;
+}
 
 interface Claim {
   id: string;
@@ -29,6 +34,18 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
   const [draggedClaimId, setDraggedClaimId] = useState<string | null>(null);
   const [selectedDay, setSelectedDay] = useState<{ date: string; claims: Claim[] } | null>(null);
 
+  // Pending drop state for scheduling modal
+  const [pendingDrop, setPendingDrop] = useState<string | null>(null);
+  const [pendingDate, setPendingDate] = useState<string | null>(null);
+
+  // Scheduling modal inputs
+  const [scheduleTime, setScheduleTime] = useState('09:00');
+  const [scheduleNotes, setScheduleNotes] = useState('');
+  const [selectedAppraiser, setSelectedAppraiser] = useState('');
+
+  // Appraisers list
+  const [appraisers, setAppraisers] = useState<Appraiser[]>([]);
+
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
@@ -36,6 +53,23 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
+
+  // Fetch appraisers on component mount
+  useEffect(() => {
+    const fetchAppraisers = async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, full_name')
+        .eq('role', 'appraiser')
+        .order('full_name');
+
+      if (!error && data) {
+        setAppraisers(data);
+      }
+    };
+
+    fetchAppraisers();
+  }, []);
 
   // Separate scheduled and unscheduled claims
   const scheduledClaims = claims.filter(c => c.appointment_start);
@@ -69,33 +103,68 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
     e.dataTransfer.dropEffect = 'move';
   };
 
-  const handleCalendarDrop = async (e: React.DragEvent, dateStr: string) => {
+  const handleCalendarDrop = (e: React.DragEvent, dateStr: string) => {
     e.preventDefault();
     e.stopPropagation();
 
     const claimId = e.dataTransfer.getData('text/claim-id');
     if (!claimId) return;
 
-    // Set default time to 9:00 AM
-    const appointmentDate = new Date(dateStr + 'T09:00:00');
-    const appointmentEnd = new Date(appointmentDate);
+    // Instead of updating immediately, open the scheduling modal
+    setPendingDrop(claimId);
+    setPendingDate(dateStr);
+    setScheduleTime('09:00');
+    setScheduleNotes('');
+    setSelectedAppraiser('');
+  };
+
+  const handleSaveSchedule = async () => {
+    if (!pendingDrop || !pendingDate) return;
+
+    // Combine date and time into ISO timestamp
+    const appointmentStart = new Date(`${pendingDate}T${scheduleTime}:00`);
+    const appointmentEnd = new Date(appointmentStart);
     appointmentEnd.setHours(appointmentEnd.getHours() + 2);
 
     try {
+      const updateData: any = {
+        appointment_start: appointmentStart.toISOString(),
+        appointment_end: appointmentEnd.toISOString(),
+        status: 'SCHEDULED'
+      };
+
+      // Add notes if provided
+      if (scheduleNotes.trim()) {
+        updateData.notes = scheduleNotes.trim();
+      }
+
+      // Add appraiser if selected
+      if (selectedAppraiser) {
+        updateData.assigned_to = selectedAppraiser;
+      }
+
       const { error } = await supabase
         .from('claims')
-        .update({
-          appointment_start: appointmentDate.toISOString(),
-          appointment_end: appointmentEnd.toISOString(),
-          status: 'SCHEDULED'
-        })
-        .eq('id', claimId);
+        .update(updateData)
+        .eq('id', pendingDrop);
 
       if (error) throw error;
+
+      // Clear pending state and close modal
+      setPendingDrop(null);
+      setPendingDate(null);
       onClaimUpdate();
     } catch (error: any) {
       alert(`Error scheduling claim: ${error.message}`);
     }
+  };
+
+  const handleCancelSchedule = () => {
+    setPendingDrop(null);
+    setPendingDate(null);
+    setScheduleTime('09:00');
+    setScheduleNotes('');
+    setSelectedAppraiser('');
   };
 
   const handleBacklogDrop = async (e: React.DragEvent) => {
@@ -534,6 +603,204 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
                   No claims scheduled for this day
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Scheduling Modal */}
+      {pendingDrop && pendingDate && (
+        <div
+          onClick={handleCancelSchedule}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.8)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px'
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#1a202c',
+              border: '2px solid #4a5568',
+              borderRadius: '12px',
+              maxWidth: '500px',
+              width: '100%',
+              padding: '24px'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <h3 style={{ margin: 0, color: '#e2e8f0', fontSize: '20px', fontWeight: 'bold' }}>
+                📅 Schedule Appointment
+              </h3>
+              <button
+                onClick={handleCancelSchedule}
+                style={{
+                  background: 'transparent',
+                  color: '#a0aec0',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '24px',
+                  padding: 0,
+                  lineHeight: 1
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Date Display */}
+            <div style={{ marginBottom: '20px', padding: '12px', background: '#2d3748', borderRadius: '8px' }}>
+              <div style={{ fontSize: '14px', color: '#a0aec0', marginBottom: '4px' }}>
+                Selected Date
+              </div>
+              <div style={{ fontSize: '16px', color: '#e2e8f0', fontWeight: 'bold' }}>
+                {new Date(pendingDate).toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+              </div>
+            </div>
+
+            {/* Time Picker */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '14px', color: '#cbd5e1', marginBottom: '8px', fontWeight: '600' }}>
+                Appointment Time
+              </label>
+              <input
+                type="time"
+                value={scheduleTime}
+                onChange={(e) => setScheduleTime(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  fontSize: '16px',
+                  border: '2px solid #6b7280',
+                  borderRadius: '8px',
+                  background: '#475569',
+                  color: '#ffffff'
+                }}
+              />
+            </div>
+
+            {/* Appraiser Selector */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '14px', color: '#cbd5e1', marginBottom: '8px', fontWeight: '600' }}>
+                Assign Appraiser (Optional)
+              </label>
+              <select
+                value={selectedAppraiser}
+                onChange={(e) => setSelectedAppraiser(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  fontSize: '16px',
+                  border: '2px solid #6b7280',
+                  borderRadius: '8px',
+                  background: '#475569',
+                  color: '#ffffff',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="">-- Select Appraiser --</option>
+                {appraisers.map(appraiser => (
+                  <option key={appraiser.user_id} value={appraiser.user_id}>
+                    {appraiser.full_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Notes Textarea */}
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', fontSize: '14px', color: '#cbd5e1', marginBottom: '8px', fontWeight: '600' }}>
+                Additional Notes (Optional)
+              </label>
+              <textarea
+                value={scheduleNotes}
+                onChange={(e) => setScheduleNotes(e.target.value)}
+                placeholder="Add any notes about this appointment..."
+                rows={4}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  fontSize: '15px',
+                  border: '2px solid #6b7280',
+                  borderRadius: '8px',
+                  background: '#475569',
+                  color: '#ffffff',
+                  fontFamily: 'inherit',
+                  resize: 'vertical'
+                }}
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={handleSaveSchedule}
+                style={{
+                  flex: 1,
+                  padding: '14px 24px',
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontWeight: '600',
+                  fontSize: '16px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                }}
+              >
+                ✅ Save Schedule
+              </button>
+              <button
+                onClick={handleCancelSchedule}
+                style={{
+                  flex: 1,
+                  padding: '14px 24px',
+                  background: '#6b7280',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontWeight: '600',
+                  fontSize: '16px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#4b5563';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = '#6b7280';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                }}
+              >
+                ❌ Cancel
+              </button>
             </div>
           </div>
         </div>
