@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import imageCompression from "browser-image-compression";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { getSupabaseAuthz } from "../../lib/supabaseAuthz";
 
 export default function ClaimDetail() {
   const { id } = useParams();
@@ -11,6 +12,13 @@ export default function ClaimDetail() {
   const [photos, setPhotos] = useState<any[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [users, setUsers] = useState<any[]>([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editNotes, setEditNotes] = useState("");
+  const [editAddressLine1, setEditAddressLine1] = useState("");
+  const [editAddressLine2, setEditAddressLine2] = useState("");
+  const [editCity, setEditCity] = useState("");
+  const [editState, setEditState] = useState("");
+  const [editPostalCode, setEditPostalCode] = useState("");
 
   const load = async () => {
     const { data } = await supabase
@@ -81,6 +89,38 @@ export default function ClaimDetail() {
     const { error } = await supabase.from("claims").update(patch).eq("id", id);
     if (error) alert(error.message);
     else await load();
+  };
+
+  const startEditing = () => {
+    setEditNotes(claim?.notes || "");
+    setEditAddressLine1(claim?.address_line1 || "");
+    setEditAddressLine2(claim?.address_line2 || "");
+    setEditCity(claim?.city || "");
+    setEditState(claim?.state || "");
+    setEditPostalCode(claim?.postal_code || "");
+    setIsEditing(true);
+  };
+
+  const saveEdits = async () => {
+    await update({
+      notes: editNotes,
+      address_line1: editAddressLine1,
+      address_line2: editAddressLine2,
+      city: editCity,
+      state: editState,
+      postal_code: editPostalCode,
+    });
+    setIsEditing(false);
+  };
+
+  const cancelEdits = () => {
+    setIsEditing(false);
+  };
+
+  const markComplete = async () => {
+    if (confirm("Mark this claim as COMPLETED? This will notify the admin.")) {
+      await update({ status: "COMPLETED" });
+    }
   };
 
   const deleteClaim = async () => {
@@ -343,23 +383,68 @@ export default function ClaimDetail() {
         </div>
 
         {/* Accident Description */}
-        {claim.notes && (
+        {(claim.notes || isEditing) && (
           <div style={{ ...sectionStyle, marginBottom: "24px" }}>
-            <h4 style={headerStyle}>📋 Accident Description</h4>
-            <div
-              style={{
-                whiteSpace: "pre-wrap",
-                background: "#2d3748",
-                border: "1px solid #4b5563",
-                padding: "16px",
-                borderRadius: "8px",
-                color: "#ffffff",
-                fontSize: "16px",
-                lineHeight: "1.6",
-              }}
-            >
-              {claim.notes}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <h4 style={{ ...headerStyle, marginBottom: 0, paddingBottom: 0, border: "none" }}>📋 Accident Description</h4>
+              {!isEditing && (
+                <button
+                  onClick={startEditing}
+                  style={{
+                    padding: "8px 16px",
+                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "6px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                    transition: "all 0.2s",
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-1px)"}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
+                >
+                  ✏️ Edit
+                </button>
+              )}
             </div>
+            {isEditing ? (
+              <textarea
+                value={editNotes}
+                onChange={(e) => setEditNotes(e.target.value)}
+                placeholder="Enter accident description..."
+                style={{
+                  width: "100%",
+                  minHeight: "120px",
+                  padding: "12px",
+                  background: "#475569",
+                  border: "2px solid #6b7280",
+                  borderRadius: "8px",
+                  color: "#ffffff",
+                  fontSize: "16px",
+                  lineHeight: "1.6",
+                  fontFamily: "inherit",
+                  resize: "vertical",
+                }}
+                onFocus={(e) => e.target.style.borderColor = "#667eea"}
+                onBlur={(e) => e.target.style.borderColor = "#6b7280"}
+              />
+            ) : (
+              <div
+                style={{
+                  whiteSpace: "pre-wrap",
+                  background: "#2d3748",
+                  border: "1px solid #4b5563",
+                  padding: "16px",
+                  borderRadius: "8px",
+                  color: "#ffffff",
+                  fontSize: "16px",
+                  lineHeight: "1.6",
+                }}
+              >
+                {claim.notes || <span style={{ color: "#9ca3af", fontStyle: "italic" }}>No description provided</span>}
+              </div>
+            )}
           </div>
         )}
 
@@ -541,24 +626,245 @@ export default function ClaimDetail() {
               ⚠️ Permanent delete cannot be undone. All photos and data will be lost.
             </p>
           </div>
+
+          {/* Complete Claim Button for Appraisers */}
+          {(() => {
+            const authz = getSupabaseAuthz();
+            const userInfo = authz?.getCurrentUser();
+            const isAppraiser = userInfo?.role === "appraiser";
+            const hasPhotos = photos.length > 0;
+            const isCompleted = claim.status === "COMPLETED";
+
+            return isAppraiser && hasPhotos && !isCompleted ? (
+              <div style={{ marginTop: "24px", paddingTop: "24px", borderTop: "2px solid #4b5563" }}>
+                <div style={labelStyle}>Ready to Submit?</div>
+                <button
+                  onClick={markComplete}
+                  style={{
+                    width: "100%",
+                    padding: "16px 24px",
+                    background: "linear-gradient(135deg, #4CAF50 0%, #45a049 100%)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "8px",
+                    fontWeight: "600",
+                    fontSize: "18px",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                    boxShadow: "0 4px 6px rgba(0,0,0,0.3)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "translateY(-2px)";
+                    e.currentTarget.style.boxShadow = "0 6px 12px rgba(0,0,0,0.4)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow = "0 4px 6px rgba(0,0,0,0.3)";
+                  }}
+                >
+                  ✅ Mark Claim as Complete
+                </button>
+                <p style={{ fontSize: "13px", color: "#cbd5e1", marginTop: "8px", fontStyle: "italic", textAlign: "center" }}>
+                  This will notify the admin that you've finished this claim
+                </p>
+              </div>
+            ) : null;
+          })()}
         </div>
 
         {/* Location & Map */}
         <div style={sectionStyle}>
           <h4 style={headerStyle}>📍 Location</h4>
-          <div style={{ marginBottom: "16px" }}>
-            <div style={labelStyle}>Street Address</div>
-            <div style={valueStyle}>
-              {claim.address_line1}
-              {claim.address_line2 && <>, {claim.address_line2}</>}
+
+          {isEditing ? (
+            <div style={{ marginBottom: "20px" }}>
+              <div style={{ marginBottom: "16px" }}>
+                <div style={labelStyle}>Address Line 1</div>
+                <input
+                  type="text"
+                  value={editAddressLine1}
+                  onChange={(e) => setEditAddressLine1(e.target.value)}
+                  placeholder="Street address"
+                  style={{
+                    width: "100%",
+                    padding: "12px 16px",
+                    fontSize: "17px",
+                    border: "2px solid #6b7280",
+                    borderRadius: "8px",
+                    background: "#475569",
+                    color: "#ffffff",
+                    transition: "border-color 0.2s",
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = "#667eea"}
+                  onBlur={(e) => e.target.style.borderColor = "#6b7280"}
+                />
+              </div>
+              <div style={{ marginBottom: "16px" }}>
+                <div style={labelStyle}>Address Line 2 (Optional)</div>
+                <input
+                  type="text"
+                  value={editAddressLine2}
+                  onChange={(e) => setEditAddressLine2(e.target.value)}
+                  placeholder="Apt, suite, etc."
+                  style={{
+                    width: "100%",
+                    padding: "12px 16px",
+                    fontSize: "17px",
+                    border: "2px solid #6b7280",
+                    borderRadius: "8px",
+                    background: "#475569",
+                    color: "#ffffff",
+                    transition: "border-color 0.2s",
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = "#667eea"}
+                  onBlur={(e) => e.target.style.borderColor = "#6b7280"}
+                />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: "12px" }}>
+                <div>
+                  <div style={labelStyle}>City</div>
+                  <input
+                    type="text"
+                    value={editCity}
+                    onChange={(e) => setEditCity(e.target.value)}
+                    placeholder="City"
+                    style={{
+                      width: "100%",
+                      padding: "12px 16px",
+                      fontSize: "17px",
+                      border: "2px solid #6b7280",
+                      borderRadius: "8px",
+                      background: "#475569",
+                      color: "#ffffff",
+                      transition: "border-color 0.2s",
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = "#667eea"}
+                    onBlur={(e) => e.target.style.borderColor = "#6b7280"}
+                  />
+                </div>
+                <div>
+                  <div style={labelStyle}>State</div>
+                  <input
+                    type="text"
+                    value={editState}
+                    onChange={(e) => setEditState(e.target.value)}
+                    placeholder="State"
+                    style={{
+                      width: "100%",
+                      padding: "12px 16px",
+                      fontSize: "17px",
+                      border: "2px solid #6b7280",
+                      borderRadius: "8px",
+                      background: "#475569",
+                      color: "#ffffff",
+                      transition: "border-color 0.2s",
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = "#667eea"}
+                    onBlur={(e) => e.target.style.borderColor = "#6b7280"}
+                  />
+                </div>
+                <div>
+                  <div style={labelStyle}>ZIP</div>
+                  <input
+                    type="text"
+                    value={editPostalCode}
+                    onChange={(e) => setEditPostalCode(e.target.value)}
+                    placeholder="ZIP"
+                    style={{
+                      width: "100%",
+                      padding: "12px 16px",
+                      fontSize: "17px",
+                      border: "2px solid #6b7280",
+                      borderRadius: "8px",
+                      background: "#475569",
+                      color: "#ffffff",
+                      transition: "border-color 0.2s",
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = "#667eea"}
+                    onBlur={(e) => e.target.style.borderColor = "#6b7280"}
+                  />
+                </div>
+              </div>
             </div>
-          </div>
-          <div style={{ marginBottom: "20px" }}>
-            <div style={labelStyle}>City, State, ZIP</div>
-            <div style={valueStyle}>
-              {claim.city}, {claim.state} {claim.postal_code}
+          ) : (
+            <>
+              <div style={{ marginBottom: "16px" }}>
+                <div style={labelStyle}>Street Address</div>
+                <div style={valueStyle}>
+                  {claim.address_line1}
+                  {claim.address_line2 && <>, {claim.address_line2}</>}
+                </div>
+              </div>
+              <div style={{ marginBottom: "20px" }}>
+                <div style={labelStyle}>City, State, ZIP</div>
+                <div style={valueStyle}>
+                  {claim.city}, {claim.state} {claim.postal_code}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Save/Cancel Buttons in Edit Mode */}
+          {isEditing && (
+            <div style={{ display: "flex", gap: "12px", marginBottom: "20px", flexWrap: "wrap" }}>
+              <button
+                onClick={saveEdits}
+                style={{
+                  flex: "1",
+                  minWidth: "150px",
+                  padding: "12px 24px",
+                  background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontWeight: "600",
+                  fontSize: "16px",
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-1px)";
+                  e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.3)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
+                }}
+              >
+                ✅ Save Changes
+              </button>
+              <button
+                onClick={cancelEdits}
+                style={{
+                  flex: "1",
+                  minWidth: "150px",
+                  padding: "12px 24px",
+                  background: "#6b7280",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontWeight: "600",
+                  fontSize: "16px",
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#4b5563";
+                  e.currentTarget.style.transform = "translateY(-1px)";
+                  e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.3)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "#6b7280";
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
+                }}
+              >
+                ❌ Cancel
+              </button>
             </div>
-          </div>
+          )}
 
           {claim.lat && claim.lng ? (
             <div
