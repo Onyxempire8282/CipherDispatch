@@ -159,119 +159,203 @@ export default function ClaimDetail() {
     window.open(`https://www.google.com/maps?q=${q}`, "_blank");
   };
 
+  const sectionStyle = {
+    background: "#2d3748",
+    border: "1px solid #4a5568",
+    borderRadius: "12px",
+    padding: "24px",
+    boxShadow: "0 4px 6px rgba(0,0,0,0.3)",
+  };
+
+  const headerStyle = {
+    fontSize: "20px",
+    fontWeight: "bold",
+    color: "#e2e8f0",
+    marginBottom: "16px",
+    paddingBottom: "12px",
+    borderBottom: "2px solid #4a5568",
+  };
+
+  const labelStyle = {
+    fontSize: "14px",
+    fontWeight: "600",
+    color: "#a0aec0",
+    marginBottom: "4px",
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.5px",
+  };
+
+  const valueStyle = {
+    fontSize: "16px",
+    color: "#e2e8f0",
+    marginBottom: "12px",
+  };
+
   return (
     <div
       style={{
         minHeight: "100vh",
-        background: "linear-gradient(135deg, #1a202c 0%, #2d3748 100%)",
-        padding: 16,
+        background: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)",
+        padding: "24px 16px",
       }}
     >
       <div
         style={{
-          maxWidth: 1200,
+          maxWidth: "1400px",
           margin: "0 auto",
-          display: "grid",
-          gap: 12,
         }}
       >
+        {/* Header Bar */}
         <div
           style={{
+            ...sectionStyle,
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: 16,
-            background: "#2d3748",
-            border: "1px solid #4a5568",
-            padding: 16,
-            borderRadius: 8,
+            marginBottom: "24px",
+            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            borderColor: "#667eea",
           }}
         >
-          <h3 style={{ margin: 0, color: "#e2e8f0" }}>
-            Claim {claim.claim_number}
-          </h3>
-          <div style={{ display: "flex", gap: 8 }}>
+          <div>
+            <h2 style={{ margin: 0, color: "white", fontSize: "28px", fontWeight: "bold" }}>
+              Claim #{claim.claim_number}
+            </h2>
+            <p style={{ margin: "4px 0 0 0", color: "rgba(255,255,255,0.9)", fontSize: "16px" }}>
+              {claim.customer_name}
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: "12px" }}>
             <Link
               to="/admin/claims"
               style={{
-                padding: "8px 16px",
-                background: "#4a5568",
+                padding: "10px 20px",
+                background: "rgba(255,255,255,0.2)",
                 color: "white",
                 textDecoration: "none",
-                borderRadius: 4,
-                fontWeight: "bold",
+                borderRadius: "8px",
+                fontWeight: "600",
+                fontSize: "15px",
+                backdropFilter: "blur(10px)",
+                border: "1px solid rgba(255,255,255,0.3)",
+                transition: "all 0.2s",
               }}
+              onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.3)"}
+              onMouseLeave={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.2)"}
             >
               ← Back to Claims
             </Link>
             <Link
               to="/"
               style={{
-                padding: "8px 16px",
-                background: "#6c757d",
+                padding: "10px 20px",
+                background: "rgba(255,255,255,0.2)",
                 color: "white",
                 textDecoration: "none",
-                borderRadius: 4,
-                fontWeight: "bold",
+                borderRadius: "8px",
+                fontWeight: "600",
+                fontSize: "15px",
+                backdropFilter: "blur(10px)",
+                border: "1px solid rgba(255,255,255,0.3)",
+                transition: "all 0.2s",
               }}
+              onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.3)"}
+              onMouseLeave={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.2)"}
             >
               ← Home
             </Link>
           </div>
         </div>
 
-        <div>
-          <h4>Customer Information</h4>
-          <div>
-            <strong>Name:</strong> {claim.customer_name}
+        {/* Main Content Grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", marginBottom: "24px" }}>
+          {/* Customer Information */}
+          <div style={sectionStyle}>
+            <h4 style={headerStyle}>👤 Customer Information</h4>
+            <div style={{ marginBottom: "16px" }}>
+              <div style={labelStyle}>Name</div>
+              <div style={valueStyle}>{claim.customer_name}</div>
+            </div>
+            {claim.phone && (
+              <div style={{ marginBottom: "16px" }}>
+                <div style={labelStyle}>Phone</div>
+                <a
+                  href={`tel:${claim.phone}`}
+                  style={{
+                    fontSize: "16px",
+                    color: "#667eea",
+                    textDecoration: "none",
+                    fontWeight: "600",
+                  }}
+                >
+                  📞 {claim.phone}
+                </a>
+              </div>
+            )}
+            {claim.email && (
+              <div style={{ marginBottom: "16px" }}>
+                <div style={labelStyle}>Email</div>
+                <a
+                  href={`mailto:${claim.email}`}
+                  style={{
+                    fontSize: "16px",
+                    color: "#667eea",
+                    textDecoration: "none",
+                    fontWeight: "600",
+                  }}
+                >
+                  ✉️ {claim.email}
+                </a>
+              </div>
+            )}
           </div>
-          {claim.phone && (
-            <div>
-              <strong>Phone:</strong>{" "}
-              <a href={`tel:${claim.phone}`}>{claim.phone}</a>
+
+          {/* Vehicle Information */}
+          <div style={sectionStyle}>
+            <h4 style={headerStyle}>🚗 Vehicle Information</h4>
+            {claim.vin && (
+              <div style={{ marginBottom: "16px" }}>
+                <div style={labelStyle}>VIN</div>
+                <div style={{ ...valueStyle, fontFamily: "monospace", fontSize: "15px" }}>{claim.vin}</div>
+              </div>
+            )}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
+              {claim.vehicle_year && (
+                <div>
+                  <div style={labelStyle}>Year</div>
+                  <div style={valueStyle}>{claim.vehicle_year}</div>
+                </div>
+              )}
+              {claim.vehicle_make && (
+                <div>
+                  <div style={labelStyle}>Make</div>
+                  <div style={valueStyle}>{claim.vehicle_make}</div>
+                </div>
+              )}
+              {claim.vehicle_model && (
+                <div>
+                  <div style={labelStyle}>Model</div>
+                  <div style={valueStyle}>{claim.vehicle_model}</div>
+                </div>
+              )}
             </div>
-          )}
-          {claim.email && (
-            <div>
-              <strong>Email:</strong>{" "}
-              <a href={`mailto:${claim.email}`}>{claim.email}</a>
-            </div>
-          )}
+          </div>
         </div>
 
-        <div>
-          <h4>Vehicle Information</h4>
-          {claim.vin && (
-            <div>
-              <strong>VIN:</strong> {claim.vin}
-            </div>
-          )}
-          {claim.vehicle_year && (
-            <div>
-              <strong>Year:</strong> {claim.vehicle_year}
-            </div>
-          )}
-          {claim.vehicle_make && (
-            <div>
-              <strong>Make:</strong> {claim.vehicle_make}
-            </div>
-          )}
-          {claim.vehicle_model && (
-            <div>
-              <strong>Model:</strong> {claim.vehicle_model}
-            </div>
-          )}
-        </div>
-
+        {/* Accident Description */}
         {claim.notes && (
-          <div>
-            <h4>Accident Description</h4>
+          <div style={{ ...sectionStyle, marginBottom: "24px" }}>
+            <h4 style={headerStyle}>📋 Accident Description</h4>
             <div
               style={{
                 whiteSpace: "pre-wrap",
-                background: "#f5f5f5",
-                padding: 12,
-                borderRadius: 4,
+                background: "#1a202c",
+                border: "1px solid #4a5568",
+                padding: "16px",
+                borderRadius: "8px",
+                color: "#e2e8f0",
+                fontSize: "15px",
+                lineHeight: "1.6",
               }}
             >
               {claim.notes}
