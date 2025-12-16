@@ -29,9 +29,12 @@ type Claim = {
   } | null;
 };
 
+type ClaimStatus = "UNASSIGNED" | "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELED" | "ALL";
+
 export default function AdminClaims() {
   const [searchParams] = useSearchParams();
   const [rows, setRows] = useState<Claim[]>([]);
+  const [allClaims, setAllClaims] = useState<Claim[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [authzInitialized, setAuthzInitialized] = useState(false);
@@ -39,6 +42,7 @@ export default function AdminClaims() {
     searchParams.get("archived") === "true"
   );
   const [showCalendar, setShowCalendar] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState<ClaimStatus>("ALL");
 
   const initializeAuth = async () => {
     try {
@@ -113,13 +117,30 @@ export default function AdminClaims() {
       }
 
       console.log(`Loaded ${data?.length || 0} claims for ${userInfo?.role}`);
-      setRows((data as Claim[]) || []);
+      const claims = (data as Claim[]) || [];
+      setAllClaims(claims);
+      applyFilters(claims);
     } catch (err: any) {
       console.error("Error in load function:", err);
       setError(err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const applyFilters = (claims: Claim[]) => {
+    let filtered = [...claims];
+
+    // Apply status filter
+    if (selectedStatus !== "ALL") {
+      if (selectedStatus === "UNASSIGNED") {
+        filtered = filtered.filter(claim => !claim.assigned_to);
+      } else {
+        filtered = filtered.filter(claim => claim.status === selectedStatus);
+      }
+    }
+
+    setRows(filtered);
   };
 
   useEffect(() => {
@@ -151,6 +172,13 @@ export default function AdminClaims() {
       }
     }
   }, [showArchived, authzInitialized]);
+
+  // Re-apply filters when filter state changes
+  useEffect(() => {
+    if (allClaims.length > 0) {
+      applyFilters(allClaims);
+    }
+  }, [selectedStatus, allClaims]);
 
   // Show loading state
   if (loading) {
@@ -217,14 +245,36 @@ export default function AdminClaims() {
     );
   }
 
-  // Calculate status counts
-  const statusCounts = rows.reduce((acc, claim) => {
+  // Calculate status counts from ALL claims (not filtered)
+  const statusCounts = allClaims.reduce((acc, claim) => {
     const status = claim.status || "UNASSIGNED";
     acc[status] = (acc[status] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
-  const unassignedCount = rows.filter((r) => !r.assigned_to).length;
+  const unassignedCount = allClaims.filter((r) => !r.assigned_to).length;
+
+  // Group claims by firm
+  const groupClaimsByFirm = () => {
+    const groups: Record<string, Claim[]> = {};
+
+    rows.forEach(claim => {
+      const firmName = claim.firm_name || "No Firm";
+      if (!groups[firmName]) {
+        groups[firmName] = [];
+      }
+      groups[firmName].push(claim);
+    });
+
+    return groups;
+  };
+
+  const firmGroups = groupClaimsByFirm();
+
+  // Calculate pending claims per firm (exclude COMPLETED and CANCELED)
+  const getPendingCountForFirm = (claims: Claim[]) => {
+    return claims.filter(c => c.status !== "COMPLETED" && c.status !== "CANCELED").length;
+  };
 
   return (
     <div
@@ -234,101 +284,169 @@ export default function AdminClaims() {
         padding: 16,
       }}
     >
-      {/* Status Summary Cards */}
-      {!showArchived && (
+      {/* Status Summary Pills */}
+      {!showArchived && !showCalendar && (
         <div
           style={{
             display: "flex",
-            gap: 16,
+            gap: 12,
             marginBottom: 24,
-            justifyContent: "center",
             flexWrap: "wrap",
+            justifyContent: "center",
           }}
         >
-          <div
+          <button
+            onClick={() => setSelectedStatus("ALL")}
             style={{
-              background: "#2d3748",
-              border: "1px solid #4a5568",
-              borderLeft: "4px solid #2196F3",
+              padding: "12px 20px",
+              background: selectedStatus === "ALL" ? "#667eea" : "#374151",
+              color: "white",
+              border: selectedStatus === "ALL" ? "2px solid #818cf8" : "2px solid transparent",
               borderRadius: 8,
-              padding: "16px 24px",
-              minWidth: 150,
-              textAlign: "center",
+              fontWeight: "bold",
+              cursor: "pointer",
+              fontSize: "14px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              transition: "all 0.2s",
+              minWidth: "120px",
             }}
           >
-            <div style={{ fontSize: 28, fontWeight: "bold", color: "#2196F3" }}>
-              {statusCounts.SCHEDULED || 0}
+            <div style={{ fontSize: "20px", marginBottom: 4 }}>
+              {allClaims.length}
             </div>
-            <div style={{ fontSize: 12, color: "#a0aec0", marginTop: 4 }}>
-              📅 Scheduled
-            </div>
-          </div>
-          <div
+            <div style={{ fontSize: "12px", opacity: 0.9 }}>All Active</div>
+          </button>
+          <button
+            onClick={() => setSelectedStatus("UNASSIGNED")}
             style={{
-              background: "#2d3748",
-              border: "1px solid #4a5568",
-              borderLeft: "4px solid #FF9800",
+              padding: "12px 20px",
+              background: selectedStatus === "UNASSIGNED" ? "#9E9E9E" : "#374151",
+              color: "white",
+              border: selectedStatus === "UNASSIGNED" ? "2px solid #bdbdbd" : "2px solid transparent",
               borderRadius: 8,
-              padding: "16px 24px",
-              minWidth: 150,
-              textAlign: "center",
+              fontWeight: "bold",
+              cursor: "pointer",
+              fontSize: "14px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              transition: "all 0.2s",
+              minWidth: "120px",
             }}
           >
-            <div style={{ fontSize: 28, fontWeight: "bold", color: "#FF9800" }}>
-              {statusCounts.IN_PROGRESS || 0}
-            </div>
-            <div style={{ fontSize: 12, color: "#a0aec0", marginTop: 4 }}>
-              🔧 In Progress
-            </div>
-          </div>
-          <div
-            style={{
-              background: "#2d3748",
-              border: "1px solid #4a5568",
-              borderLeft: "4px solid #9E9E9E",
-              borderRadius: 8,
-              padding: "16px 24px",
-              minWidth: 150,
-              textAlign: "center",
-            }}
-          >
-            <div style={{ fontSize: 28, fontWeight: "bold", color: "#9E9E9E" }}>
+            <div style={{ fontSize: "20px", marginBottom: 4 }}>
               {unassignedCount}
             </div>
-            <div style={{ fontSize: 12, color: "#a0aec0", marginTop: 4 }}>
-              👤 Unassigned
-            </div>
-          </div>
-          <div
+            <div style={{ fontSize: "12px", opacity: 0.9 }}>Unassigned</div>
+          </button>
+          <button
+            onClick={() => setSelectedStatus("SCHEDULED")}
             style={{
-              background: "#2d3748",
-              border: "1px solid #4a5568",
-              borderLeft: "4px solid #4CAF50",
+              padding: "12px 20px",
+              background: selectedStatus === "SCHEDULED" ? "#2196F3" : "#374151",
+              color: "white",
+              border: selectedStatus === "SCHEDULED" ? "2px solid #64b5f6" : "2px solid transparent",
               borderRadius: 8,
-              padding: "16px 24px",
-              minWidth: 150,
-              textAlign: "center",
+              fontWeight: "bold",
+              cursor: "pointer",
+              fontSize: "14px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              transition: "all 0.2s",
+              minWidth: "120px",
             }}
           >
-            <div style={{ fontSize: 28, fontWeight: "bold", color: "#4CAF50" }}>
+            <div style={{ fontSize: "20px", marginBottom: 4 }}>
+              {statusCounts.SCHEDULED || 0}
+            </div>
+            <div style={{ fontSize: "12px", opacity: 0.9 }}>Scheduled</div>
+          </button>
+          <button
+            onClick={() => setSelectedStatus("IN_PROGRESS")}
+            style={{
+              padding: "12px 20px",
+              background: selectedStatus === "IN_PROGRESS" ? "#FF9800" : "#374151",
+              color: "white",
+              border: selectedStatus === "IN_PROGRESS" ? "2px solid #ffb74d" : "2px solid transparent",
+              borderRadius: 8,
+              fontWeight: "bold",
+              cursor: "pointer",
+              fontSize: "14px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              transition: "all 0.2s",
+              minWidth: "120px",
+            }}
+          >
+            <div style={{ fontSize: "20px", marginBottom: 4 }}>
+              {statusCounts.IN_PROGRESS || 0}
+            </div>
+            <div style={{ fontSize: "12px", opacity: 0.9 }}>In Progress</div>
+          </button>
+          <button
+            onClick={() => setSelectedStatus("COMPLETED")}
+            style={{
+              padding: "12px 20px",
+              background: selectedStatus === "COMPLETED" ? "#4CAF50" : "#374151",
+              color: "white",
+              border: selectedStatus === "COMPLETED" ? "2px solid #81c784" : "2px solid transparent",
+              borderRadius: 8,
+              fontWeight: "bold",
+              cursor: "pointer",
+              fontSize: "14px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              transition: "all 0.2s",
+              minWidth: "120px",
+            }}
+          >
+            <div style={{ fontSize: "20px", marginBottom: 4 }}>
               {statusCounts.COMPLETED || 0}
             </div>
-            <div style={{ fontSize: 12, color: "#a0aec0", marginTop: 4 }}>
-              ✅ Completed
+            <div style={{ fontSize: "12px", opacity: 0.9 }}>Completed</div>
+          </button>
+          <button
+            onClick={() => setSelectedStatus("CANCELED")}
+            style={{
+              padding: "12px 20px",
+              background: selectedStatus === "CANCELED" ? "#ef4444" : "#374151",
+              color: "white",
+              border: selectedStatus === "CANCELED" ? "2px solid #f87171" : "2px solid transparent",
+              borderRadius: 8,
+              fontWeight: "bold",
+              cursor: "pointer",
+              fontSize: "14px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              transition: "all 0.2s",
+              minWidth: "120px",
+            }}
+          >
+            <div style={{ fontSize: "20px", marginBottom: 4 }}>
+              {statusCounts.CANCELED || 0}
             </div>
-          </div>
+            <div style={{ fontSize: "12px", opacity: 0.9 }}>Canceled</div>
+          </button>
         </div>
       )}
 
       <div
         style={{
           display: "flex",
+          flexWrap: "wrap",
           justifyContent: "space-between",
           alignItems: "center",
           marginBottom: 24,
+          gap: 16,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
           <Link
             to="/"
             style={{
@@ -346,11 +464,12 @@ export default function AdminClaims() {
             {showCalendar ? "Monthly Scheduling Calendar" : showArchived ? "Archived Claims" : "Active Claims"}
           </h3>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button
             onClick={() => {
               setShowCalendar(!showCalendar);
               if (showArchived) setShowArchived(false);
+              setSelectedStatus("ALL");
             }}
             style={{
               padding: "8px 16px",
@@ -368,6 +487,7 @@ export default function AdminClaims() {
             onClick={() => {
               setShowArchived(!showArchived);
               if (showCalendar) setShowCalendar(false);
+              setSelectedStatus("ALL");
             }}
             style={{
               padding: "8px 16px",
@@ -416,16 +536,79 @@ export default function AdminClaims() {
       {/* Calendar View */}
       {showCalendar && !showArchived ? (
         <MonthlyCalendar claims={rows} onClaimUpdate={load} />
+      ) : rows.length === 0 ? (
+        <div style={{ textAlign: "center", padding: 48, color: "#a0aec0" }}>
+          No claims found matching your filters.
+        </div>
       ) : (
-        /* List View */
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-            gap: 16,
-          }}
-        >
-        {rows.map((r) => (
+        /* List View - Grouped by Firm */
+        <div>
+          {Object.entries(firmGroups).map(([firmName, claims]) => {
+            const pendingCount = getPendingCountForFirm(claims);
+
+            return (
+              <div key={firmName} style={{ marginBottom: 32 }}>
+                {/* Firm Header */}
+                <div
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: "bold",
+                    color: "#e2e8f0",
+                    marginBottom: 16,
+                    paddingBottom: 8,
+                    borderBottom: `3px solid ${getFirmColor(firmName)}`,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <span
+                      style={{
+                        display: "inline-block",
+                        width: 12,
+                        height: 12,
+                        borderRadius: "50%",
+                        background: getFirmColor(firmName),
+                      }}
+                    />
+                    <span>{firmName}</span>
+                  </div>
+                  {pendingCount > 0 && (
+                    <span
+                      style={{
+                        fontSize: "14px",
+                        opacity: 0.7,
+                        fontWeight: "normal",
+                        background: "#374151",
+                        padding: "4px 12px",
+                        borderRadius: 12,
+                      }}
+                    >
+                      {pendingCount} pending
+                    </span>
+                  )}
+                  <span
+                    style={{
+                      fontSize: "14px",
+                      opacity: 0.7,
+                      fontWeight: "normal",
+                    }}
+                  >
+                    ({claims.length} total)
+                  </span>
+                </div>
+
+                {/* Claims Grid */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+                    gap: 16,
+                  }}
+                >
+                  {claims.map((r) => (
           <Link
             key={r.id}
             to={`/claim/${r.id}`}
@@ -616,12 +799,11 @@ export default function AdminClaims() {
               </div>
             </div>
           </Link>
-        ))}
-        {rows.length === 0 && (
-          <div style={{ textAlign: "center", padding: 48, color: "#a0aec0" }}>
-            No claims yet. Create your first claim!
-          </div>
-        )}
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
