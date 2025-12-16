@@ -160,34 +160,34 @@ export default function ClaimDetail() {
   };
 
   const sectionStyle = {
-    background: "#2d3748",
-    border: "1px solid #4a5568",
+    background: "#374151",
+    border: "1px solid #4b5563",
     borderRadius: "12px",
     padding: "24px",
     boxShadow: "0 4px 6px rgba(0,0,0,0.3)",
   };
 
   const headerStyle = {
-    fontSize: "20px",
+    fontSize: "22px",
     fontWeight: "bold",
-    color: "#e2e8f0",
+    color: "#f8fafc",
     marginBottom: "16px",
     paddingBottom: "12px",
-    borderBottom: "2px solid #4a5568",
+    borderBottom: "2px solid #4b5563",
   };
 
   const labelStyle = {
-    fontSize: "14px",
+    fontSize: "15px",
     fontWeight: "600",
-    color: "#a0aec0",
-    marginBottom: "4px",
+    color: "#cbd5e1",
+    marginBottom: "6px",
     textTransform: "uppercase" as const,
     letterSpacing: "0.5px",
   };
 
   const valueStyle = {
-    fontSize: "16px",
-    color: "#e2e8f0",
+    fontSize: "17px",
+    color: "#ffffff",
     marginBottom: "12px",
   };
 
@@ -282,8 +282,8 @@ export default function ClaimDetail() {
                 <a
                   href={`tel:${claim.phone}`}
                   style={{
-                    fontSize: "16px",
-                    color: "#667eea",
+                    fontSize: "17px",
+                    color: "#818cf8",
                     textDecoration: "none",
                     fontWeight: "600",
                   }}
@@ -298,8 +298,8 @@ export default function ClaimDetail() {
                 <a
                   href={`mailto:${claim.email}`}
                   style={{
-                    fontSize: "16px",
-                    color: "#667eea",
+                    fontSize: "17px",
+                    color: "#818cf8",
                     textDecoration: "none",
                     fontWeight: "600",
                   }}
@@ -316,7 +316,7 @@ export default function ClaimDetail() {
             {claim.vin && (
               <div style={{ marginBottom: "16px" }}>
                 <div style={labelStyle}>VIN</div>
-                <div style={{ ...valueStyle, fontFamily: "monospace", fontSize: "15px" }}>{claim.vin}</div>
+                <div style={{ ...valueStyle, fontFamily: "monospace", fontSize: "16px" }}>{claim.vin}</div>
               </div>
             )}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
@@ -349,12 +349,12 @@ export default function ClaimDetail() {
             <div
               style={{
                 whiteSpace: "pre-wrap",
-                background: "#1a202c",
-                border: "1px solid #4a5568",
+                background: "#2d3748",
+                border: "1px solid #4b5563",
                 padding: "16px",
                 borderRadius: "8px",
-                color: "#e2e8f0",
-                fontSize: "15px",
+                color: "#ffffff",
+                fontSize: "16px",
                 lineHeight: "1.6",
               }}
             >
@@ -363,56 +363,91 @@ export default function ClaimDetail() {
           </div>
         )}
 
-        <div>
-          <h4>Appointment</h4>
-          <label>Appointment Start</label>
-          <input
-            type="datetime-local"
-            onChange={(e) =>
-              update({
-                appointment_start: new Date(e.target.value).toISOString(),
-              })
-            }
-          />
-          <label>Appointment End</label>
-          <input
-            type="datetime-local"
-            onChange={(e) =>
-              update({
-                appointment_end: new Date(e.target.value).toISOString(),
-              })
-            }
-          />
-        </div>
+        {/* Appointment and Assignment Section */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", marginBottom: "24px" }}>
+          {/* Appointment */}
+          <div style={sectionStyle}>
+            <h4 style={headerStyle}>📅 Appointment</h4>
+            <div style={{ marginBottom: "20px" }}>
+              <div style={labelStyle}>Start Date & Time</div>
+              <input
+                type="datetime-local"
+                defaultValue={
+                  claim.appointment_start
+                    ? new Date(claim.appointment_start).toISOString().slice(0, 16)
+                    : ""
+                }
+                onChange={(e) =>
+                  update({
+                    appointment_start: e.target.value ? new Date(e.target.value).toISOString() : null,
+                  })
+                }
+                style={{
+                  width: "100%",
+                  padding: "12px 16px",
+                  fontSize: "17px",
+                  border: "2px solid #6b7280",
+                  borderRadius: "8px",
+                  background: "#475569",
+                  color: "#ffffff",
+                  transition: "border-color 0.2s",
+                }}
+                onFocus={(e) => e.target.style.borderColor = "#667eea"}
+                onBlur={(e) => e.target.style.borderColor = "#6b7280"}
+              />
+            </div>
+            <div>
+              <div style={labelStyle}>End Date & Time</div>
+              <input
+                type="datetime-local"
+                defaultValue={
+                  claim.appointment_end
+                    ? new Date(claim.appointment_end).toISOString().slice(0, 16)
+                    : ""
+                }
+                onChange={(e) =>
+                  update({
+                    appointment_end: e.target.value ? new Date(e.target.value).toISOString() : null,
+                  })
+                }
+                style={{
+                  width: "100%",
+                  padding: "12px 16px",
+                  fontSize: "17px",
+                  border: "2px solid #6b7280",
+                  borderRadius: "8px",
+                  background: "#475569",
+                  color: "#ffffff",
+                  transition: "border-color 0.2s",
+                }}
+                onFocus={(e) => e.target.style.borderColor = "#667eea"}
+                onBlur={(e) => e.target.style.borderColor = "#6b7280"}
+              />
+            </div>
+          </div>
 
-        <div>
-          <h4>Assignment</h4>
-          <div style={{ marginBottom: 16 }}>
-            <label
-              style={{
-                display: "block",
-                marginBottom: 8,
-                fontWeight: "bold",
-                color: "#333",
-              }}
-            >
-              Assign to Appraiser:
-            </label>
+          {/* Assignment */}
+          <div style={sectionStyle}>
+            <h4 style={headerStyle}>👥 Assignment</h4>
+            <div style={labelStyle}>Assigned Appraiser</div>
             <select
               value={claim.assigned_to || ""}
               onChange={(e) =>
                 update({ assigned_to: e.target.value || null })
               }
               style={{
-                padding: 12,
-                fontSize: 16,
-                border: "1px solid #4a5568",
-                borderRadius: 6,
-                background: "#2d3748",
-                color: "#e2e8f0",
                 width: "100%",
-                maxWidth: 400,
+                padding: "12px 16px",
+                fontSize: "17px",
+                border: "2px solid #6b7280",
+                borderRadius: "8px",
+                background: "#475569",
+                color: "#ffffff",
+                cursor: "pointer",
+                transition: "border-color 0.2s",
               }}
+              onFocus={(e) => e.target.style.borderColor = "#667eea"}
+              onBlur={(e) => e.target.style.borderColor = "#6b7280"}
             >
               <option value="">Unassigned</option>
               {users.map((u) => (
@@ -424,16 +459,20 @@ export default function ClaimDetail() {
           </div>
         </div>
 
-        <div>
-          <h4>Status & Actions</h4>
-          <div style={{ marginBottom: 8 }}>
-            <strong>Current Status:</strong>{" "}
-            <span
+        {/* Status & Actions */}
+        <div style={sectionStyle}>
+          <h4 style={headerStyle}>⚡ Status & Actions</h4>
+
+          <div style={{ marginBottom: "24px" }}>
+            <div style={labelStyle}>Current Status</div>
+            <div
               style={{
-                display: "inline-block",
-                padding: "4px 12px",
-                borderRadius: 4,
-                fontSize: 14,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "12px 24px",
+                borderRadius: "8px",
+                fontSize: "17px",
                 fontWeight: "bold",
                 background:
                   claim.status === "COMPLETED"
@@ -446,120 +485,91 @@ export default function ClaimDetail() {
                     ? "#ef4444"
                     : "#9E9E9E",
                 color: "white",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
               }}
             >
-              {claim.status}
-            </span>
-          </div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button
-              onClick={() => update({ status: "SCHEDULED" })}
-              style={{
-                padding: "8px 16px",
-                background: "#2196F3",
-                color: "white",
-                border: "none",
-                borderRadius: 4,
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
-            >
-              📅 Mark Scheduled
-            </button>
-            <button
-              onClick={() => update({ status: "IN_PROGRESS" })}
-              style={{
-                padding: "8px 16px",
-                background: "#FF9800",
-                color: "white",
-                border: "none",
-                borderRadius: 4,
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
-            >
-              🔧 Start Work
-            </button>
-            <button
-              onClick={() => update({ status: "COMPLETED" })}
-              style={{
-                padding: "8px 16px",
-                background: "#4CAF50",
-                color: "white",
-                border: "none",
-                borderRadius: 4,
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
-            >
-              ✅ Mark Complete
-            </button>
-            <button
-              onClick={() => {
-                if (confirm("Cancel this claim? This will mark it as CANCELED and remove it from active claims.")) {
-                  update({ status: "CANCELED" });
-                }
-              }}
-              style={{
-                padding: "8px 16px",
-                background: "#ef4444",
-                color: "white",
-                border: "none",
-                borderRadius: 4,
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
-            >
-              ❌ Cancel Claim
-            </button>
+              {claim.status === "COMPLETED" && "✅"}
+              {claim.status === "IN_PROGRESS" && "🔧"}
+              {claim.status === "SCHEDULED" && "📅"}
+              {claim.status === "CANCELED" && "❌"}
+              {!claim.status && "📋"}
+              {" "}{claim.status || "NOT_STARTED"}
+            </div>
           </div>
 
-          <div
-            style={{
-              marginTop: 16,
-              paddingTop: 16,
-              borderTop: "2px solid #f0f0f0",
-            }}
-          >
-            <h5 style={{ color: "#dc3545", marginBottom: 8 }}>
-              ⚠️ Danger Zone
-            </h5>
-            <button
-              onClick={deleteClaim}
-              style={{
-                padding: "8px 16px",
-                background: "#dc3545",
-                color: "white",
-                border: "2px solid #c82333",
-                borderRadius: 4,
-                fontWeight: "bold",
-                cursor: "pointer",
+          <div style={{ marginBottom: "24px" }}>
+            <div style={labelStyle}>Update Status</div>
+            <select
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value === "DELETE") {
+                  deleteClaim();
+                } else if (value === "CANCELED") {
+                  if (confirm("Cancel this claim? This will mark it as CANCELED and remove it from active claims.")) {
+                    update({ status: "CANCELED" });
+                  }
+                } else if (value) {
+                  update({ status: value });
+                }
+                e.target.value = ""; // Reset dropdown
               }}
-              onMouseOver={(e) =>
-                (e.currentTarget.style.background = "#c82333")
-              }
-              onMouseOut={(e) => (e.currentTarget.style.background = "#dc3545")}
+              style={{
+                width: "100%",
+                padding: "12px 16px",
+                fontSize: "17px",
+                border: "2px solid #6b7280",
+                borderRadius: "8px",
+                background: "#475569",
+                color: "#ffffff",
+                cursor: "pointer",
+                fontWeight: "600",
+                transition: "border-color 0.2s",
+              }}
+              onFocus={(e) => e.target.style.borderColor = "#667eea"}
+              onBlur={(e) => e.target.style.borderColor = "#6b7280"}
             >
-              🗑️ Permanently Delete Claim
-            </button>
-            <p style={{ fontSize: 12, color: "#666", marginTop: 8 }}>
-              ⚠️ This action cannot be undone. All photos and data will be
-              permanently deleted.
+              <option value="">Choose an action...</option>
+              <option value="SCHEDULED">📅 Mark as Scheduled</option>
+              <option value="IN_PROGRESS">🔧 Start Work</option>
+              <option value="COMPLETED">✅ Mark as Complete</option>
+              <option value="CANCELED">❌ Cancel Claim</option>
+              <option value="DELETE" style={{ color: "#ef4444", fontWeight: "bold" }}>
+                🗑️ Permanently Delete Claim
+              </option>
+            </select>
+            <p style={{ fontSize: "14px", color: "#cbd5e1", marginTop: "8px", fontStyle: "italic" }}>
+              ⚠️ Permanent delete cannot be undone. All photos and data will be lost.
             </p>
           </div>
         </div>
 
-        <div>
-          <h4>Location</h4>
-          <div>
-            <strong>Address:</strong> {claim.address_line1}{" "}
-            {claim.address_line2 && `, ${claim.address_line2}`}
+        {/* Location & Map */}
+        <div style={sectionStyle}>
+          <h4 style={headerStyle}>📍 Location</h4>
+          <div style={{ marginBottom: "16px" }}>
+            <div style={labelStyle}>Street Address</div>
+            <div style={valueStyle}>
+              {claim.address_line1}
+              {claim.address_line2 && <>, {claim.address_line2}</>}
+            </div>
           </div>
-          <div>
-            {claim.city}, {claim.state} {claim.postal_code}
+          <div style={{ marginBottom: "20px" }}>
+            <div style={labelStyle}>City, State, ZIP</div>
+            <div style={valueStyle}>
+              {claim.city}, {claim.state} {claim.postal_code}
+            </div>
           </div>
+
           {claim.lat && claim.lng ? (
-            <div style={{ height: 300, marginTop: 8 }}>
+            <div
+              style={{
+                height: "350px",
+                borderRadius: "12px",
+                overflow: "hidden",
+                boxShadow: "0 4px 6px rgba(0,0,0,0.3)",
+                marginBottom: "16px",
+              }}
+            >
               <MapContainer
                 center={[claim.lat, claim.lng]}
                 zoom={15}
@@ -575,34 +585,79 @@ export default function ClaimDetail() {
               </MapContainer>
             </div>
           ) : (
-            <div>No coordinates yet</div>
+            <div
+              style={{
+                padding: "20px",
+                textAlign: "center",
+                background: "#2d3748",
+                borderRadius: "8px",
+                color: "#cbd5e1",
+                fontSize: "16px",
+                marginBottom: "16px",
+              }}
+            >
+              No coordinates available
+            </div>
           )}
-          <button onClick={openInMaps} style={{ marginTop: 8 }}>
-            Open in Google Maps
+
+          <button
+            onClick={openInMaps}
+            style={{
+              width: "100%",
+              padding: "12px 24px",
+              fontSize: "16px",
+              fontWeight: "600",
+              background: "#10b981",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              cursor: "pointer",
+              transition: "all 0.2s",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "#059669";
+              e.currentTarget.style.transform = "translateY(-1px)";
+              e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.3)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "#10b981";
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
+            }}
+          >
+            🗺️ Open in Google Maps
           </button>
         </div>
 
-        <div>
-          <h4>📸 Photos ({photos.length})</h4>
-          <div
-            style={{
-              marginBottom: 16,
-              display: "flex",
-              gap: 8,
-              flexWrap: "wrap",
-            }}
-          >
+        {/* Photos Section */}
+        <div style={sectionStyle}>
+          <h4 style={headerStyle}>📸 Photos ({photos.length})</h4>
+
+          <div style={{ display: "flex", gap: "12px", marginBottom: "24px", flexWrap: "wrap" }}>
             <label
               htmlFor="photo-upload"
               style={{
-                display: "inline-block",
-                padding: "12px 24px",
-                background: "#0066cc",
+                flex: "1",
+                minWidth: "200px",
+                padding: "14px 24px",
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
                 color: "white",
-                borderRadius: 6,
-                fontWeight: "bold",
+                borderRadius: "8px",
+                fontWeight: "600",
+                fontSize: "16px",
                 cursor: "pointer",
-                fontSize: 16,
+                textAlign: "center",
+                transition: "all 0.2s",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-1px)";
+                e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.3)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
               }}
             >
               📷 Take Photo
@@ -620,14 +675,28 @@ export default function ClaimDetail() {
             <label
               htmlFor="photo-gallery"
               style={{
-                display: "inline-block",
-                padding: "12px 24px",
-                background: "#4CAF50",
+                flex: "1",
+                minWidth: "200px",
+                padding: "14px 24px",
+                background: "#10b981",
                 color: "white",
-                borderRadius: 6,
-                fontWeight: "bold",
+                borderRadius: "8px",
+                fontWeight: "600",
+                fontSize: "16px",
                 cursor: "pointer",
-                fontSize: 16,
+                textAlign: "center",
+                transition: "all 0.2s",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#059669";
+                e.currentTarget.style.transform = "translateY(-1px)";
+                e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.3)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "#10b981";
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
               }}
             >
               🖼️ Choose from Gallery
@@ -640,25 +709,27 @@ export default function ClaimDetail() {
               style={{ display: "none" }}
               multiple
             />
-
-            <p
-              style={{
-                fontSize: 13,
-                color: "#666",
-                marginTop: 8,
-                width: "100%",
-              }}
-            >
-              💡 Tip: Photos are automatically compressed and optimized for
-              storage
-            </p>
           </div>
+
+          <p
+            style={{
+              fontSize: "15px",
+              color: "#cbd5e1",
+              marginBottom: "20px",
+              padding: "12px",
+              background: "#2d3748",
+              borderRadius: "8px",
+              borderLeft: "4px solid #667eea",
+            }}
+          >
+            💡 Tip: Photos are automatically compressed and optimized for storage
+          </p>
+
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-              gap: 8,
-              marginTop: 8,
+              gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+              gap: "16px",
             }}
           >
             {photos.map((p, index) => {
