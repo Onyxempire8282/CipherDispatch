@@ -105,13 +105,26 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
     const claimId = e.dataTransfer.getData('text/claim-id');
     if (!claimId) return;
 
+    // Find the claim to check if it's currently scheduled
+    const claim = claims.find(c => c.id === claimId);
+    if (!claim) {
+      alert('Claim not found');
+      return;
+    }
+
+    // If already unscheduled, no need to update
+    if (!claim.appointment_start) {
+      alert('Claim is already unscheduled');
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('claims')
         .update({
           appointment_start: null,
           appointment_end: null,
-          status: null
+          status: 'IN_PROGRESS'
         })
         .eq('id', claimId);
 
@@ -140,7 +153,7 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
         onDragEnd={handleDragEnd}
         onClick={(e) => {
           e.stopPropagation();
-          window.open(`/claim/${claim.id}`, '_blank');
+          window.open(`/CipherDispatch/claim/${claim.id}`, '_blank');
         }}
         style={{
           cursor: 'grab',
@@ -151,7 +164,8 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
           borderRadius: '4px',
           fontSize: '12px',
           color: '#e2e8f0',
-          opacity: draggedClaimId === claim.id ? 0.5 : 1
+          opacity: draggedClaimId === claim.id ? 0.5 : 1,
+          userSelect: 'none'
         }}
       >
         <div style={{ fontWeight: 'bold', marginBottom: '2px', fontSize: '13px' }}>
@@ -180,7 +194,7 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
         onDragEnd={handleDragEnd}
         onClick={(e) => {
           e.stopPropagation();
-          window.open(`/claim/${claim.id}`, '_blank');
+          window.open(`/CipherDispatch/claim/${claim.id}`, '_blank');
         }}
         style={{
           cursor: 'grab',
@@ -243,6 +257,11 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
         if (!claim.appointment_start) return false;
         const claimDate = new Date(claim.appointment_start).toISOString().split('T')[0];
         return claimDate === dateStr;
+      }).sort((a, b) => {
+        // Sort by appointment time (earliest first)
+        const timeA = new Date(a.appointment_start!).getTime();
+        const timeB = new Date(b.appointment_start!).getTime();
+        return timeA - timeB;
       });
 
       const visibleClaims = daysClaims.slice(0, MAX_VISIBLE_PER_DAY);
@@ -478,7 +497,7 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
               {selectedDay.claims.map(claim => (
                 <div
                   key={claim.id}
-                  onClick={() => window.open(`/claim/${claim.id}`, '_blank')}
+                  onClick={() => window.open(`/CipherDispatch/claim/${claim.id}`, '_blank')}
                   style={{
                     background: '#2d3748',
                     borderLeft: `4px solid ${getFirmColor(claim.firm_name)}`,

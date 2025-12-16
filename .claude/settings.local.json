@@ -9,7 +9,14 @@
       "Bash(git commit:*)",
       "Bash(cat:*)",
       "Bash(curl:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npm install:*)",
+      "Bash(npx tailwindcss:*)",
+      "Bash(git log:*)",
+      "Bash(npm run deploy:*)",
+      "Bash(npx gh-pages-clean)",
+      "Bash(if exist \"node_modules\\.cache\\gh-pages\" rmdir /s /q \"node_modules\\.cache\\gh-pages\")",
+      "Bash(npx gh-pages:*)"
     ]
   }
 }
