@@ -1,6 +1,28 @@
 @import "leaflet/dist/leaflet.css";
 
-:root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
-input, select, button { padding: 8px; margin: 4px 0; }
-button { cursor: pointer; }
-img { display: block; }
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  input, select, button {
+    padding: 8px;
+    margin: 4px 0;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  img {
+    display: block;
+  }
+}
+
+@layer components {
+  /* BEM-style custom components when Tailwind classes aren't sufficient */
+}

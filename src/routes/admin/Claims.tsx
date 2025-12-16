@@ -7,6 +7,7 @@ import {
 } from "../../lib/supabaseAuthz";
 import { getFirmColor } from "../../constants/firmColors";
 import { downloadClaimsCSV } from "../../utils/csvExport";
+import MonthlyCalendar from "../../components/claims/MonthlyCalendar";
 
 type Claim = {
   id: string;
@@ -37,6 +38,7 @@ export default function AdminClaims() {
   const [showArchived, setShowArchived] = useState(
     searchParams.get("archived") === "true"
   );
+  const [showCalendar, setShowCalendar] = useState(false);
 
   const initializeAuth = async () => {
     try {
@@ -340,13 +342,33 @@ export default function AdminClaims() {
           >
             ← Home
           </Link>
-          <h3 style={{ margin: 0, color: "#e2e8f0" }}>
-            {showArchived ? "Archived Claims" : "Active Claims"}
+          <h3 style={{ margin: 0, color: "#e2e8f0", fontSize: "20px" }}>
+            {showCalendar ? "Monthly Scheduling Calendar" : showArchived ? "Archived Claims" : "Active Claims"}
           </h3>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button
-            onClick={() => setShowArchived(!showArchived)}
+            onClick={() => {
+              setShowCalendar(!showCalendar);
+              if (showArchived) setShowArchived(false);
+            }}
+            style={{
+              padding: "8px 16px",
+              background: showCalendar ? "#667eea" : "#4a5568",
+              color: "white",
+              border: "none",
+              borderRadius: 4,
+              fontWeight: "bold",
+              cursor: "pointer",
+            }}
+          >
+            {showCalendar ? "📋 List View" : "📅 Calendar View"}
+          </button>
+          <button
+            onClick={() => {
+              setShowArchived(!showArchived);
+              if (showCalendar) setShowCalendar(false);
+            }}
             style={{
               padding: "8px 16px",
               background: showArchived ? "#4a5568" : "#f59e0b",
@@ -390,13 +412,19 @@ export default function AdminClaims() {
           </Link>
         </div>
       </div>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-          gap: 16,
-        }}
-      >
+
+      {/* Calendar View */}
+      {showCalendar && !showArchived ? (
+        <MonthlyCalendar claims={rows} onClaimUpdate={load} />
+      ) : (
+        /* List View */
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+            gap: 16,
+          }}
+        >
         {rows.map((r) => (
           <Link
             key={r.id}
@@ -425,7 +453,7 @@ export default function AdminClaims() {
             <div style={{ marginBottom: 12 }}>
               <div
                 style={{
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: "bold",
                   marginBottom: 8,
                   color: "#e2e8f0",
@@ -493,18 +521,18 @@ export default function AdminClaims() {
 
             <div
               style={{
-                fontSize: 14,
+                fontSize: 16,
                 marginBottom: 12,
                 paddingBottom: 12,
                 borderBottom: "1px solid #4a5568",
               }}
             >
-              <div style={{ color: "#a0aec0", marginBottom: 4 }}>
+              <div style={{ color: "#e2e8f0", marginBottom: 4 }}>
                 <strong>Customer:</strong> {r.customer_name}
               </div>
             </div>
 
-            <div style={{ fontSize: 13, marginBottom: 12 }}>
+            <div style={{ fontSize: 15, marginBottom: 12 }}>
               <div
                 style={{
                   color: "#e2e8f0",
@@ -515,7 +543,7 @@ export default function AdminClaims() {
                 � Appointment
               </div>
               {r.appointment_start ? (
-                <div style={{ color: "#a0aec0", fontSize: 12 }}>
+                <div style={{ color: "#cbd5e0", fontSize: 14 }}>
                   <strong>Start:</strong>{" "}
                   {new Date(r.appointment_start).toLocaleDateString("en-US", {
                     weekday: "short",
@@ -577,12 +605,12 @@ export default function AdminClaims() {
 
             <div
               style={{
-                fontSize: 13,
+                fontSize: 15,
                 paddingTop: 12,
                 borderTop: "1px solid #4a5568",
               }}
             >
-              <div style={{ color: "#a0aec0" }}>
+              <div style={{ color: "#e2e8f0" }}>
                 <strong>👤 Assigned:</strong>{" "}
                 {r.profiles?.full_name || (r.assigned_to ? "Unknown User" : "Unassigned")}
               </div>
@@ -594,7 +622,8 @@ export default function AdminClaims() {
             No claims yet. Create your first claim!
           </div>
         )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

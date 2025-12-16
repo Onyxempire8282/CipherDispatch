@@ -8,6 +8,7 @@ import AdminNewClaim from "./routes/admin/NewClaim";
 import AdminClaims from "./routes/admin/Claims";
 import MyClaims from "./routes/appraiser/MyClaims";
 import ClaimDetail from "./routes/appraiser/ClaimDetail";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 import "./index.css";
 import "leaflet/dist/leaflet.css";
 
@@ -17,10 +18,38 @@ const router = createBrowserRouter(
   [
     { path: "/", element: <App /> },
     { path: "/login", element: <Login /> },
-    { path: "/admin/claims", element: <AdminClaims /> },
-    { path: "/admin/claims/new", element: <AdminNewClaim /> },
-    { path: "/my-claims", element: <MyClaims /> },
-    { path: "/claim/:id", element: <ClaimDetail /> },
+    {
+      path: "/admin/claims",
+      element: (
+        <ProtectedRoute requiredRole="admin">
+          <AdminClaims />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/admin/claims/new",
+      element: (
+        <ProtectedRoute requiredRole="admin">
+          <AdminNewClaim />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/my-claims",
+      element: (
+        <ProtectedRoute>
+          <MyClaims />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/claim/:id",
+      element: (
+        <ProtectedRoute>
+          <ClaimDetail />
+        </ProtectedRoute>
+      ),
+    },
   ],
   {
     basename: "/CipherDispatch",

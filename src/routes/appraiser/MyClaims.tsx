@@ -24,6 +24,7 @@ export default function MyClaims() {
   const [error, setError] = useState<string | null>(null);
   const [authzInitialized, setAuthzInitialized] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
+  const [showTodayOnly, setShowTodayOnly] = useState(false);
 
   const initializeAuth = async () => {
     try {
@@ -101,7 +102,21 @@ export default function MyClaims() {
       console.log(
         `Loaded ${data?.length || 0} my claims for ${userInfo?.role}`
       );
-      setRows(data || []);
+
+      let filteredData = data || [];
+
+      // Filter for today's claims if showTodayOnly is true
+      if (showTodayOnly && !showCompleted) {
+        const today = new Date().toISOString().split('T')[0];
+        filteredData = filteredData.filter(claim => {
+          if (!claim.appointment_start) return false;
+          const claimDate = new Date(claim.appointment_start).toISOString().split('T')[0];
+          return claimDate === today;
+        });
+        console.log(`Filtered to ${filteredData.length} claims for today`);
+      }
+
+      setRows(filteredData);
     } catch (err: any) {
       console.error("Error in load function:", err);
       setError(err.message);
@@ -138,7 +153,7 @@ export default function MyClaims() {
         };
       }
     }
-  }, [showCompleted, authzInitialized]);
+  }, [showCompleted, authzInitialized, showTodayOnly]);
 
   // Show loading state
   if (loading) {
@@ -231,28 +246,52 @@ export default function MyClaims() {
               textDecoration: "none",
               borderRadius: 4,
               fontWeight: "bold",
+              fontSize: "15px",
             }}
           >
             ← Home
           </Link>
-          <h3 style={{ margin: 0, color: "#e2e8f0" }}>
-            {showCompleted ? "My Completed Claims" : "My Active Claims"}
+          <h3 style={{ margin: 0, color: "#e2e8f0", fontSize: "22px", fontWeight: "bold" }}>
+            {showCompleted ? "My Completed Claims" : showTodayOnly ? "Today's Claims" : "My Active Claims"}
           </h3>
         </div>
-        <button
-          onClick={() => setShowCompleted(!showCompleted)}
-          style={{
-            padding: "8px 16px",
-            background: showCompleted ? "#4a5568" : "#10b981",
-            color: "white",
-            border: "none",
-            borderRadius: 4,
-            fontWeight: "bold",
-            cursor: "pointer",
-          }}
-        >
-          {showCompleted ? "← View Active Claims" : "✅ View Completed"}
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          {!showCompleted && (
+            <button
+              onClick={() => setShowTodayOnly(!showTodayOnly)}
+              style={{
+                padding: "8px 16px",
+                background: showTodayOnly ? "#667eea" : "#4a5568",
+                color: "white",
+                border: "none",
+                borderRadius: 4,
+                fontWeight: "bold",
+                cursor: "pointer",
+                fontSize: "15px",
+              }}
+            >
+              {showTodayOnly ? "📋 View All" : "📅 Today Only"}
+            </button>
+          )}
+          <button
+            onClick={() => {
+              setShowCompleted(!showCompleted);
+              if (!showCompleted) setShowTodayOnly(false);
+            }}
+            style={{
+              padding: "8px 16px",
+              background: showCompleted ? "#4a5568" : "#10b981",
+              color: "white",
+              border: "none",
+              borderRadius: 4,
+              fontWeight: "bold",
+              cursor: "pointer",
+              fontSize: "15px",
+            }}
+          >
+            {showCompleted ? "← View Active Claims" : "✅ View Completed"}
+          </button>
+        </div>
       </div>
       <div
         style={{
@@ -288,7 +327,7 @@ export default function MyClaims() {
             <div style={{ marginBottom: 12 }}>
               <div
                 style={{
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: "bold",
                   marginBottom: 8,
                   color: "#e2e8f0",
@@ -320,18 +359,18 @@ export default function MyClaims() {
 
             <div
               style={{
-                fontSize: 14,
+                fontSize: 16,
                 marginBottom: 12,
                 paddingBottom: 12,
                 borderBottom: "1px solid #4a5568",
               }}
             >
-              <div style={{ color: "#a0aec0", marginBottom: 4 }}>
+              <div style={{ color: "#e2e8f0", marginBottom: 4 }}>
                 <strong>Customer:</strong> {r.customer_name}
               </div>
             </div>
 
-            <div style={{ fontSize: 13, marginBottom: 12 }}>
+            <div style={{ fontSize: 15, marginBottom: 12 }}>
               <div
                 style={{
                   color: "#e2e8f0",
@@ -342,7 +381,7 @@ export default function MyClaims() {
                 📅 Appointment
               </div>
               {r.appointment_start ? (
-                <div style={{ color: "#a0aec0", fontSize: 12 }}>
+                <div style={{ color: "#cbd5e0", fontSize: 14 }}>
                   {new Date(r.appointment_start).toLocaleDateString("en-US", {
                     weekday: "short",
                     month: "short",
@@ -365,7 +404,7 @@ export default function MyClaims() {
               )}
             </div>
 
-            <div style={{ fontSize: 13 }}>
+            <div style={{ fontSize: 15 }}>
               <div
                 style={{
                   color: "#e2e8f0",
@@ -376,7 +415,7 @@ export default function MyClaims() {
                 🚗 Vehicle
               </div>
               {r.vehicle_year || r.vehicle_make || r.vehicle_model ? (
-                <div style={{ color: "#a0aec0", fontSize: 12 }}>
+                <div style={{ color: "#cbd5e0", fontSize: 14 }}>
                   {r.vehicle_year && `${r.vehicle_year} `}
                   {r.vehicle_make && `${r.vehicle_make} `}
                   {r.vehicle_model && r.vehicle_model}
