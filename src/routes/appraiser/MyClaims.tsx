@@ -126,9 +126,9 @@ export default function MyClaims() {
         claim.status === null || claim.status === "SCHEDULED" || claim.status === "IN_PROGRESS"
       );
     } else {
-      // Show completed and canceled claims
+      // Show completed claims only (CANCELED is separate via status filter)
       filteredData = filteredData.filter(claim =>
-        claim.status === "COMPLETED" || claim.status === "CANCELED"
+        claim.status === "COMPLETED"
       );
     }
 

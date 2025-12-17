@@ -4,6 +4,7 @@ import { supabase } from "../../lib/supabase";
 import imageCompression from "browser-image-compression";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { getSupabaseAuthz } from "../../lib/supabaseAuthz";
+import JSZip from "jszip";
 
 export default function ClaimDetail() {
   const { id } = useParams();
@@ -13,6 +14,14 @@ export default function ClaimDetail() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [isEditing, setIsEditing] = useState(false);
+
+  // Photo viewer state
+  const [rotation, setRotation] = useState(0);
+  const [zoom, setZoom] = useState(1);
+  const [panX, setPanX] = useState(0);
+  const [panY, setPanY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
   // Edit state for all fields
   const [editCustomerName, setEditCustomerName] = useState("");
@@ -241,6 +250,108 @@ export default function ClaimDetail() {
 
     // Reload photos
     await load();
+  };
+
+  const downloadAllPhotos = async () => {
+    if (photos.length === 0) {
+      alert("No photos to download");
+      return;
+    }
+
+    try {
+      const zip = new JSZip();
+      const photoFolder = zip.folder("photos");
+
+      // Fetch all photos and add to zip
+      for (let i = 0; i < photos.length; i++) {
+        const photo = photos[i];
+        const photoUrl = supabase.storage
+          .from("claim-photos")
+          .getPublicUrl(photo.storage_path).data.publicUrl;
+
+        // Fetch photo as blob
+        const response = await fetch(photoUrl);
+        const blob = await response.blob();
+
+        // Add to zip with sequential naming
+        const filename = `photo-${i + 1}.jpg`;
+        photoFolder?.file(filename, blob);
+      }
+
+      // Generate zip file
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+
+      // Create download link and trigger download
+      const url = URL.createObjectURL(zipBlob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `claim_${claim.claim_number}_photos.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error: any) {
+      alert(`Error creating zip file: ${error.message}`);
+    }
+  };
+
+  // Photo viewer helper functions
+  const resetViewerState = () => {
+    setRotation(0);
+    setZoom(1);
+    setPanX(0);
+    setPanY(0);
+    setIsDragging(false);
+  };
+
+  const rotateLeft = () => {
+    setRotation((r) => (r - 90) % 360);
+  };
+
+  const rotateRight = () => {
+    setRotation((r) => (r + 90) % 360);
+  };
+
+  const handleZoomIn = () => {
+    setZoom((z) => Math.min(z + 0.5, 4));
+  };
+
+  const handleZoomOut = () => {
+    setZoom((z) => {
+      const newZoom = Math.max(z - 0.5, 1);
+      if (newZoom === 1) {
+        setPanX(0);
+        setPanY(0);
+      }
+      return newZoom;
+    });
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (zoom > 1) {
+      setIsDragging(true);
+      setDragStart({ x: e.clientX - panX, y: e.clientY - panY });
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDragging && zoom > 1) {
+      setPanX(e.clientX - dragStart.x);
+      setPanY(e.clientY - dragStart.y);
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    if (e.deltaY < 0) {
+      handleZoomIn();
+    } else {
+      handleZoomOut();
+    }
   };
 
   if (!claim) return null;
@@ -1229,6 +1340,39 @@ export default function ClaimDetail() {
               style={{ display: "none" }}
               multiple
             />
+
+            {photos.length > 0 && (
+              <button
+                onClick={downloadAllPhotos}
+                style={{
+                  flex: "1",
+                  minWidth: "200px",
+                  padding: "14px 24px",
+                  background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+                  color: "white",
+                  borderRadius: "8px",
+                  fontWeight: "600",
+                  fontSize: "16px",
+                  cursor: "pointer",
+                  textAlign: "center",
+                  transition: "all 0.2s",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                  border: "none",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "linear-gradient(135deg, #d97706 0%, #b45309 100%)";
+                  e.currentTarget.style.transform = "translateY(-1px)";
+                  e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.3)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)";
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
+                }}
+              >
+                📦 Download All Photos
+              </button>
+            )}
           </div>
 
           <p
@@ -1331,7 +1475,13 @@ export default function ClaimDetail() {
         {/* Lightbox Modal */}
         {lightboxIndex !== null && (
           <div
-            onClick={() => setLightboxIndex(null)}
+            onClick={() => {
+              setLightboxIndex(null);
+              resetViewerState();
+            }}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
             style={{
               position: "fixed",
               top: 0,
@@ -1344,10 +1494,14 @@ export default function ClaimDetail() {
               alignItems: "center",
               justifyContent: "center",
               flexDirection: "column",
+              overflow: "hidden",
             }}
           >
             <button
-              onClick={() => setLightboxIndex(null)}
+              onClick={() => {
+                setLightboxIndex(null);
+                resetViewerState();
+              }}
               style={{
                 position: "absolute",
                 top: 20,
@@ -1360,17 +1514,135 @@ export default function ClaimDetail() {
                 fontSize: 24,
                 cursor: "pointer",
                 fontWeight: "bold",
+                zIndex: 10000,
               }}
             >
               ×
             </button>
+
+            {/* Zoom Controls */}
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                position: "absolute",
+                top: 20,
+                left: 20,
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+                zIndex: 10000,
+              }}
+            >
+              <button
+                onClick={handleZoomIn}
+                disabled={zoom >= 4}
+                style={{
+                  padding: "8px 16px",
+                  background: zoom >= 4 ? "#4a5568" : "#667eea",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 6,
+                  fontSize: 18,
+                  fontWeight: "bold",
+                  cursor: zoom >= 4 ? "not-allowed" : "pointer",
+                  opacity: zoom >= 4 ? 0.5 : 1,
+                }}
+              >
+                +
+              </button>
+              <div
+                style={{
+                  padding: "4px 8px",
+                  background: "rgba(255,255,255,0.2)",
+                  color: "white",
+                  borderRadius: 4,
+                  fontSize: 14,
+                  textAlign: "center",
+                  fontWeight: "bold",
+                }}
+              >
+                {Math.round(zoom * 100)}%
+              </div>
+              <button
+                onClick={handleZoomOut}
+                disabled={zoom <= 1}
+                style={{
+                  padding: "8px 16px",
+                  background: zoom <= 1 ? "#4a5568" : "#667eea",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 6,
+                  fontSize: 18,
+                  fontWeight: "bold",
+                  cursor: zoom <= 1 ? "not-allowed" : "pointer",
+                  opacity: zoom <= 1 ? 0.5 : 1,
+                }}
+              >
+                −
+              </button>
+            </div>
+
+            {/* Rotation Controls */}
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                position: "absolute",
+                top: 20,
+                left: "50%",
+                transform: "translateX(-50%)",
+                display: "flex",
+                gap: 12,
+                zIndex: 10000,
+              }}
+            >
+              <button
+                onClick={rotateLeft}
+                style={{
+                  padding: "10px 20px",
+                  background: "#667eea",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 6,
+                  fontSize: 16,
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                ↺ Rotate Left
+              </button>
+              <button
+                onClick={rotateRight}
+                style={{
+                  padding: "10px 20px",
+                  background: "#667eea",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 6,
+                  fontSize: 16,
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                Rotate Right ↻
+              </button>
+            </div>
 
             <div
               style={{
                 position: "relative",
                 maxWidth: "90%",
                 maxHeight: "80%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
+              onClick={(e) => e.stopPropagation()}
             >
               <img
                 src={
@@ -1379,12 +1651,18 @@ export default function ClaimDetail() {
                     .getPublicUrl(photos[lightboxIndex].storage_path).data
                     .publicUrl
                 }
+                onWheel={handleWheel}
+                onMouseDown={handleMouseDown}
                 style={{
                   maxWidth: "100%",
                   maxHeight: "80vh",
                   objectFit: "contain",
+                  transform: `rotate(${rotation}deg) scale(${zoom}) translate(${panX / zoom}px, ${panY / zoom}px)`,
+                  transition: isDragging ? "none" : "transform 0.2s ease-out",
+                  cursor: zoom > 1 ? (isDragging ? "grabbing" : "grab") : "default",
+                  userSelect: "none",
                 }}
-                onClick={(e) => e.stopPropagation()}
+                draggable={false}
               />
             </div>
 
@@ -1400,6 +1678,7 @@ export default function ClaimDetail() {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
+                  resetViewerState();
                   setLightboxIndex(
                     lightboxIndex > 0 ? lightboxIndex - 1 : photos.length - 1
                   );
@@ -1427,6 +1706,7 @@ export default function ClaimDetail() {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
+                  resetViewerState();
                   setLightboxIndex(
                     lightboxIndex < photos.length - 1 ? lightboxIndex + 1 : 0
                   );

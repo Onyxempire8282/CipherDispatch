@@ -8,6 +8,7 @@ import {
 import { getFirmColor } from "../../constants/firmColors";
 import { downloadClaimsCSV } from "../../utils/csvExport";
 import MonthlyCalendar from "../../components/claims/MonthlyCalendar";
+import JSZip from "jszip";
 
 type Claim = {
   id: string;
@@ -85,16 +86,16 @@ export default function AdminClaims() {
         )
         .order("created_at", { ascending: false });
 
-      // Apply role-based scoping BEFORE filtering by status
+      // Apply role-based scoping
       query = authz.scopedClaimsQuery(query);
 
-      // Then apply status filtering
-      if (!showArchived) {
-        // Show all claims except completed/canceled ones (active claims)
-        query = query.or("status.is.null,status.in.(SCHEDULED,IN_PROGRESS)");
+      // Apply archived filtering - only show CANCELED claims when archived view is active
+      if (showArchived) {
+        // Show only canceled claims in "archived" view
+        query = query.eq("status", "CANCELED");
       } else {
-        // Show completed and canceled claims as "archived"
-        query = query.or("status.eq.COMPLETED,status.eq.CANCELED");
+        // Show active claims only (COMPLETED is separate via status filter)
+        query = query.or("status.is.null,status.in.(SCHEDULED,IN_PROGRESS)");
       }
 
       const { data, error: queryError } = await query;
@@ -141,6 +142,61 @@ export default function AdminClaims() {
     }
 
     setRows(filtered);
+  };
+
+  const downloadClaimPhotos = async (claimId: string, claimNumber: string) => {
+    try {
+      // Fetch photos for this claim
+      const { data: photos, error } = await supabase
+        .from("claim_photos")
+        .select("*")
+        .eq("claim_id", claimId)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        alert(`Error fetching photos: ${error.message}`);
+        return;
+      }
+
+      if (!photos || photos.length === 0) {
+        alert("No photos to download for this claim");
+        return;
+      }
+
+      const zip = new JSZip();
+      const photoFolder = zip.folder("photos");
+
+      // Fetch all photos and add to zip
+      for (let i = 0; i < photos.length; i++) {
+        const photo = photos[i];
+        const photoUrl = supabase.storage
+          .from("claim-photos")
+          .getPublicUrl(photo.storage_path).data.publicUrl;
+
+        // Fetch photo as blob
+        const response = await fetch(photoUrl);
+        const blob = await response.blob();
+
+        // Add to zip with sequential naming
+        const filename = `photo-${i + 1}.jpg`;
+        photoFolder?.file(filename, blob);
+      }
+
+      // Generate zip file
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+
+      // Create download link and trigger download
+      const url = URL.createObjectURL(zipBlob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `claim_${claimNumber}_photos.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error: any) {
+      alert(`Error creating zip file: ${error.message}`);
+    }
   };
 
   useEffect(() => {
@@ -275,6 +331,11 @@ export default function AdminClaims() {
   const getPendingCountForFirm = (claims: Claim[]) => {
     return claims.filter(c => c.status !== "COMPLETED" && c.status !== "CANCELED").length;
   };
+
+  // Check if current user is admin
+  const authz = getSupabaseAuthz();
+  const userInfo = authz?.getCurrentUser();
+  const isAdmin = userInfo?.role === "admin";
 
   return (
     <div
@@ -793,10 +854,46 @@ export default function AdminClaims() {
                 borderTop: "1px solid #4a5568",
               }}
             >
-              <div style={{ color: "#e2e8f0" }}>
+              <div style={{ color: "#e2e8f0", marginBottom: isAdmin ? 12 : 0 }}>
                 <strong>👤 Assigned:</strong>{" "}
                 {r.profiles?.full_name || (r.assigned_to ? "Unknown User" : "Unassigned")}
               </div>
+
+              {/* Admin-only: Download Photos Button */}
+              {isAdmin && (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    downloadClaimPhotos(r.id, r.claim_number);
+                  }}
+                  style={{
+                    width: "100%",
+                    padding: "10px 16px",
+                    background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 6,
+                    fontWeight: "600",
+                    fontSize: 14,
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "linear-gradient(135deg, #d97706 0%, #b45309 100%)";
+                    e.currentTarget.style.transform = "translateY(-1px)";
+                    e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.3)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)";
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
+                  }}
+                >
+                  📦 Download All Photos (ZIP)
+                </button>
+              )}
             </div>
           </Link>
                   ))}
