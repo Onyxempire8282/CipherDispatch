@@ -33,6 +33,7 @@ export default function MyClaims() {
   const [showCompleted, setShowCompleted] = useState(false);
   const [showTodayOnly, setShowTodayOnly] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<ClaimStatus | "ALL">("ALL");
+  const [draggingClaimId, setDraggingClaimId] = useState<string | null>(null);
 
   const initializeAuth = async () => {
     try {
@@ -182,6 +183,42 @@ export default function MyClaims() {
     }
   }, [showCompleted, showTodayOnly, selectedStatus, allClaims]);
 
+  // Drag-and-drop handlers for cross-window dragging
+  const handleDragStart = (e: React.DragEvent, claim: Claim) => {
+    setDraggingClaimId(claim.id);
+
+    // Construct payload for cross-window drop
+    const payload = {
+      id: claim.id,
+      claimNumber: claim.claim_number,
+      firmName: '',
+      customerName: claim.customer_name,
+      addressLine1: claim.address_line1 || '',
+      city: claim.city || '',
+      state: claim.state || '',
+      zip: claim.postal_code || '',
+      lat: null,
+      lng: null,
+      vin: claim.vin || '',
+      vehicleYear: claim.vehicle_year || null,
+      vehicleMake: claim.vehicle_make || '',
+      vehicleModel: claim.vehicle_model || '',
+      status: claim.status || '',
+      appointmentStart: claim.appointment_start || null
+    };
+
+    const jsonString = JSON.stringify(payload);
+
+    // Set data in multiple formats for cross-window compatibility
+    e.dataTransfer.setData('application/json', jsonString);
+    e.dataTransfer.setData('text/plain', jsonString);
+    e.dataTransfer.effectAllowed = 'copy';
+  };
+
+  const handleDragEnd = () => {
+    setDraggingClaimId(null);
+  };
+
   // Calculate status counts
   const getStatusCounts = () => {
     const counts = {
@@ -318,6 +355,9 @@ export default function MyClaims() {
     <Link
       key={r.id}
       to={`/claim/${r.id}`}
+      draggable={true}
+      onDragStart={(e) => handleDragStart(e, r)}
+      onDragEnd={handleDragEnd}
       style={{
         border: "1px solid #4a5568",
         borderRadius: 8,
@@ -326,16 +366,21 @@ export default function MyClaims() {
         boxShadow: "0 2px 4px rgba(0,0,0,0.5)",
         textDecoration: "none",
         color: "#e2e8f0",
-        transition: "transform 0.2s, box-shadow 0.2s",
-        cursor: "pointer",
+        transition: "transform 0.2s, box-shadow 0.2s, opacity 0.2s",
+        cursor: draggingClaimId === r.id ? "grabbing" : "pointer",
+        opacity: draggingClaimId === r.id ? 0.5 : 1,
       }}
       onMouseOver={(e) => {
-        e.currentTarget.style.transform = "translateY(-4px)";
-        e.currentTarget.style.boxShadow = "0 6px 12px rgba(0,0,0,0.7)";
+        if (draggingClaimId !== r.id) {
+          e.currentTarget.style.transform = "translateY(-4px)";
+          e.currentTarget.style.boxShadow = "0 6px 12px rgba(0,0,0,0.7)";
+        }
       }}
       onMouseOut={(e) => {
-        e.currentTarget.style.transform = "translateY(0)";
-        e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.5)";
+        if (draggingClaimId !== r.id) {
+          e.currentTarget.style.transform = "translateY(0)";
+          e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.5)";
+        }
       }}
     >
       <div style={{ marginBottom: 12 }}>

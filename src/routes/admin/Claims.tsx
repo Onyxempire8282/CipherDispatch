@@ -25,6 +25,12 @@ type Claim = {
   firm_name?: string;
   notes?: string;
   created_at?: string;
+  address_line1?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+  lat?: number;
+  lng?: number;
   profiles?: {
     full_name?: string;
   } | null;
@@ -44,6 +50,7 @@ export default function AdminClaims() {
   );
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<ClaimStatus>("ALL");
+  const [draggingClaimId, setDraggingClaimId] = useState<string | null>(null);
 
   const initializeAuth = async () => {
     try {
@@ -82,7 +89,7 @@ export default function AdminClaims() {
       let query = supabase
         .from("claims")
         .select(
-          "id,claim_number,customer_name,status,vin,vehicle_year,vehicle_make,vehicle_model,assigned_to,appointment_start,appointment_end,firm_name,notes,created_at,profiles:assigned_to(full_name)"
+          "id,claim_number,customer_name,status,vin,vehicle_year,vehicle_make,vehicle_model,assigned_to,appointment_start,appointment_end,firm_name,notes,created_at,address_line1,city,state,postal_code,lat,lng,profiles:assigned_to(full_name)"
         )
         .order("created_at", { ascending: false });
 
@@ -197,6 +204,42 @@ export default function AdminClaims() {
     } catch (error: any) {
       alert(`Error creating zip file: ${error.message}`);
     }
+  };
+
+  // Drag-and-drop handlers for cross-window dragging
+  const handleDragStart = (e: React.DragEvent, claim: Claim) => {
+    setDraggingClaimId(claim.id);
+
+    // Construct payload for cross-window drop
+    const payload = {
+      id: claim.id,
+      claimNumber: claim.claim_number,
+      firmName: claim.firm_name || '',
+      customerName: claim.customer_name,
+      addressLine1: claim.address_line1 || '',
+      city: claim.city || '',
+      state: claim.state || '',
+      zip: claim.postal_code || '',
+      lat: claim.lat || null,
+      lng: claim.lng || null,
+      vin: claim.vin || '',
+      vehicleYear: claim.vehicle_year || null,
+      vehicleMake: claim.vehicle_make || '',
+      vehicleModel: claim.vehicle_model || '',
+      status: claim.status || '',
+      appointmentStart: claim.appointment_start || null
+    };
+
+    const jsonString = JSON.stringify(payload);
+
+    // Set data in multiple formats for cross-window compatibility
+    e.dataTransfer.setData('application/json', jsonString);
+    e.dataTransfer.setData('text/plain', jsonString);
+    e.dataTransfer.effectAllowed = 'copy';
+  };
+
+  const handleDragEnd = () => {
+    setDraggingClaimId(null);
   };
 
   useEffect(() => {
@@ -673,6 +716,9 @@ export default function AdminClaims() {
           <Link
             key={r.id}
             to={`/claim/${r.id}`}
+            draggable={true}
+            onDragStart={(e) => handleDragStart(e, r)}
+            onDragEnd={handleDragEnd}
             style={{
               border: "1px solid #4a5568",
               borderLeft: `4px solid ${getFirmColor(r.firm_name)}`,
@@ -682,16 +728,21 @@ export default function AdminClaims() {
               boxShadow: "0 2px 4px rgba(0,0,0,0.5)",
               textDecoration: "none",
               color: "#e2e8f0",
-              transition: "transform 0.2s, box-shadow 0.2s",
-              cursor: "pointer",
+              transition: "transform 0.2s, box-shadow 0.2s, opacity 0.2s",
+              cursor: draggingClaimId === r.id ? "grabbing" : "pointer",
+              opacity: draggingClaimId === r.id ? 0.5 : 1,
             }}
             onMouseOver={(e) => {
-              e.currentTarget.style.transform = "translateY(-4px)";
-              e.currentTarget.style.boxShadow = "0 6px 12px rgba(0,0,0,0.7)";
+              if (draggingClaimId !== r.id) {
+                e.currentTarget.style.transform = "translateY(-4px)";
+                e.currentTarget.style.boxShadow = "0 6px 12px rgba(0,0,0,0.7)";
+              }
             }}
             onMouseOut={(e) => {
-              e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.5)";
+              if (draggingClaimId !== r.id) {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.5)";
+              }
             }}
           >
             <div style={{ marginBottom: 12 }}>
