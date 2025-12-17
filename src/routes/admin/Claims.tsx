@@ -94,8 +94,8 @@ export default function AdminClaims() {
         // Show only canceled claims in "archived" view
         query = query.eq("status", "CANCELED");
       } else {
-        // Show active claims only (COMPLETED is separate via status filter)
-        query = query.or("status.is.null,status.in.(SCHEDULED,IN_PROGRESS)");
+        // Show all active claims (COMPLETED is in active view but can be filtered separately)
+        query = query.or("status.is.null,status.in.(SCHEDULED,IN_PROGRESS,COMPLETED)");
       }
 
       const { data, error: queryError } = await query;
