@@ -13,6 +13,8 @@ export interface Claim {
   status?: string | null;
   assigned_to?: string | null;
   appointment_start?: string;
+  pay_amount?: number | null;
+  file_total?: number | null;
   [key: string]: any; // Allow other properties
 }
 

@@ -8,6 +8,7 @@ import {
 import { getFirmColor } from "../../constants/firmColors";
 import { downloadClaimsCSV } from "../../utils/csvExport";
 import MonthlyCalendar from "../../components/claims/MonthlyCalendar";
+import PayoutForecast from "../../components/admin/PayoutForecast";
 import JSZip from "jszip";
 
 type Claim = {
@@ -31,6 +32,8 @@ type Claim = {
   postal_code?: string;
   lat?: number;
   lng?: number;
+  pay_amount?: number | null;
+  file_total?: number | null;
   profiles?: {
     full_name?: string;
   } | null;
@@ -89,7 +92,7 @@ export default function AdminClaims() {
       let query = supabase
         .from("claims")
         .select(
-          "id,claim_number,customer_name,status,vin,vehicle_year,vehicle_make,vehicle_model,assigned_to,appointment_start,appointment_end,firm_name,notes,created_at,address_line1,city,state,postal_code,lat,lng,profiles:assigned_to(full_name)"
+          "id,claim_number,customer_name,status,vin,vehicle_year,vehicle_make,vehicle_model,assigned_to,appointment_start,appointment_end,firm_name,notes,created_at,address_line1,city,state,postal_code,lat,lng,pay_amount,file_total,profiles:assigned_to(full_name)"
         )
         .order("created_at", { ascending: false });
 
@@ -636,6 +639,13 @@ export default function AdminClaims() {
           </Link>
         </div>
       </div>
+
+      {/* Payout Forecast - Admin Only */}
+      {isAdmin && !showArchived && (
+        <div style={{ marginBottom: 24 }}>
+          <PayoutForecast claims={allClaims} />
+        </div>
+      )}
 
       {/* Calendar View */}
       {showCalendar && !showArchived ? (

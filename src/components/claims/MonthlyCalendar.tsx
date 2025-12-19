@@ -19,6 +19,8 @@ interface Claim {
   vehicle_make?: string;
   vehicle_model?: string;
   city?: string;
+  pay_amount?: number | null;
+  file_total?: number | null;
   profiles?: { full_name?: string } | null;
 }
 
@@ -336,6 +338,14 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
       const visibleClaims = daysClaims.slice(0, MAX_VISIBLE_PER_DAY);
       const hiddenCount = daysClaims.length - visibleClaims.length;
 
+      // Calculate daily pay total and file total
+      const dailyPayTotal = daysClaims.reduce((sum, claim) => {
+        return sum + (claim.pay_amount || 0);
+      }, 0);
+      const dailyFileTotal = daysClaims.reduce((sum, claim) => {
+        return sum + (claim.file_total || 0);
+      }, 0);
+
       days.push(
         <div
           key={day}
@@ -363,9 +373,21 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
             {day}
           </div>
           {daysClaims.length > 0 && (
-            <div style={{ fontSize: '10px', color: '#a0aec0', marginBottom: '6px' }}>
-              {daysClaims.length} claim{daysClaims.length > 1 ? 's' : ''}
-            </div>
+            <>
+              <div style={{ fontSize: '10px', color: '#a0aec0', marginBottom: '2px' }}>
+                {daysClaims.length} claim{daysClaims.length > 1 ? 's' : ''}
+              </div>
+              {dailyPayTotal > 0 && (
+                <div style={{ fontSize: '10px', color: '#10b981', marginBottom: '2px', fontWeight: 'bold' }}>
+                  💰 ${dailyPayTotal.toFixed(2)}
+                </div>
+              )}
+              {dailyFileTotal > 0 && (
+                <div style={{ fontSize: '10px', color: '#3b82f6', marginBottom: '4px', fontWeight: 'bold' }}>
+                  📄 ${dailyFileTotal.toFixed(2)}
+                </div>
+              )}
+            </>
           )}
           <div>
             {visibleClaims.map(claim => renderCompactClaimCard(claim))}

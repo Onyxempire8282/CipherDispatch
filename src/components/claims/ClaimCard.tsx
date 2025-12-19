@@ -9,6 +9,7 @@ import Card from '../ui/Card';
 import Badge from '../ui/Badge';
 import { getFirmColor } from '../../constants/firmColors';
 import { formatAppointmentDateTime } from '../../utils/dateHelpers';
+import { getSupabaseAuthz } from '../../lib/supabaseAuthz';
 
 export interface ClaimCardData {
   id: string;
@@ -25,6 +26,8 @@ export interface ClaimCardData {
   assigned_user_name?: string;
   firm_name?: string;
   notes?: string;
+  pay_amount?: number | null;
+  file_total?: number | null;
 }
 
 export interface ClaimCardProps {
@@ -57,6 +60,10 @@ export default function ClaimCard({
 
   const firmColor = showFirmBadge && claim.firm_name ? getFirmColor(claim.firm_name) : undefined;
 
+  const authz = getSupabaseAuthz();
+  const userInfo = authz?.getCurrentUser();
+  const isAdmin = userInfo?.role === "admin";
+
   return (
     <Card
       firmColor={firmColor}
@@ -79,6 +86,26 @@ export default function ClaimCard({
           )}
         </div>
       </div>
+
+      {/* Payment Amount - Admin Only */}
+      {isAdmin && claim.pay_amount != null && (
+        <div className="border-t border-brand-dark-700 pt-3">
+          <p className="text-xs font-medium text-brand-light-400 mb-1">💰 Pay Amount</p>
+          <p className="text-sm text-brand-light-100 font-semibold">
+            ${claim.pay_amount.toFixed(2)}
+          </p>
+        </div>
+      )}
+
+      {/* File Total - Admin Only */}
+      {isAdmin && claim.file_total != null && (
+        <div className="border-t border-brand-dark-700 pt-3">
+          <p className="text-xs font-medium text-brand-light-400 mb-1">📄 File Total</p>
+          <p className="text-sm text-brand-light-100 font-semibold">
+            ${claim.file_total.toFixed(2)}
+          </p>
+        </div>
+      )}
 
       {/* Customer Section */}
       <div className="border-t border-brand-dark-700 pt-3">

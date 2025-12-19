@@ -40,6 +40,8 @@ export default function ClaimDetail() {
   const [editAppointmentStart, setEditAppointmentStart] = useState("");
   const [editAppointmentEnd, setEditAppointmentEnd] = useState("");
   const [editAssignedTo, setEditAssignedTo] = useState("");
+  const [editPayAmount, setEditPayAmount] = useState("");
+  const [editFileTotal, setEditFileTotal] = useState("");
 
   const load = async () => {
     const { data } = await supabase
@@ -137,6 +139,8 @@ export default function ClaimDetail() {
         : ""
     );
     setEditAssignedTo(claim?.assigned_to || "");
+    setEditPayAmount(claim?.pay_amount?.toString() || "");
+    setEditFileTotal(claim?.file_total?.toString() || "");
     setIsEditing(true);
   };
 
@@ -163,6 +167,26 @@ export default function ClaimDetail() {
       if (!isNaN(year)) {
         patch.vehicle_year = year;
       }
+    }
+
+    // Add pay amount if valid
+    if (editPayAmount) {
+      const amount = parseFloat(editPayAmount);
+      if (!isNaN(amount)) {
+        patch.pay_amount = amount;
+      }
+    } else {
+      patch.pay_amount = null;
+    }
+
+    // Add file total if valid
+    if (editFileTotal) {
+      const amount = parseFloat(editFileTotal);
+      if (!isNaN(amount)) {
+        patch.file_total = amount;
+      }
+    } else {
+      patch.file_total = null;
     }
 
     // Add appointment times if provided
@@ -549,6 +573,79 @@ export default function ClaimDetail() {
 
         {/* Main Content Grid */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", marginBottom: "24px" }}>
+          {/* Payment Information - Admin Only */}
+          {(() => {
+            const authz = getSupabaseAuthz();
+            const userInfo = authz?.getCurrentUser();
+            const isAdmin = userInfo?.role === "admin";
+
+            return isAdmin ? (
+              <div style={sectionStyle}>
+                <h4 style={headerStyle}>💰 Payment Information</h4>
+                <div style={{ marginBottom: "16px" }}>
+                  <div style={labelStyle}>Pay Amount</div>
+                  {isEditing ? (
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={editPayAmount}
+                      onChange={(e) => setEditPayAmount(e.target.value)}
+                      placeholder="Enter amount"
+                      style={{
+                        width: "100%",
+                        padding: "12px 16px",
+                        fontSize: "17px",
+                        border: "2px solid #6b7280",
+                        borderRadius: "8px",
+                        background: "#475569",
+                        color: "#ffffff",
+                        transition: "border-color 0.2s",
+                      }}
+                      onFocus={(e) => e.target.style.borderColor = "#667eea"}
+                      onBlur={(e) => e.target.style.borderColor = "#6b7280"}
+                    />
+                  ) : claim.pay_amount ? (
+                    <div style={valueStyle}>
+                      ${claim.pay_amount.toFixed(2)}
+                    </div>
+                  ) : (
+                    <div style={{ ...valueStyle, color: "#9ca3af", fontStyle: "italic" }}>Not set</div>
+                  )}
+                </div>
+                <div style={{ marginBottom: "16px" }}>
+                  <div style={labelStyle}>File Total</div>
+                  {isEditing ? (
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={editFileTotal}
+                      onChange={(e) => setEditFileTotal(e.target.value)}
+                      placeholder="Enter file total"
+                      style={{
+                        width: "100%",
+                        padding: "12px 16px",
+                        fontSize: "17px",
+                        border: "2px solid #6b7280",
+                        borderRadius: "8px",
+                        background: "#475569",
+                        color: "#ffffff",
+                        transition: "border-color 0.2s",
+                      }}
+                      onFocus={(e) => e.target.style.borderColor = "#667eea"}
+                      onBlur={(e) => e.target.style.borderColor = "#6b7280"}
+                    />
+                  ) : claim.file_total ? (
+                    <div style={valueStyle}>
+                      ${claim.file_total.toFixed(2)}
+                    </div>
+                  ) : (
+                    <div style={{ ...valueStyle, color: "#9ca3af", fontStyle: "italic" }}>Not set</div>
+                  )}
+                </div>
+              </div>
+            ) : null;
+          })()}
+
           {/* Customer Information */}
           <div style={sectionStyle}>
             <h4 style={headerStyle}>👤 Customer Information</h4>
