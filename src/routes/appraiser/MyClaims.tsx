@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   initializeSupabaseAuthz,
   getSupabaseAuthz,
@@ -31,6 +31,7 @@ type Claim = {
 type ClaimStatus = "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELED" | null;
 
 export default function MyClaims() {
+  const [searchParams] = useSearchParams();
   const [rows, setRows] = useState<Claim[]>([]);
   const [allClaims, setAllClaims] = useState<Claim[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,7 +41,7 @@ export default function MyClaims() {
   const [showTodayOnly, setShowTodayOnly] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<ClaimStatus | "ALL">("ALL");
   const [draggingClaimId, setDraggingClaimId] = useState<string | null>(null);
-  const [showCalendar, setShowCalendar] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(searchParams.get("view") === "calendar");
 
   const initializeAuth = async () => {
     try {
