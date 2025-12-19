@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { getFirmColor } from '../../constants/firmColors';
 import { getSupabaseAuthz } from '../../lib/supabaseAuthz';
@@ -33,6 +34,7 @@ interface MonthlyCalendarProps {
 const MAX_VISIBLE_PER_DAY = 3;
 
 export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalendarProps) {
+  const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [draggedClaimId, setDraggedClaimId] = useState<string | null>(null);
   const [selectedDay, setSelectedDay] = useState<{ date: string; claims: Claim[] } | null>(null);
@@ -232,7 +234,7 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
         onDragEnd={handleDragEnd}
         onClick={(e) => {
           e.stopPropagation();
-          window.open(`/CipherDispatch/claim/${claim.id}`, '_blank');
+          navigate(`/claim/${claim.id}?from=calendar`);
         }}
         style={{
           cursor: 'grab',
@@ -598,7 +600,7 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
               {selectedDay.claims.map(claim => (
                 <div
                   key={claim.id}
-                  onClick={() => window.open(`/CipherDispatch/claim/${claim.id}`, '_blank')}
+                  onClick={() => navigate(`/claim/${claim.id}?from=calendar`)}
                   style={{
                     background: '#2d3748',
                     borderLeft: `4px solid ${getFirmColor(claim.firm_name)}`,

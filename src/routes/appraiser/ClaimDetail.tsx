@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import imageCompression from "browser-image-compression";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
@@ -9,6 +9,7 @@ import JSZip from "jszip";
 export default function ClaimDetail() {
   const { id } = useParams();
   const nav = useNavigate();
+  const [searchParams] = useSearchParams();
   const [claim, setClaim] = useState<any>(null);
   const [photos, setPhotos] = useState<any[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -566,7 +567,12 @@ export default function ClaimDetail() {
               const authz = getSupabaseAuthz();
               const userInfo = authz?.getCurrentUser();
               const isAdmin = userInfo?.role === "admin";
-              const backLink = isAdmin ? "/admin/claims" : "/my-claims";
+              const fromCalendar = searchParams.get("from") === "calendar";
+
+              let backLink = isAdmin ? "/admin/claims" : "/my-claims";
+              if (fromCalendar) {
+                backLink += "?view=calendar";
+              }
 
               return (
                 <Link
@@ -586,7 +592,7 @@ export default function ClaimDetail() {
                   onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.3)"}
                   onMouseLeave={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.2)"}
                 >
-                  ← Back to Claims
+                  ← Back to {fromCalendar ? "Calendar" : "Claims"}
                 </Link>
               );
             })()}
