@@ -189,12 +189,20 @@ export default function ClaimDetail() {
       patch.file_total = null;
     }
 
-    // Add appointment times if provided
+    // Add appointment times if provided - preserve local timezone
     if (editAppointmentStart) {
-      patch.appointment_start = new Date(editAppointmentStart).toISOString();
+      const [datePart, timePart] = editAppointmentStart.split('T');
+      const [year, month, day] = datePart.split('-').map(Number);
+      const [hour, minute] = timePart.split(':').map(Number);
+      const localDate = new Date(year, month - 1, day, hour, minute, 0);
+      patch.appointment_start = localDate.toISOString();
     }
     if (editAppointmentEnd) {
-      patch.appointment_end = new Date(editAppointmentEnd).toISOString();
+      const [datePart, timePart] = editAppointmentEnd.split('T');
+      const [year, month, day] = datePart.split('-').map(Number);
+      const [hour, minute] = timePart.split(':').map(Number);
+      const localDate = new Date(year, month - 1, day, hour, minute, 0);
+      patch.appointment_end = localDate.toISOString();
     }
 
     await update(patch);

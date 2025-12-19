@@ -123,10 +123,12 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
   const handleSaveSchedule = async () => {
     if (!pendingDrop || !pendingDate) return;
 
-    // Combine date and time into ISO timestamp
-    const appointmentStart = new Date(`${pendingDate}T${scheduleTime}:00`);
-    const appointmentEnd = new Date(appointmentStart);
-    appointmentEnd.setHours(appointmentEnd.getHours() + 2);
+    // Combine date and time preserving local timezone
+    const [year, month, day] = pendingDate.split('-').map(Number);
+    const [hour, minute] = scheduleTime.split(':').map(Number);
+
+    const appointmentStart = new Date(year, month - 1, day, hour, minute, 0);
+    const appointmentEnd = new Date(appointmentStart.getTime() + 2 * 60 * 60 * 1000);
 
     try {
       const updateData: any = {
@@ -321,13 +323,14 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
     // Days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
-      const dateStr = date.toISOString().split('T')[0];
       const isToday = date.toDateString() === new Date().toDateString();
 
       const daysClaims = scheduledClaims.filter(claim => {
         if (!claim.appointment_start) return false;
-        const claimDate = new Date(claim.appointment_start).toISOString().split('T')[0];
-        return claimDate === dateStr;
+        const claimDate = new Date(claim.appointment_start);
+        return claimDate.getFullYear() === year &&
+               claimDate.getMonth() === month &&
+               claimDate.getDate() === day;
       }).sort((a, b) => {
         // Sort by appointment time (earliest first)
         const timeA = new Date(a.appointment_start!).getTime();
