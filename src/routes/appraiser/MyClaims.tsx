@@ -230,15 +230,18 @@ export default function MyClaims() {
   // Calculate status counts
   const getStatusCounts = () => {
     const counts = {
-      active: 0,
+      unassigned: 0,
+      assigned: 0,
       inProgress: 0,
       completed: 0,
       canceled: 0,
     };
 
     allClaims.forEach(claim => {
-      if (claim.status === null || claim.status === "SCHEDULED") {
-        counts.active++;
+      if (claim.status === null) {
+        counts.unassigned++;
+      } else if (claim.status === "SCHEDULED") {
+        counts.assigned++;
       } else if (claim.status === "IN_PROGRESS") {
         counts.inProgress++;
       } else if (claim.status === "COMPLETED") {
@@ -659,7 +662,7 @@ export default function MyClaims() {
           }}
         >
           <div style={{ fontSize: "18px", marginBottom: 4 }}>
-            {statusCounts.active + statusCounts.inProgress}
+            {statusCounts.unassigned + statusCounts.assigned + statusCounts.inProgress}
           </div>
           <div style={{ fontSize: "12px", opacity: 0.9 }}>All Active</div>
         </button>
@@ -684,7 +687,7 @@ export default function MyClaims() {
           }}
         >
           <div style={{ fontSize: "18px", marginBottom: 4 }}>
-            {statusCounts.active}
+            {statusCounts.assigned}
           </div>
           <div style={{ fontSize: "12px", opacity: 0.9 }}>Assigned</div>
         </button>
