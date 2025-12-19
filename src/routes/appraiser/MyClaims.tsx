@@ -5,6 +5,7 @@ import {
   initializeSupabaseAuthz,
   getSupabaseAuthz,
 } from "../../lib/supabaseAuthz";
+import MonthlyCalendar from "../../components/claims/MonthlyCalendar";
 
 type Claim = {
   id: string;
@@ -12,6 +13,7 @@ type Claim = {
   customer_name: string;
   status: string;
   appointment_start?: string;
+  appointment_end?: string;
   vin?: string;
   vehicle_year?: number;
   vehicle_make?: string;
@@ -20,6 +22,10 @@ type Claim = {
   city?: string;
   state?: string;
   postal_code?: string;
+  firm_name?: string;
+  pay_amount?: number | null;
+  file_total?: number | null;
+  profiles?: { full_name?: string } | null;
 };
 
 type ClaimStatus = "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELED" | null;
@@ -34,6 +40,7 @@ export default function MyClaims() {
   const [showTodayOnly, setShowTodayOnly] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<ClaimStatus | "ALL">("ALL");
   const [draggingClaimId, setDraggingClaimId] = useState<string | null>(null);
+  const [showCalendar, setShowCalendar] = useState(false);
 
   const initializeAuth = async () => {
     try {
@@ -72,7 +79,7 @@ export default function MyClaims() {
       let query = supabase
         .from("claims")
         .select(
-          "id,claim_number,customer_name,status,appointment_start,vin,vehicle_year,vehicle_make,vehicle_model,address_line1,city,state,postal_code"
+          "id,claim_number,customer_name,status,appointment_start,appointment_end,vin,vehicle_year,vehicle_make,vehicle_model,address_line1,city,state,postal_code,firm_name,pay_amount,file_total,profiles:assigned_to(full_name)"
         );
 
       // Apply role-based scoping
@@ -558,7 +565,22 @@ export default function MyClaims() {
           </h3>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          {!showCompleted && (
+          <button
+            onClick={() => setShowCalendar(!showCalendar)}
+            style={{
+              padding: "8px 16px",
+              background: showCalendar ? "#667eea" : "#4a5568",
+              color: "white",
+              border: "none",
+              borderRadius: 4,
+              fontWeight: "bold",
+              cursor: "pointer",
+              fontSize: "15px",
+            }}
+          >
+            {showCalendar ? "📋 List View" : "📅 Calendar View"}
+          </button>
+          {!showCompleted && !showCalendar && (
             <button
               onClick={() => setShowTodayOnly(!showTodayOnly)}
               style={{
@@ -575,39 +597,46 @@ export default function MyClaims() {
               {showTodayOnly ? "📋 View All" : "📅 Today Only"}
             </button>
           )}
-          <button
-            onClick={() => {
-              setShowCompleted(!showCompleted);
-              if (!showCompleted) {
-                setShowTodayOnly(false);
-                setSelectedStatus("ALL");
-              }
-            }}
-            style={{
-              padding: "8px 16px",
-              background: showCompleted ? "#4a5568" : "#10b981",
-              color: "white",
-              border: "none",
-              borderRadius: 4,
-              fontWeight: "bold",
-              cursor: "pointer",
-              fontSize: "15px",
-            }}
-          >
-            {showCompleted ? "← View Active Claims" : "✅ View Completed"}
-          </button>
+          {!showCalendar && (
+            <button
+              onClick={() => {
+                setShowCompleted(!showCompleted);
+                if (!showCompleted) {
+                  setShowTodayOnly(false);
+                  setSelectedStatus("ALL");
+                }
+              }}
+              style={{
+                padding: "8px 16px",
+                background: showCompleted ? "#4a5568" : "#10b981",
+                color: "white",
+                border: "none",
+                borderRadius: 4,
+                fontWeight: "bold",
+                cursor: "pointer",
+                fontSize: "15px",
+              }}
+            >
+              {showCompleted ? "← View Active Claims" : "✅ View Completed"}
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Status Summary Pills */}
-      <div
-        style={{
-          display: "flex",
-          gap: 12,
-          marginBottom: 24,
-          flexWrap: "wrap",
-        }}
-      >
+      {/* Calendar View */}
+      {showCalendar ? (
+        <MonthlyCalendar claims={allClaims} onClaimUpdate={load} />
+      ) : (
+        <>
+          {/* Status Summary Pills */}
+          <div
+            style={{
+              display: "flex",
+              gap: 12,
+              marginBottom: 24,
+              flexWrap: "wrap",
+            }}
+          >
         <button
           onClick={() => {
             setSelectedStatus("ALL");
@@ -785,6 +814,8 @@ export default function MyClaims() {
               </div>
             );
           })}
+        </>
+      )}
         </>
       )}
     </div>
