@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { getFirmColor } from '../../constants/firmColors';
+import { getSupabaseAuthz } from '../../lib/supabaseAuthz';
 
 interface Appraiser {
   user_id: string;
@@ -47,6 +48,11 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
 
   // Appraisers list
   const [appraisers, setAppraisers] = useState<Appraiser[]>([]);
+
+  // Check if current user is admin for pay field visibility
+  const authz = getSupabaseAuthz();
+  const userInfo = authz?.getCurrentUser();
+  const isAdmin = userInfo?.role === 'admin';
 
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -324,6 +330,7 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
       const isToday = date.toDateString() === new Date().toDateString();
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
       const daysClaims = scheduledClaims.filter(claim => {
         if (!claim.appointment_start) return false;
@@ -380,12 +387,12 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
               <div style={{ fontSize: '10px', color: '#a0aec0', marginBottom: '2px' }}>
                 {daysClaims.length} claim{daysClaims.length > 1 ? 's' : ''}
               </div>
-              {dailyPayTotal > 0 && (
+              {isAdmin && dailyPayTotal > 0 && (
                 <div style={{ fontSize: '10px', color: '#10b981', marginBottom: '2px', fontWeight: 'bold' }}>
                   💰 ${dailyPayTotal.toFixed(2)}
                 </div>
               )}
-              {dailyFileTotal > 0 && (
+              {isAdmin && dailyFileTotal > 0 && (
                 <div style={{ fontSize: '10px', color: '#3b82f6', marginBottom: '4px', fontWeight: 'bold' }}>
                   📄 ${dailyFileTotal.toFixed(2)}
                 </div>

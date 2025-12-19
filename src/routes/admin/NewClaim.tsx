@@ -385,15 +385,30 @@ export default function NewClaim() {
             </label>
             <input
               type="datetime-local"
-              value={form.appointment_start?.slice(0, 16) || ""}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  appointment_start: e.target.value
-                    ? new Date(e.target.value).toISOString()
-                    : undefined,
-                })
+              value={
+                form.appointment_start
+                  ? (() => {
+                      const d = new Date(form.appointment_start);
+                      const year = d.getFullYear();
+                      const month = String(d.getMonth() + 1).padStart(2, "0");
+                      const day = String(d.getDate()).padStart(2, "0");
+                      const hours = String(d.getHours()).padStart(2, "0");
+                      const minutes = String(d.getMinutes()).padStart(2, "0");
+                      return `${year}-${month}-${day}T${hours}:${minutes}`;
+                    })()
+                  : ""
               }
+              onChange={(e) => {
+                if (!e.target.value) {
+                  setForm({ ...form, appointment_start: undefined });
+                  return;
+                }
+                const [datePart, timePart] = e.target.value.split("T");
+                const [year, month, day] = datePart.split("-").map(Number);
+                const [hour, minute] = timePart.split(":").map(Number);
+                const localDate = new Date(year, month - 1, day, hour, minute, 0);
+                setForm({ ...form, appointment_start: localDate.toISOString() });
+              }}
               style={inputStyle}
             />
           </div>
@@ -410,15 +425,30 @@ export default function NewClaim() {
             </label>
             <input
               type="datetime-local"
-              value={form.appointment_end?.slice(0, 16) || ""}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  appointment_end: e.target.value
-                    ? new Date(e.target.value).toISOString()
-                    : undefined,
-                })
+              value={
+                form.appointment_end
+                  ? (() => {
+                      const d = new Date(form.appointment_end);
+                      const year = d.getFullYear();
+                      const month = String(d.getMonth() + 1).padStart(2, "0");
+                      const day = String(d.getDate()).padStart(2, "0");
+                      const hours = String(d.getHours()).padStart(2, "0");
+                      const minutes = String(d.getMinutes()).padStart(2, "0");
+                      return `${year}-${month}-${day}T${hours}:${minutes}`;
+                    })()
+                  : ""
               }
+              onChange={(e) => {
+                if (!e.target.value) {
+                  setForm({ ...form, appointment_end: undefined });
+                  return;
+                }
+                const [datePart, timePart] = e.target.value.split("T");
+                const [year, month, day] = datePart.split("-").map(Number);
+                const [hour, minute] = timePart.split(":").map(Number);
+                const localDate = new Date(year, month - 1, day, hour, minute, 0);
+                setForm({ ...form, appointment_end: localDate.toISOString() });
+              }}
               style={inputStyle}
             />
           </div>
