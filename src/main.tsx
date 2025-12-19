@@ -6,6 +6,7 @@ import App from "./routes/App";
 import Login from "./routes/Login";
 import AdminNewClaim from "./routes/admin/NewClaim";
 import AdminClaims from "./routes/admin/Claims";
+import AdminVendors from "./routes/admin/Vendors";
 import MyClaims from "./routes/appraiser/MyClaims";
 import ClaimDetail from "./routes/appraiser/ClaimDetail";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -31,6 +32,14 @@ const router = createBrowserRouter(
       element: (
         <ProtectedRoute requiredRole="admin">
           <AdminNewClaim />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/admin/vendors",
+      element: (
+        <ProtectedRoute requiredRole="admin">
+          <AdminVendors />
         </ProtectedRoute>
       ),
     },
