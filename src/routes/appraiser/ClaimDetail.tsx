@@ -480,99 +480,116 @@ export default function ClaimDetail() {
             </p>
           </div>
           <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-            {!isEditing ? (
-              <button
-                onClick={startEditing}
-                style={{
-                  padding: "10px 20px",
-                  background: "rgba(255,255,255,0.2)",
-                  color: "white",
-                  border: "1px solid rgba(255,255,255,0.3)",
-                  borderRadius: "8px",
-                  fontWeight: "600",
-                  fontSize: "15px",
-                  backdropFilter: "blur(10px)",
-                  cursor: "pointer",
-                  transition: "all 0.2s",
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.3)"}
-                onMouseLeave={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.2)"}
-              >
-                ✏️ Edit Claim
-              </button>
-            ) : (
-              <>
-                <button
-                  onClick={saveEdits}
+            {(() => {
+              const authz = getSupabaseAuthz();
+              const userInfo = authz?.getCurrentUser();
+              const isAdmin = userInfo?.role === "admin";
+
+              return isAdmin ? (
+                !isEditing ? (
+                  <button
+                    onClick={startEditing}
+                    style={{
+                      padding: "10px 20px",
+                      background: "rgba(255,255,255,0.2)",
+                      color: "white",
+                      border: "1px solid rgba(255,255,255,0.3)",
+                      borderRadius: "8px",
+                      fontWeight: "600",
+                      fontSize: "15px",
+                      backdropFilter: "blur(10px)",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.3)"}
+                    onMouseLeave={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.2)"}
+                  >
+                    ✏️ Edit Claim
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      onClick={saveEdits}
+                      style={{
+                        padding: "10px 20px",
+                        background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "8px",
+                        fontWeight: "600",
+                        fontSize: "15px",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = "translateY(-1px)";
+                        e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.3)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = "translateY(0)";
+                        e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
+                      }}
+                    >
+                      ✅ Save Changes
+                    </button>
+                    <button
+                      onClick={cancelEdits}
+                      style={{
+                        padding: "10px 20px",
+                        background: "rgba(239, 68, 68, 0.9)",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "8px",
+                        fontWeight: "600",
+                        fontSize: "15px",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "rgba(220, 38, 38, 0.9)";
+                        e.currentTarget.style.transform = "translateY(-1px)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "rgba(239, 68, 68, 0.9)";
+                        e.currentTarget.style.transform = "translateY(0)";
+                      }}
+                    >
+                      ❌ Cancel
+                    </button>
+                  </>
+                )
+              ) : null;
+            })()}
+            {(() => {
+              const authz = getSupabaseAuthz();
+              const userInfo = authz?.getCurrentUser();
+              const isAdmin = userInfo?.role === "admin";
+              const backLink = isAdmin ? "/admin/claims" : "/my-claims";
+
+              return (
+                <Link
+                  to={backLink}
                   style={{
                     padding: "10px 20px",
-                    background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                    background: "rgba(255,255,255,0.2)",
                     color: "white",
-                    border: "none",
+                    textDecoration: "none",
                     borderRadius: "8px",
                     fontWeight: "600",
                     fontSize: "15px",
-                    cursor: "pointer",
+                    backdropFilter: "blur(10px)",
+                    border: "1px solid rgba(255,255,255,0.3)",
                     transition: "all 0.2s",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
                   }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "translateY(-1px)";
-                    e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.3)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "translateY(0)";
-                    e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
-                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.3)"}
+                  onMouseLeave={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.2)"}
                 >
-                  ✅ Save Changes
-                </button>
-                <button
-                  onClick={cancelEdits}
-                  style={{
-                    padding: "10px 20px",
-                    background: "rgba(239, 68, 68, 0.9)",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "8px",
-                    fontWeight: "600",
-                    fontSize: "15px",
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "rgba(220, 38, 38, 0.9)";
-                    e.currentTarget.style.transform = "translateY(-1px)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "rgba(239, 68, 68, 0.9)";
-                    e.currentTarget.style.transform = "translateY(0)";
-                  }}
-                >
-                  ❌ Cancel
-                </button>
-              </>
-            )}
-            <Link
-              to="/admin/claims"
-              style={{
-                padding: "10px 20px",
-                background: "rgba(255,255,255,0.2)",
-                color: "white",
-                textDecoration: "none",
-                borderRadius: "8px",
-                fontWeight: "600",
-                fontSize: "15px",
-                backdropFilter: "blur(10px)",
-                border: "1px solid rgba(255,255,255,0.3)",
-                transition: "all 0.2s",
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.3)"}
-              onMouseLeave={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.2)"}
-            >
-              ← Back to Claims
-            </Link>
+                  ← Back to Claims
+                </Link>
+              );
+            })()}
             <Link
               to="/"
               style={{
