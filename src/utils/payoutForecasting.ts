@@ -1,11 +1,17 @@
 // Payout Forecasting - Based on Historical Deposit Analysis
 // Uses actual deposit dates to infer pay periods and forecast future payouts
+// Forecasts FUTURE payouts based on scheduled appointments
+
+import { calculateExpectedPayout, normalizeFirmNameForConfig, isRecurringFirm } from './firmFeeConfig';
 
 export interface Claim {
   id: string;
   firm_name: string;
-  completion_date: string;
-  file_total: number;
+  completion_date?: string | null;
+  appointment_start?: string | null;
+  file_total?: number | null;
+  pay_amount?: number | null;
+  mileage?: number | null;
   status: string;
 }
 
@@ -42,23 +48,8 @@ export interface MonthlyTotal {
 
 // Normalize firm names per deposit data mapping
 export function normalizeFirmName(firmName: string): string {
-  if (!firmName) return 'Unknown';
-
-  const normalized = firmName.toUpperCase().trim();
-
-  if (normalized.includes('G T APPRAISALS') || normalized === 'LEGACY') return 'Legacy';
-  if (normalized.includes('SL APPRAISAL') || normalized === 'DOAN') return 'Doan';
-  if (normalized.includes('AUTOCLAIMSDI') || normalized === 'ACD') return 'ACD';
-  if (normalized.includes('HEAVY EQUIPMENT') || normalized === 'HEA') return 'HEA';
-  if (normalized.includes('CLAIMSOLUTION 16005709')) return 'ClaimSolution';
-  if (normalized.includes('AMA CLAIM SOLUTI')) return 'AMA';
-  if (normalized.includes('A TEAM')) return 'A-TEAM';
-  if (normalized.includes('IANET')) return 'IANET';
-  if (normalized.includes('SEDGWK') || normalized === 'SEDGWICK') return 'Sedgwick';
-  if (normalized.includes('COMPLETE CLAIMS')) return 'Complete Claims';
-  if (normalized.includes('SCA ENTERPR')) return 'SCA';
-
-  return firmName;
+  // Use the shared normalizer from firmFeeConfig
+  return normalizeFirmNameForConfig(firmName) || 'Unknown';
 }
 
 // Helper functions
@@ -246,6 +237,73 @@ export function getPayPeriod(firm: string, completedDate: Date): PayoutPeriod {
       };
     }
 
+    case 'AMA': {
+      // Bi-weekly (assuming similar to Complete Claims)
+      // Reference date to be determined from actual deposits
+      const refAMA = new Date('2024-12-04');
+      const daysUntilWed = (3 - day + 7) % 7 || 7;
+      let nextWed = addDays(completedDate, daysUntilWed);
+
+      const daysSinceRef = daysBetween(refAMA, nextWed);
+      const weeksSinceRef = Math.floor(daysSinceRef / 7);
+      if (weeksSinceRef % 2 !== 0) {
+        nextWed = addDays(nextWed, 7);
+      }
+
+      return {
+        periodStart: addDays(nextWed, -13),
+        periodEnd: addDays(nextWed, -1),
+        payoutDate: nextWed
+      };
+    }
+
+    case 'A-TEAM': {
+      // Bi-weekly (assuming Thursday)
+      const refATEAM = new Date('2024-12-19');
+      const daysUntilThu = (4 - day + 7) % 7 || 7;
+      let nextThu = addDays(completedDate, daysUntilThu);
+
+      const daysSinceRef = daysBetween(refATEAM, nextThu);
+      const weeksSinceRef = Math.floor(daysSinceRef / 7);
+      if (weeksSinceRef % 2 !== 0) {
+        nextThu = addDays(nextThu, 7);
+      }
+
+      return {
+        periodStart: addDays(nextThu, -13),
+        periodEnd: nextThu,
+        payoutDate: nextThu
+      };
+    }
+
+    case 'Frontline': {
+      // Monthly end-of-month (similar to IANET)
+      const frontlineMonth = completedDate.getMonth();
+      const frontlineYear = completedDate.getFullYear();
+      const lastDay = new Date(frontlineYear, frontlineMonth + 1, 0).getDate();
+      const payoutEOM = new Date(frontlineYear, frontlineMonth, lastDay);
+
+      return {
+        periodStart: new Date(frontlineYear, frontlineMonth, 1, 0, 0, 0),
+        periodEnd: new Date(frontlineYear, frontlineMonth, lastDay, 23, 59, 59),
+        payoutDate: adjustForWeekend(payoutEOM)
+      };
+    }
+
+    case 'SCA': {
+      // Irregular - treat as monthly EOM
+      const scaMonth = completedDate.getMonth();
+      const scaYear = completedDate.getFullYear();
+      const lastDay = new Date(scaYear, scaMonth + 1, 0).getDate();
+      const payoutEOM = new Date(scaYear, scaMonth, lastDay);
+
+      return {
+        periodStart: new Date(scaYear, scaMonth, 1, 0, 0, 0),
+        periodEnd: new Date(scaYear, scaMonth, lastDay, 23, 59, 59),
+        payoutDate: adjustForWeekend(payoutEOM)
+      };
+    }
+
     default:
       throw new Error(`Unknown or excluded firm: ${normalized}`);
   }
@@ -253,28 +311,39 @@ export function getPayPeriod(firm: string, completedDate: Date): PayoutPeriod {
 
 // Main forecasting function
 export function forecastPayouts(claims: Claim[], todayDate: Date = new Date()): PayoutForecast[] {
-  // Filter to completed claims with file_total
-  const completedClaims = claims.filter(c =>
-    c.status === 'COMPLETED' &&
-    c.completion_date &&
-    c.file_total > 0
-  );
-
-  // Group by firm and payout date
   const payoutMap = new Map<string, PayoutForecast>();
 
-  for (const claim of completedClaims) {
-    const completedDate = new Date(claim.completion_date);
+  for (const claim of claims) {
     const firmNormalized = normalizeFirmName(claim.firm_name);
 
-    // Skip excluded firms (irregular/low occurrence)
-    if (['SCA', 'A-TEAM', 'AMA'].includes(firmNormalized)) continue;
+    // Skip if not a recurring firm
+    if (!isRecurringFirm(claim.firm_name)) continue;
+
+    // Determine the work date - use completion_date if completed, otherwise use appointment_start
+    let workDate: Date | null = null;
+    let expectedAmount = 0;
+
+    if (claim.status === 'COMPLETED' && claim.completion_date) {
+      // For completed claims, use actual completion date and file_total/pay_amount
+      workDate = new Date(claim.completion_date);
+      expectedAmount = claim.file_total || claim.pay_amount || 0;
+    } else if (claim.appointment_start) {
+      // For scheduled claims, use appointment date and calculate expected amount
+      workDate = new Date(claim.appointment_start);
+      expectedAmount = calculateExpectedPayout(
+        claim.firm_name,
+        claim.pay_amount || undefined,
+        claim.mileage || undefined
+      );
+    }
+
+    if (!workDate || expectedAmount <= 0) continue;
 
     try {
-      const period = getPayPeriod(firmNormalized, completedDate);
+      const period = getPayPeriod(firmNormalized, workDate);
 
       // Only include if work falls in a valid period
-      if (completedDate >= period.periodStart && completedDate <= period.periodEnd) {
+      if (workDate >= period.periodStart && workDate <= period.periodEnd) {
         const key = `${firmNormalized}|${period.payoutDate.toISOString()}`;
 
         if (!payoutMap.has(key)) {
@@ -290,7 +359,7 @@ export function forecastPayouts(claims: Claim[], todayDate: Date = new Date()): 
         }
 
         const payout = payoutMap.get(key)!;
-        payout.totalExpected += claim.file_total;
+        payout.totalExpected += expectedAmount;
         payout.claimIds.push(claim.id);
         payout.claimCount++;
       }

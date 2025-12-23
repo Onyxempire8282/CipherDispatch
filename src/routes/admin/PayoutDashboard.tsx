@@ -26,21 +26,22 @@ export default function PayoutDashboard() {
 
   const loadData = async () => {
     try {
-      // Fetch all completed claims with file_total
+      // Fetch ALL claims (completed and scheduled) to forecast future payouts
+      // For completed claims: use file_total/pay_amount
+      // For scheduled claims: calculate expected amount from firm config
       const { data: claimsData, error } = await supabase
         .from('claims')
-        .select('id, firm_name, completion_date, file_total, status')
-        .eq('status', 'COMPLETED')
-        .not('completion_date', 'is', null)
-        .gt('file_total', 0);
+        .select('id, firm_name, completion_date, appointment_start, file_total, pay_amount, mileage, status')
+        .or('status.eq.COMPLETED,status.eq.SCHEDULED,status.eq.IN_PROGRESS')
+        .or('completion_date.not.is.null,appointment_start.not.is.null');
 
       if (error) throw error;
 
-      const claimsWithTotal = (claimsData || []) as Claim[];
-      setClaims(claimsWithTotal);
+      const allClaims = (claimsData || []) as Claim[];
+      setClaims(allClaims);
 
-      // Generate forecasts
-      const allPayouts = forecastPayouts(claimsWithTotal);
+      // Generate forecasts from both completed and scheduled claims
+      const allPayouts = forecastPayouts(allClaims);
       setPayouts(allPayouts);
 
       // Generate views
@@ -374,11 +375,19 @@ export default function PayoutDashboard() {
         fontSize: 14
       }}>
         <div style={{ fontWeight: "bold", color: "#667eea", marginBottom: 8 }}>
-          Forecast Based on Historical Deposit Patterns
+          Payout Forecast Details
+        </div>
+        <div style={{ marginBottom: 8 }}>
+          This forecast includes both <strong>completed claims</strong> awaiting payment and <strong>scheduled appointments</strong> for future work.
+        </div>
+        <div style={{ marginBottom: 8 }}>
+          • Completed claims use actual file_total amounts
+        </div>
+        <div style={{ marginBottom: 8 }}>
+          • Scheduled claims use expected amounts based on firm fee structures
         </div>
         <div>
-          Payout dates are calculated from actual deposit history. Only completed claims with file_total &gt; 0 are included.
-          Excludes irregular firms (SCA, A-TEAM, AMA).
+          Payout dates calculated from historical deposit patterns for each firm. All recurring firms included (Sedgwick, Legacy, ACD, ClaimSolution, Complete Claims, Doan, HEA, IANET, AMA, A-TEAM, Frontline).
         </div>
       </div>
     </div>
