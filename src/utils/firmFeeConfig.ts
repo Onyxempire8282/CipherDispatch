@@ -90,12 +90,12 @@ export function normalizeFirmNameForConfig(firmName: string): string {
   if (normalized.includes('SL APPRAISAL') || normalized === 'DOAN') return 'Doan';
   if (normalized.includes('AUTOCLAIMSDI') || normalized.includes('AUTOCLAIMS')) return 'ACD';
   if (normalized.includes('HEAVY EQUIPMENT') || normalized === 'HEA') return 'HEA';
-  if (normalized.includes('CLAIMSOLUTION')) return 'ClaimSolution';
+  if (normalized.includes('CLAIMSOLUTION') || normalized.includes('CLAIM SOLUTION')) return 'ClaimSolution';
   if (normalized.includes('AMA')) return 'AMA';
   if (normalized.includes('A TEAM') || normalized.includes('A-TEAM') || normalized.includes('ATEAM')) return 'A-TEAM';
   if (normalized.includes('IANET')) return 'IANET';
   if (normalized.includes('SEDGWK') || normalized === 'SEDGWICK') return 'Sedgwick';
-  if (normalized.includes('COMPLETE CLAIMS')) return 'Complete Claims';
+  if (normalized.includes('COMPLETE CLAIMS') || normalized === 'CCS') return 'Complete Claims';
   if (normalized.includes('SCA')) return 'SCA';
   if (normalized.includes('FRONTLINE')) return 'Frontline';
 
