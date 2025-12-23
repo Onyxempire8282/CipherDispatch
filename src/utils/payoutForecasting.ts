@@ -119,22 +119,28 @@ export function getPayPeriod(firm: string, completedDate: Date): PayoutPeriod {
     }
 
     case 'ClaimSolution': {
-      // Bi-weekly Thursday, period Fri→Thu
-      // Reference: 12/19/2024 (Thu)
-      const refCS = new Date('2024-12-19');
+      // Bi-weekly Thursday payout
+      // Period: Thu-Wed (14 days), paid following Thursday
+      // Example: 12/12-12/25 work → paid 1/2
+      //          12/26-1/8 work → paid 1/16
+      // Reference: 1/2/2025 (Thu payout) covers period ending 12/25/2024 (Wed)
+      const refCS = new Date('2025-01-02'); // Thursday payout date
+
+      // Find the next Thursday after (or on) the completed date
       const daysUntilThu = (4 - day + 7) % 7 || 7;
       let nextThu = addDays(completedDate, daysUntilThu);
 
+      // Check if this Thursday is on the bi-weekly schedule
       const daysSinceRef = daysBetween(refCS, nextThu);
       const weeksSinceRef = Math.floor(daysSinceRef / 7);
       if (weeksSinceRef % 2 !== 0) {
-        nextThu = addDays(nextThu, 7);
+        nextThu = addDays(nextThu, 7); // Move to next bi-weekly Thursday
       }
 
       return {
-        periodStart: addDays(nextThu, -13), // Friday 2 weeks ago
-        periodEnd: nextThu,
-        payoutDate: nextThu
+        periodStart: addDays(nextThu, -21), // Thursday 3 weeks ago (start of 2-week period)
+        periodEnd: addDays(nextThu, -8),    // Wednesday before payout (end of 2-week period)
+        payoutDate: nextThu                  // Thursday payout
       };
     }
 

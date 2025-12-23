@@ -1,0 +1,548 @@
+/**
+ * Payout Dashboard Styles
+ * Organized by component section
+ */
+
+/* ========== Layout ========== */
+
+.payout-dashboard {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+  padding: 16px;
+}
+
+.payout-dashboard__loading {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+  padding: 40px;
+  color: #e2e8f0;
+}
+
+/* ========== Header ========== */
+
+.payout-dashboard__header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.payout-dashboard__header-content {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.payout-dashboard__title {
+  margin: 0;
+  color: #e2e8f0;
+  font-size: 22px;
+  font-weight: bold;
+}
+
+.payout-dashboard__home-link {
+  padding: 8px 16px;
+  background: #4a5568;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+.payout-dashboard__home-link:hover {
+  background: #5a6578;
+}
+
+/* ========== Summary Cards ========== */
+
+.payout-dashboard__summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.payout-dashboard__summary-card {
+  background: #2d3748;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.payout-dashboard__summary-card--this-week {
+  border: 2px solid #10b981;
+}
+
+.payout-dashboard__summary-card--next-week {
+  border: 2px solid #667eea;
+}
+
+.payout-dashboard__summary-card--this-month {
+  border: 2px solid #f59e0b;
+}
+
+.payout-dashboard__summary-label {
+  color: #a0aec0;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.payout-dashboard__summary-amount {
+  font-size: 32px;
+  font-weight: bold;
+}
+
+.payout-dashboard__summary-amount--this-week {
+  color: #10b981;
+}
+
+.payout-dashboard__summary-amount--next-week {
+  color: #667eea;
+}
+
+.payout-dashboard__summary-amount--this-month {
+  color: #f59e0b;
+}
+
+.payout-dashboard__summary-count {
+  color: #a0aec0;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+/* ========== View Mode Buttons ========== */
+
+.payout-dashboard__view-buttons {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.payout-dashboard__view-button {
+  padding: 10px 20px;
+  background: #4a5568;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.payout-dashboard__view-button:hover {
+  background: #5a6578;
+}
+
+.payout-dashboard__view-button--active {
+  background: #667eea;
+}
+
+.payout-dashboard__view-button--active:hover {
+  background: #7789eb;
+}
+
+/* ========== View Containers ========== */
+
+.payout-dashboard__view-container {
+  display: grid;
+  gap: 16px;
+}
+
+.payout-dashboard__view-header {
+  color: #e2e8f0;
+  margin: 0 0 8px 0;
+}
+
+.payout-dashboard__empty-state {
+  background: #2d3748;
+  border: 1px solid #4a5568;
+  border-radius: 12px;
+  padding: 48px;
+  text-align: center;
+  color: #a0aec0;
+}
+
+/* ========== Payout Cards (Upcoming View) ========== */
+
+.payout-card {
+  background: #2d3748;
+  border: 2px solid #667eea;
+  border-radius: 12px;
+  padding: 24px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 24px;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.payout-card:hover {
+  background: #374151;
+  border-color: #818cf8;
+}
+
+.payout-card__field-label {
+  color: #a0aec0;
+  font-size: 12px;
+}
+
+.payout-card__firm-name {
+  color: #e2e8f0;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.payout-card__period {
+  color: #e2e8f0;
+  font-size: 14px;
+}
+
+.payout-card__date {
+  color: #10b981;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.payout-card__amount-section {
+  text-align: right;
+}
+
+.payout-card__claim-count {
+  color: #a0aec0;
+  font-size: 12px;
+}
+
+.payout-card__amount {
+  color: #e2e8f0;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+/* ========== Weekly/Monthly View Cards ========== */
+
+.period-card {
+  background: #2d3748;
+  border: 1px solid #4a5568;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.period-card__header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #4a5568;
+}
+
+.period-card__period-label {
+  color: #a0aec0;
+  font-size: 12px;
+}
+
+.period-card__period-value {
+  color: #e2e8f0;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.period-card__total-label {
+  color: #a0aec0;
+  font-size: 12px;
+  text-align: right;
+}
+
+.period-card__total-amount {
+  color: #10b981;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.period-card__payout-list {
+  display: grid;
+  gap: 8px;
+}
+
+.period-card__payout-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #1a202c;
+  border-radius: 6px;
+}
+
+.period-card__payout-firm {
+  color: #e2e8f0;
+  font-weight: bold;
+}
+
+.period-card__payout-date {
+  color: #a0aec0;
+  margin-left: 12px;
+  font-size: 14px;
+}
+
+.period-card__payout-amount {
+  color: #e2e8f0;
+  font-weight: bold;
+}
+
+/* ========== Modal ========== */
+
+.payout-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.payout-modal {
+  background: #1a202c;
+  border: 2px solid #667eea;
+  border-radius: 12px;
+  max-width: 900px;
+  width: 100%;
+  max-height: 85vh;
+  overflow: auto;
+  padding: 24px;
+}
+
+.payout-modal__header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  align-items: center;
+}
+
+.payout-modal__title {
+  margin: 0;
+  color: #e2e8f0;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.payout-modal__subtitle {
+  color: #a0aec0;
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.payout-modal__close-button {
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.payout-modal__close-button:hover {
+  background: #dc2626;
+}
+
+.payout-modal__summary {
+  background: #2d3748;
+  border: 2px solid #10b981;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.payout-modal__summary-count {
+  color: #e2e8f0;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.payout-modal__summary-total {
+  text-align: right;
+}
+
+.payout-modal__summary-total-label {
+  color: #a0aec0;
+  font-size: 14px;
+}
+
+.payout-modal__summary-total-amount {
+  color: #10b981;
+  font-size: 32px;
+  font-weight: bold;
+}
+
+.payout-modal__claims-header {
+  color: #e2e8f0;
+  margin: 0 0 12px 0;
+  font-size: 18px;
+}
+
+.payout-modal__claims-list {
+  display: grid;
+  gap: 12px;
+}
+
+/* ========== Claim Card (in modal) ========== */
+
+.claim-card {
+  background: #2d3748;
+  border: 1px solid #4a5568;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.claim-card__grid {
+  display: grid;
+  grid-template-columns: 2fr 2fr 1fr auto;
+  gap: 16px;
+  align-items: center;
+}
+
+.claim-card__field-label {
+  color: #a0aec0;
+  font-size: 11px;
+  margin-bottom: 4px;
+}
+
+.claim-card__claim-number {
+  color: #e2e8f0;
+  font-size: 15px;
+  font-weight: bold;
+}
+
+.claim-card__customer {
+  color: #e2e8f0;
+  font-size: 15px;
+}
+
+.claim-card__status {
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.claim-card__status--completed {
+  color: #10b981;
+}
+
+.claim-card__status--scheduled {
+  color: #f59e0b;
+}
+
+.claim-card__amount-section {
+  text-align: right;
+}
+
+.claim-card__amount {
+  color: #10b981;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.claim-card__edit-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.claim-card__edit-input {
+  width: 100px;
+  padding: 6px 8px;
+  background: #1a202c;
+  border: 1px solid #667eea;
+  border-radius: 4px;
+  color: #e2e8f0;
+  font-size: 14px;
+}
+
+.claim-card__edit-button {
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.claim-card__edit-button:hover {
+  background: #7789eb;
+}
+
+.claim-card__save-button {
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.claim-card__save-button:hover {
+  background: #059669;
+}
+
+.claim-card__cancel-button {
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.claim-card__cancel-button:hover {
+  background: #dc2626;
+}
+
+.claim-card__footer {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #4a5568;
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: #a0aec0;
+}
+
+.claim-card__footer-value {
+  color: #cbd5e0;
+}
+
+/* ========== Info Box ========== */
+
+.payout-dashboard__info-box {
+  background: #2d3748;
+  border: 1px solid #667eea;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 24px;
+  color: #a0aec0;
+  font-size: 14px;
+}
+
+.payout-dashboard__info-title {
+  font-weight: bold;
+  color: #667eea;
+  margin-bottom: 8px;
+}
+
+.payout-dashboard__info-text {
+  margin-bottom: 8px;
+}
+
+.payout-dashboard__info-text:last-child {
+  margin-bottom: 0;
+}
