@@ -8,7 +8,7 @@ export default function PayoutDashboard() {
   const [claims, setClaims] = useState<any[]>([]);
   const [payouts, setPayouts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewFilter, setViewFilter] = useState<'all' | 'weekly' | 'bi_monthly' | 'monthly'>('all');
+  const [viewFilter, setViewFilter] = useState<'all' | 'weekly' | 'biweekly' | 'monthly'>('all');
 
   useEffect(() => {
     loadData();
@@ -28,7 +28,12 @@ export default function PayoutDashboard() {
 
     // Calculate payouts
     const payoutData = vendorsList.map(vendor => {
-      const period = getPayoutPeriod(vendor.pay_cycle_type as PayCycleType);
+      const referenceDate = vendor.reference_pay_date ? new Date(vendor.reference_pay_date) : undefined;
+      const period = getPayoutPeriod(
+        vendor.pay_cycle_type as PayCycleType,
+        new Date(),
+        referenceDate
+      );
       const vendorClaims = claimsList.filter(c => c.firm_name === vendor.name);
 
       const currentPeriodClaims = vendorClaims.filter(c => {
@@ -56,9 +61,9 @@ export default function PayoutDashboard() {
 
   const filteredPayouts = payouts.filter(p => {
     if (viewFilter === 'all') return true;
-    if (viewFilter === 'weekly') return p.cycleType.includes('weekly');
-    if (viewFilter === 'bi_monthly') return p.cycleType === 'bi_monthly';
-    if (viewFilter === 'monthly') return p.cycleType.includes('monthly');
+    if (viewFilter === 'weekly') return p.cycleType === 'weekly_thu_fri_thu';
+    if (viewFilter === 'biweekly') return p.cycleType.startsWith('biweekly');
+    if (viewFilter === 'monthly') return p.cycleType.includes('monthly') || p.cycleType === 'semimonthly_15th_end';
     return true;
   });
 
@@ -124,7 +129,7 @@ export default function PayoutDashboard() {
 
       {/* Filter Buttons */}
       <div style={{ display: "flex", gap: 12, marginBottom: 24 }}>
-        {['all', 'weekly', 'bi_monthly', 'monthly'].map(filter => (
+        {['all', 'weekly', 'biweekly', 'monthly'].map(filter => (
           <button
             key={filter}
             onClick={() => setViewFilter(filter as any)}
@@ -138,7 +143,7 @@ export default function PayoutDashboard() {
               cursor: "pointer",
             }}
           >
-            {filter === 'all' ? 'All Upcoming' : filter.replace('_', ' ').toUpperCase()}
+            {filter === 'all' ? 'All Upcoming' : filter.charAt(0).toUpperCase() + filter.slice(1)}
           </button>
         ))}
       </div>

@@ -5,11 +5,15 @@ import {
   initializeSupabaseAuthz,
   getSupabaseAuthz,
 } from "../../lib/supabaseAuthz";
+import { PayCycleType } from "../../utils/payoutCalculations";
 
 type Vendor = {
   id: string;
   name: string;
   color: string;
+  pay_cycle_type?: PayCycleType;
+  reference_pay_date?: string;
+  active?: boolean;
   created_at?: string;
 };
 
@@ -22,6 +26,9 @@ export default function Vendors() {
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
   const [formName, setFormName] = useState("");
   const [formColor, setFormColor] = useState("#9CA3AF");
+  const [formPayCycleType, setFormPayCycleType] = useState<PayCycleType>('weekly_thu_fri_thu');
+  const [formReferencePayDate, setFormReferencePayDate] = useState("");
+  const [formActive, setFormActive] = useState(true);
 
   const initializeAuth = async () => {
     try {
@@ -90,6 +97,9 @@ export default function Vendors() {
     setEditingVendor(null);
     setFormName("");
     setFormColor("#9CA3AF");
+    setFormPayCycleType('weekly_thu_fri_thu');
+    setFormReferencePayDate("");
+    setFormActive(true);
   };
 
   const handleEdit = (vendor: Vendor) => {
@@ -97,6 +107,9 @@ export default function Vendors() {
     setEditingVendor(vendor);
     setFormName(vendor.name);
     setFormColor(vendor.color);
+    setFormPayCycleType(vendor.pay_cycle_type || 'weekly_thu_fri_thu');
+    setFormReferencePayDate(vendor.reference_pay_date || "");
+    setFormActive(vendor.active !== false);
   };
 
   const handleCancel = () => {
@@ -104,6 +117,9 @@ export default function Vendors() {
     setEditingVendor(null);
     setFormName("");
     setFormColor("#9CA3AF");
+    setFormPayCycleType('weekly_thu_fri_thu');
+    setFormReferencePayDate("");
+    setFormActive(true);
   };
 
   const handleSave = async () => {
@@ -112,12 +128,26 @@ export default function Vendors() {
       return;
     }
 
+    // Validate reference date for bi-weekly cycles
+    if (formPayCycleType.startsWith('biweekly') && !formReferencePayDate) {
+      alert("Reference pay date is required for bi-weekly pay cycles");
+      return;
+    }
+
     try {
+      const vendorData = {
+        name: formName.trim(),
+        color: formColor,
+        pay_cycle_type: formPayCycleType,
+        reference_pay_date: formReferencePayDate || null,
+        active: formActive
+      };
+
       if (editingVendor) {
         // Update existing vendor
         const { error } = await supabase
           .from("vendors")
-          .update({ name: formName.trim(), color: formColor })
+          .update(vendorData)
           .eq("id", editingVendor.id);
 
         if (error) throw error;
@@ -125,7 +155,7 @@ export default function Vendors() {
         // Add new vendor
         const { error } = await supabase
           .from("vendors")
-          .insert([{ name: formName.trim(), color: formColor }]);
+          .insert([vendorData]);
 
         if (error) throw error;
       }
@@ -336,7 +366,7 @@ export default function Vendors() {
               />
             </div>
 
-            <div style={{ marginBottom: 24 }}>
+            <div style={{ marginBottom: 20 }}>
               <label
                 style={{
                   display: "block",
@@ -376,6 +406,96 @@ export default function Vendors() {
                   }}
                 />
               </div>
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <label
+                style={{
+                  display: "block",
+                  marginBottom: 8,
+                  color: "#e2e8f0",
+                  fontWeight: "bold",
+                }}
+              >
+                Pay Cycle Type
+              </label>
+              <select
+                value={formPayCycleType}
+                onChange={(e) => setFormPayCycleType(e.target.value as PayCycleType)}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  background: "#1a202c",
+                  border: "1px solid #4a5568",
+                  borderRadius: 6,
+                  color: "#e2e8f0",
+                  fontSize: "15px",
+                }}
+              >
+                <option value="weekly_thu_fri_thu">Sedgwick: Weekly Thu (Fri→Thu)</option>
+                <option value="biweekly_thu_fri_thu">Legacy/Complete Claims: Bi-weekly Thu (Fri→Thu)</option>
+                <option value="biweekly_fri_sat_fri">ClaimSolution/Doan: Bi-weekly Fri (Sat→Fri)</option>
+                <option value="monthly_15th_prev_month">HEA: Monthly 15th (Previous Month)</option>
+                <option value="semimonthly_15th_end">ACD: Semi-monthly 15th & End</option>
+                <option value="monthly_last_same_month">IANET: Monthly Last Day (Same Month)</option>
+              </select>
+            </div>
+
+            {formPayCycleType.startsWith('biweekly') && (
+              <div style={{ marginBottom: 20 }}>
+                <label
+                  style={{
+                    display: "block",
+                    marginBottom: 8,
+                    color: "#e2e8f0",
+                    fontWeight: "bold",
+                  }}
+                >
+                  Reference Pay Date (for bi-weekly calculation)
+                </label>
+                <input
+                  type="date"
+                  value={formReferencePayDate}
+                  onChange={(e) => setFormReferencePayDate(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "10px",
+                    background: "#1a202c",
+                    border: "1px solid #4a5568",
+                    borderRadius: 6,
+                    color: "#e2e8f0",
+                    fontSize: "15px",
+                  }}
+                />
+                <div style={{ color: "#a0aec0", fontSize: "13px", marginTop: 4 }}>
+                  Enter a known pay date to calculate bi-weekly schedule
+                </div>
+              </div>
+            )}
+
+            <div style={{ marginBottom: 24 }}>
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  color: "#e2e8f0",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={formActive}
+                  onChange={(e) => setFormActive(e.target.checked)}
+                  style={{
+                    width: 20,
+                    height: 20,
+                    cursor: "pointer",
+                  }}
+                />
+                Active Vendor
+              </label>
             </div>
 
             <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
@@ -451,17 +571,32 @@ export default function Vendors() {
                     }}
                   />
                   <div>
-                    <div
-                      style={{
-                        color: "#e2e8f0",
-                        fontSize: "16px",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      {vendor.name}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div
+                        style={{
+                          color: "#e2e8f0",
+                          fontSize: "16px",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        {vendor.name}
+                      </div>
+                      {vendor.active === false && (
+                        <span style={{
+                          color: "#ef4444",
+                          fontSize: "12px",
+                          background: "#7f1d1d",
+                          padding: "2px 8px",
+                          borderRadius: 4
+                        }}>
+                          Inactive
+                        </span>
+                      )}
                     </div>
                     <div style={{ color: "#a0aec0", fontSize: "14px" }}>
-                      {vendor.color}
+                      {vendor.pay_cycle_type ?
+                        vendor.pay_cycle_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                        : 'No pay cycle set'}
                     </div>
                   </div>
                 </div>
