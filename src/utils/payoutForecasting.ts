@@ -11,7 +11,6 @@ export interface Claim {
   appointment_start?: string | null;
   file_total?: number | null;
   pay_amount?: number | null;
-  mileage?: number | null;
   status: string;
 }
 
@@ -328,13 +327,10 @@ export function forecastPayouts(claims: Claim[], todayDate: Date = new Date()): 
       workDate = new Date(claim.completion_date);
       expectedAmount = claim.file_total || claim.pay_amount || 0;
     } else if (claim.appointment_start) {
-      // For scheduled claims, use appointment date and calculate expected amount
+      // For scheduled claims, use appointment date and pay_amount from calendar
       workDate = new Date(claim.appointment_start);
-      expectedAmount = calculateExpectedPayout(
-        claim.firm_name,
-        claim.pay_amount || undefined,
-        claim.mileage || undefined
-      );
+      // Use pay_amount if set in calendar, otherwise use firm's base fee
+      expectedAmount = claim.pay_amount || calculateExpectedPayout(claim.firm_name) || 0;
     }
 
     if (!workDate || expectedAmount <= 0) continue;

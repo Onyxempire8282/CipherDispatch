@@ -27,11 +27,10 @@ export default function PayoutDashboard() {
   const loadData = async () => {
     try {
       // Fetch ALL claims (completed and scheduled) to forecast future payouts
-      // For completed claims: use file_total/pay_amount
-      // For scheduled claims: calculate expected amount from firm config
+      // Use pay_amount or file_total from claims (already set in calendar)
       const { data: claimsData, error } = await supabase
         .from('claims')
-        .select('id, firm_name, completion_date, appointment_start, file_total, pay_amount, mileage, status')
+        .select('id, firm_name, completion_date, appointment_start, file_total, pay_amount, status')
         .or('status.eq.COMPLETED,status.eq.SCHEDULED,status.eq.IN_PROGRESS')
         .or('completion_date.not.is.null,appointment_start.not.is.null');
 
@@ -381,10 +380,10 @@ export default function PayoutDashboard() {
           This forecast includes both <strong>completed claims</strong> awaiting payment and <strong>scheduled appointments</strong> for future work.
         </div>
         <div style={{ marginBottom: 8 }}>
-          • Completed claims use actual file_total amounts
+          • Completed claims: Uses actual <strong>file_total</strong> or <strong>pay_amount</strong>
         </div>
         <div style={{ marginBottom: 8 }}>
-          • Scheduled claims use expected amounts based on firm fee structures
+          • Scheduled claims: Uses <strong>pay_amount</strong> set in the calendar
         </div>
         <div>
           Payout dates calculated from historical deposit patterns for each firm. All recurring firms included (Sedgwick, Legacy, ACD, ClaimSolution, Complete Claims, Doan, HEA, IANET, AMA, A-TEAM, Frontline).

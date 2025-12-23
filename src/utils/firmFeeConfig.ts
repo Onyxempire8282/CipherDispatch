@@ -103,25 +103,21 @@ export function normalizeFirmNameForConfig(firmName: string): string {
 }
 
 // Calculate expected payout amount for a claim
+// If pay_amount is provided, use that; otherwise use firm's base fee
 export function calculateExpectedPayout(
   firmName: string,
-  baseFee?: number,
-  mileage?: number
+  payAmount?: number
 ): number {
+  // If pay_amount is already set, use it
+  if (payAmount && payAmount > 0) {
+    return payAmount;
+  }
+
+  // Otherwise, use firm's base fee as estimate
   const normalizedFirm = normalizeFirmNameForConfig(firmName);
   const feeStructure = FIRM_FEE_CONFIG[normalizedFirm];
 
-  if (!feeStructure) {
-    // If no config, use provided baseFee or 0
-    return baseFee || 0;
-  }
-
-  const base = baseFee || feeStructure.baseFee;
-  const mileageCharge = mileage && feeStructure.perMileRate
-    ? mileage * feeStructure.perMileRate
-    : 0;
-
-  return base + mileageCharge;
+  return feeStructure?.baseFee || 0;
 }
 
 // Get fee structure for a firm
