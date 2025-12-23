@@ -1,78 +1,96 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { Link } from "react-router-dom";
-import { getPayoutPeriod, calculateMonthlyRevenue, PayCycleType } from "../../utils/payoutCalculations";
+import {
+  forecastPayouts,
+  getWeeklyView,
+  getMonthlyView,
+  getUpcomingPayouts,
+  PayoutForecast,
+  WeeklyTotal,
+  MonthlyTotal,
+  Claim
+} from "../../utils/payoutForecasting";
 
 export default function PayoutDashboard() {
-  const [vendors, setVendors] = useState<any[]>([]);
-  const [claims, setClaims] = useState<any[]>([]);
-  const [payouts, setPayouts] = useState<any[]>([]);
+  const [claims, setClaims] = useState<Claim[]>([]);
+  const [payouts, setPayouts] = useState<PayoutForecast[]>([]);
+  const [weeklyView, setWeeklyView] = useState<WeeklyTotal[]>([]);
+  const [monthlyView, setMonthlyView] = useState<MonthlyTotal[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewFilter, setViewFilter] = useState<'all' | 'weekly' | 'biweekly' | 'monthly'>('all');
+  const [viewMode, setViewMode] = useState<'upcoming' | 'weekly' | 'monthly'>('upcoming');
 
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
-    const [vendorsRes, claimsRes] = await Promise.all([
-      supabase.from('vendors').select('*').eq('active', true),
-      supabase.from('claims').select('*').eq('status', 'COMPLETED')
-    ]);
+    try {
+      // Fetch all completed claims with file_total
+      const { data: claimsData, error } = await supabase
+        .from('claims')
+        .select('id, firm_name, completion_date, file_total, status')
+        .eq('status', 'COMPLETED')
+        .not('completion_date', 'is', null)
+        .gt('file_total', 0);
 
-    const vendorsList = vendorsRes.data || [];
-    const claimsList = claimsRes.data || [];
+      if (error) throw error;
 
-    setVendors(vendorsList);
-    setClaims(claimsList);
+      const claimsWithTotal = (claimsData || []) as Claim[];
+      setClaims(claimsWithTotal);
 
-    // Calculate payouts
-    const payoutData = vendorsList.map(vendor => {
-      const referenceDate = vendor.reference_pay_date ? new Date(vendor.reference_pay_date) : undefined;
-      const period = getPayoutPeriod(
-        vendor.pay_cycle_type as PayCycleType,
-        new Date(),
-        referenceDate
-      );
-      const vendorClaims = claimsList.filter(c => c.firm_name === vendor.name);
+      // Generate forecasts
+      const allPayouts = forecastPayouts(claimsWithTotal);
+      setPayouts(allPayouts);
 
-      const currentPeriodClaims = vendorClaims.filter(c => {
-        if (!c.completion_date) return false;
-        const d = new Date(c.completion_date);
-        return d >= period.startDate && d <= period.endDate;
-      });
-
-      const total = currentPeriodClaims.reduce((sum, c) => sum + (c.file_total || 0), 0);
-
-      return {
-        vendorName: vendor.name,
-        cycleType: vendor.pay_cycle_type,
-        payDate: period.payDate,
-        periodName: period.periodName,
-        total,
-        claimCount: currentPeriodClaims.length,
-        color: vendor.color
-      };
-    });
-
-    setPayouts(payoutData);
-    setLoading(false);
+      // Generate views
+      setWeeklyView(getWeeklyView(allPayouts));
+      setMonthlyView(getMonthlyView(allPayouts));
+    } catch (error: any) {
+      console.error('Error loading payout data:', error);
+      alert(`Error: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const filteredPayouts = payouts.filter(p => {
-    if (viewFilter === 'all') return true;
-    if (viewFilter === 'weekly') return p.cycleType === 'weekly_thu_fri_thu';
-    if (viewFilter === 'biweekly') return p.cycleType.startsWith('biweekly');
-    if (viewFilter === 'monthly') return p.cycleType.includes('monthly') || p.cycleType === 'semimonthly_15th_end';
-    return true;
+  const upcomingPayouts = getUpcomingPayouts(payouts, 30);
+  const thisWeekPayouts = upcomingPayouts.filter(p => {
+    const today = new Date();
+    const weekEnd = new Date(today);
+    weekEnd.setDate(today.getDate() + 7);
+    return p.payoutDate >= today && p.payoutDate <= weekEnd;
   });
 
-  const now = new Date();
-  const monthlyRevenue = calculateMonthlyRevenue(claims, now.getMonth(), now.getFullYear());
-  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1);
-  const nextMonthRevenue = calculateMonthlyRevenue(claims, nextMonth.getMonth(), nextMonth.getFullYear());
+  const thisWeekTotal = thisWeekPayouts.reduce((sum, p) => sum + p.totalExpected, 0);
+  const nextWeekPayouts = upcomingPayouts.filter(p => {
+    const weekStart = new Date();
+    weekStart.setDate(weekStart.getDate() + 7);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 7);
+    return p.payoutDate >= weekStart && p.payoutDate <= weekEnd;
+  });
+  const nextWeekTotal = nextWeekPayouts.reduce((sum, p) => sum + p.totalExpected, 0);
 
-  if (loading) return <div style={{ padding: 40, color: '#e2e8f0' }}>Loading...</div>;
+  const thisMonth = new Date().getMonth();
+  const thisYear = new Date().getFullYear();
+  const thisMonthPayouts = payouts.filter(p =>
+    p.payoutDate.getMonth() === thisMonth && p.payoutDate.getFullYear() === thisYear
+  );
+  const thisMonthTotal = thisMonthPayouts.reduce((sum, p) => sum + p.totalExpected, 0);
+
+  if (loading) {
+    return (
+      <div style={{
+        minHeight: "100vh",
+        background: "linear-gradient(135deg, #1a202c 0%, #2d3748 100%)",
+        padding: 40,
+        color: '#e2e8f0'
+      }}>
+        Loading payout forecasts...
+      </div>
+    );
+  }
 
   return (
     <div style={{
@@ -80,6 +98,7 @@ export default function PayoutDashboard() {
       background: "linear-gradient(135deg, #1a202c 0%, #2d3748 100%)",
       padding: 16,
     }}>
+      {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 24 }}>
         <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
           <Link to="/" style={{
@@ -91,12 +110,12 @@ export default function PayoutDashboard() {
             fontWeight: "bold",
           }}>← Home</Link>
           <h3 style={{ margin: 0, color: "#e2e8f0", fontSize: "22px", fontWeight: "bold" }}>
-            Payout Dashboard
+            Payout Forecast Dashboard
           </h3>
         </div>
       </div>
 
-      {/* Monthly Revenue Summary */}
+      {/* Summary Cards */}
       <div style={{
         display: "grid",
         gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
@@ -105,37 +124,59 @@ export default function PayoutDashboard() {
       }}>
         <div style={{
           background: "#2d3748",
-          border: "1px solid #10b981",
+          border: "2px solid #10b981",
           borderRadius: 12,
           padding: 24
         }}>
-          <div style={{ color: "#a0aec0", fontSize: 14, marginBottom: 8 }}>This Month Revenue</div>
+          <div style={{ color: "#a0aec0", fontSize: 14, marginBottom: 8 }}>This Week</div>
           <div style={{ color: "#10b981", fontSize: 32, fontWeight: "bold" }}>
-            ${monthlyRevenue.toFixed(2)}
+            ${thisWeekTotal.toFixed(2)}
+          </div>
+          <div style={{ color: "#a0aec0", fontSize: 12, marginTop: 4 }}>
+            {thisWeekPayouts.length} payout{thisWeekPayouts.length !== 1 ? 's' : ''}
           </div>
         </div>
+
         <div style={{
           background: "#2d3748",
-          border: "1px solid #667eea",
+          border: "2px solid #667eea",
           borderRadius: 12,
           padding: 24
         }}>
-          <div style={{ color: "#a0aec0", fontSize: 14, marginBottom: 8 }}>Projected Next Month</div>
+          <div style={{ color: "#a0aec0", fontSize: 14, marginBottom: 8 }}>Next Week</div>
           <div style={{ color: "#667eea", fontSize: 32, fontWeight: "bold" }}>
-            ${nextMonthRevenue.toFixed(2)}
+            ${nextWeekTotal.toFixed(2)}
+          </div>
+          <div style={{ color: "#a0aec0", fontSize: 12, marginTop: 4 }}>
+            {nextWeekPayouts.length} payout{nextWeekPayouts.length !== 1 ? 's' : ''}
+          </div>
+        </div>
+
+        <div style={{
+          background: "#2d3748",
+          border: "2px solid #f59e0b",
+          borderRadius: 12,
+          padding: 24
+        }}>
+          <div style={{ color: "#a0aec0", fontSize: 14, marginBottom: 8 }}>This Month</div>
+          <div style={{ color: "#f59e0b", fontSize: 32, fontWeight: "bold" }}>
+            ${thisMonthTotal.toFixed(2)}
+          </div>
+          <div style={{ color: "#a0aec0", fontSize: 12, marginTop: 4 }}>
+            {thisMonthPayouts.length} payout{thisMonthPayouts.length !== 1 ? 's' : ''}
           </div>
         </div>
       </div>
 
-      {/* Filter Buttons */}
+      {/* View Mode Buttons */}
       <div style={{ display: "flex", gap: 12, marginBottom: 24 }}>
-        {['all', 'weekly', 'biweekly', 'monthly'].map(filter => (
+        {['upcoming', 'weekly', 'monthly'].map(mode => (
           <button
-            key={filter}
-            onClick={() => setViewFilter(filter as any)}
+            key={mode}
+            onClick={() => setViewMode(mode as any)}
             style={{
               padding: "10px 20px",
-              background: viewFilter === filter ? "#667eea" : "#4a5568",
+              background: viewMode === mode ? "#667eea" : "#4a5568",
               color: "white",
               border: "none",
               borderRadius: 6,
@@ -143,46 +184,202 @@ export default function PayoutDashboard() {
               cursor: "pointer",
             }}
           >
-            {filter === 'all' ? 'All Upcoming' : filter.charAt(0).toUpperCase() + filter.slice(1)}
+            {mode.charAt(0).toUpperCase() + mode.slice(1)}
           </button>
         ))}
       </div>
 
-      {/* Payout List */}
-      <div style={{ display: "grid", gap: 16 }}>
-        {filteredPayouts.map((payout, idx) => (
-          <div key={idx} style={{
-            background: "#2d3748",
-            border: `2px solid ${payout.color}`,
-            borderRadius: 12,
-            padding: 24,
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr 1fr auto",
-            gap: 24,
-            alignItems: "center"
-          }}>
-            <div>
-              <div style={{ color: "#a0aec0", fontSize: 12 }}>Vendor</div>
-              <div style={{ color: "#e2e8f0", fontSize: 18, fontWeight: "bold" }}>{payout.vendorName}</div>
+      {/* Upcoming View */}
+      {viewMode === 'upcoming' && (
+        <div style={{ display: "grid", gap: 16 }}>
+          <h4 style={{ color: "#e2e8f0", margin: "0 0 8px 0" }}>
+            Next 30 Days ({upcomingPayouts.length} payouts)
+          </h4>
+          {upcomingPayouts.length === 0 ? (
+            <div style={{
+              background: "#2d3748",
+              border: "1px solid #4a5568",
+              borderRadius: 12,
+              padding: 48,
+              textAlign: "center",
+              color: "#a0aec0"
+            }}>
+              No upcoming payouts in the next 30 days
             </div>
-            <div>
-              <div style={{ color: "#a0aec0", fontSize: 12 }}>Period</div>
-              <div style={{ color: "#e2e8f0", fontSize: 16 }}>{payout.periodName}</div>
-            </div>
-            <div>
-              <div style={{ color: "#a0aec0", fontSize: 12 }}>Pay Date</div>
-              <div style={{ color: "#10b981", fontSize: 16, fontWeight: "bold" }}>
-                {payout.payDate.toLocaleDateString()}
+          ) : (
+            upcomingPayouts.map((payout, idx) => (
+              <div key={idx} style={{
+                background: "#2d3748",
+                border: "2px solid #667eea",
+                borderRadius: 12,
+                padding: 24,
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr 1fr auto",
+                gap: 24,
+                alignItems: "center"
+              }}>
+                <div>
+                  <div style={{ color: "#a0aec0", fontSize: 12 }}>Firm</div>
+                  <div style={{ color: "#e2e8f0", fontSize: 18, fontWeight: "bold" }}>
+                    {payout.firm}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ color: "#a0aec0", fontSize: 12 }}>Pay Period</div>
+                  <div style={{ color: "#e2e8f0", fontSize: 14 }}>
+                    {payout.periodStart.toLocaleDateString()} - {payout.periodEnd.toLocaleDateString()}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ color: "#a0aec0", fontSize: 12 }}>Payout Date</div>
+                  <div style={{ color: "#10b981", fontSize: 16, fontWeight: "bold" }}>
+                    {payout.payoutDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                  </div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ color: "#a0aec0", fontSize: 12 }}>
+                    {payout.claimCount} claim{payout.claimCount !== 1 ? 's' : ''}
+                  </div>
+                  <div style={{ color: "#e2e8f0", fontSize: 24, fontWeight: "bold" }}>
+                    ${payout.totalExpected.toFixed(2)}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Weekly View */}
+      {viewMode === 'weekly' && (
+        <div style={{ display: "grid", gap: 16 }}>
+          <h4 style={{ color: "#e2e8f0", margin: "0 0 8px 0" }}>
+            Weekly Totals ({weeklyView.length} weeks)
+          </h4>
+          {weeklyView.slice(0, 12).map((week, idx) => (
+            <div key={idx} style={{
+              background: "#2d3748",
+              border: "1px solid #4a5568",
+              borderRadius: 12,
+              padding: 24
+            }}>
+              <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginBottom: 16,
+                paddingBottom: 16,
+                borderBottom: "1px solid #4a5568"
+              }}>
+                <div>
+                  <div style={{ color: "#a0aec0", fontSize: 12 }}>Week of</div>
+                  <div style={{ color: "#e2e8f0", fontSize: 18, fontWeight: "bold" }}>
+                    {week.weekStart.toLocaleDateString()} - {week.weekEnd.toLocaleDateString()}
+                  </div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ color: "#a0aec0", fontSize: 12 }}>Total</div>
+                  <div style={{ color: "#10b981", fontSize: 24, fontWeight: "bold" }}>
+                    ${week.totalAmount.toFixed(2)}
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: "grid", gap: 8 }}>
+                {week.payouts.map((payout, pidx) => (
+                  <div key={pidx} style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    padding: "8px 12px",
+                    background: "#1a202c",
+                    borderRadius: 6
+                  }}>
+                    <div>
+                      <span style={{ color: "#e2e8f0", fontWeight: "bold" }}>{payout.firm}</span>
+                      <span style={{ color: "#a0aec0", marginLeft: 12, fontSize: 14 }}>
+                        {payout.payoutDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      </span>
+                    </div>
+                    <div style={{ color: "#e2e8f0", fontWeight: "bold" }}>
+                      ${payout.totalExpected.toFixed(2)}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ color: "#a0aec0", fontSize: 12 }}>{payout.claimCount} claims</div>
-              <div style={{ color: "#e2e8f0", fontSize: 24, fontWeight: "bold" }}>
-                ${payout.total.toFixed(2)}
+          ))}
+        </div>
+      )}
+
+      {/* Monthly View */}
+      {viewMode === 'monthly' && (
+        <div style={{ display: "grid", gap: 16 }}>
+          <h4 style={{ color: "#e2e8f0", margin: "0 0 8px 0" }}>
+            Monthly Totals ({monthlyView.length} months)
+          </h4>
+          {monthlyView.slice(0, 6).map((month, idx) => (
+            <div key={idx} style={{
+              background: "#2d3748",
+              border: "1px solid #4a5568",
+              borderRadius: 12,
+              padding: 24
+            }}>
+              <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginBottom: 16,
+                paddingBottom: 16,
+                borderBottom: "1px solid #4a5568"
+              }}>
+                <div>
+                  <div style={{ color: "#a0aec0", fontSize: 12 }}>Month</div>
+                  <div style={{ color: "#e2e8f0", fontSize: 18, fontWeight: "bold" }}>
+                    {month.monthName} {month.year}
+                  </div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ color: "#a0aec0", fontSize: 12 }}>Total</div>
+                  <div style={{ color: "#10b981", fontSize: 24, fontWeight: "bold" }}>
+                    ${month.totalAmount.toFixed(2)}
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: "grid", gap: 8 }}>
+                {Object.entries(month.byFirm).map(([firm, amount], fidx) => (
+                  <div key={fidx} style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    padding: "8px 12px",
+                    background: "#1a202c",
+                    borderRadius: 6
+                  }}>
+                    <div style={{ color: "#e2e8f0", fontWeight: "bold" }}>{firm}</div>
+                    <div style={{ color: "#e2e8f0", fontWeight: "bold" }}>
+                      ${amount.toFixed(2)}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
+      )}
+
+      {/* Info Box */}
+      <div style={{
+        background: "#2d3748",
+        border: "1px solid #667eea",
+        borderRadius: 12,
+        padding: 16,
+        marginTop: 24,
+        color: "#a0aec0",
+        fontSize: 14
+      }}>
+        <div style={{ fontWeight: "bold", color: "#667eea", marginBottom: 8 }}>
+          Forecast Based on Historical Deposit Patterns
+        </div>
+        <div>
+          Payout dates are calculated from actual deposit history. Only completed claims with file_total &gt; 0 are included.
+          Excludes irregular firms (SCA, A-TEAM, AMA).
+        </div>
       </div>
     </div>
   );
