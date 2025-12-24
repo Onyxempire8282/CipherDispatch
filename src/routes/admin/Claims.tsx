@@ -51,7 +51,9 @@ export default function AdminClaims() {
   const [showArchived, setShowArchived] = useState(
     searchParams.get("archived") === "true"
   );
-  const [showCalendar, setShowCalendar] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(
+    searchParams.get("view") === "calendar"
+  );
   const [selectedStatus, setSelectedStatus] = useState<ClaimStatus>("ALL");
   const [draggingClaimId, setDraggingClaimId] = useState<string | null>(null);
 

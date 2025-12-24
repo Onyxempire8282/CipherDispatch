@@ -1,7 +1,7 @@
 export const FIRM_COLORS: Record<string, string> = {
   Sedgwick: "#9CA3AF",         // Gray
   ACD: "#F59E0B",              // Amber
-  ClaimSolution: "#8B5CF6",    // Violet
+  ClaimSolution: "#EC4899",    // Pink (changed from Violet for better distinction)
   "Complete Claims": "#EF4444", // Red (was CCS)
   Doan: "#10B981",             // Emerald
   Legacy: "#3B82F6",           // Blue
