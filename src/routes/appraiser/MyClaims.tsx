@@ -42,6 +42,7 @@ export default function MyClaims() {
   const [selectedStatus, setSelectedStatus] = useState<ClaimStatus | "ALL">("ALL");
   const [draggingClaimId, setDraggingClaimId] = useState<string | null>(null);
   const [showCalendar, setShowCalendar] = useState(searchParams.get("view") === "calendar");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const initializeAuth = async () => {
     try {
@@ -151,6 +152,16 @@ export default function MyClaims() {
       });
     }
 
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filteredData = filteredData.filter(claim =>
+        claim.claim_number?.toLowerCase().includes(query) ||
+        claim.customer_name?.toLowerCase().includes(query) ||
+        claim.firm_name?.toLowerCase().includes(query)
+      );
+    }
+
     setRows(filteredData);
   };
 
@@ -189,7 +200,7 @@ export default function MyClaims() {
     if (allClaims.length > 0) {
       applyFilters(allClaims);
     }
-  }, [showCompleted, showTodayOnly, selectedStatus, allClaims]);
+  }, [showCompleted, showTodayOnly, selectedStatus, searchQuery, allClaims]);
 
   // Drag-and-drop handlers for cross-window dragging
   const handleDragStart = (e: React.DragEvent, claim: Claim) => {
@@ -567,6 +578,27 @@ export default function MyClaims() {
           <h3 style={{ margin: 0, color: "#e2e8f0", fontSize: "22px", fontWeight: "bold" }}>
             My Claims
           </h3>
+          {!showCalendar && (
+            <input
+              type="text"
+              placeholder="🔍 Search by claim #, customer, or firm..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                padding: "8px 16px",
+                background: "#1a202c",
+                border: "2px solid #4a5568",
+                borderRadius: "6px",
+                color: "#e2e8f0",
+                fontSize: "14px",
+                width: "300px",
+                marginLeft: "16px",
+                transition: "border-color 0.2s",
+              }}
+              onFocus={(e) => e.currentTarget.style.borderColor = "#667eea"}
+              onBlur={(e) => e.currentTarget.style.borderColor = "#4a5568"}
+            />
+          )}
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button
@@ -589,16 +621,28 @@ export default function MyClaims() {
               onClick={() => setShowTodayOnly(!showTodayOnly)}
               style={{
                 padding: "8px 16px",
-                background: showTodayOnly ? "#667eea" : "#4a5568",
+                background: showTodayOnly ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" : "#4a5568",
                 color: "white",
-                border: "none",
-                borderRadius: 4,
+                border: showTodayOnly ? "2px solid #818cf8" : "2px solid transparent",
+                borderRadius: "6px",
                 fontWeight: "bold",
                 cursor: "pointer",
                 fontSize: "15px",
+                transition: "all 0.2s",
+                boxShadow: showTodayOnly ? "0 2px 8px rgba(102, 126, 234, 0.4)" : "none",
+              }}
+              onMouseEnter={(e) => {
+                if (!showTodayOnly) {
+                  e.currentTarget.style.background = "#5a6c7d";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!showTodayOnly) {
+                  e.currentTarget.style.background = "#4a5568";
+                }
               }}
             >
-              {showTodayOnly ? "📋 View All" : "📅 Today Only"}
+              {showTodayOnly ? "✓ Today's Claims Only" : "📅 Filter to Today"}
             </button>
           )}
           {!showCalendar && (

@@ -432,12 +432,12 @@ export default function Vendors() {
                   fontSize: "15px",
                 }}
               >
-                <option value="weekly_thu_fri_thu">Sedgwick: Weekly Thu (Fri→Thu)</option>
-                <option value="biweekly_thu_fri_thu">Legacy/Complete Claims: Bi-weekly Thu (Fri→Thu)</option>
-                <option value="biweekly_fri_sat_fri">ClaimSolution/Doan: Bi-weekly Fri (Sat→Fri)</option>
-                <option value="monthly_15th_prev_month">HEA: Monthly 15th (Previous Month)</option>
-                <option value="semimonthly_15th_end">ACD: Semi-monthly 15th & End</option>
-                <option value="monthly_last_same_month">IANET: Monthly Last Day (Same Month)</option>
+                <option value="weekly_thu_fri_thu">Weekly Thu (Fri→Thu work, paid Thu)</option>
+                <option value="biweekly_thu_fri_thu">Bi-weekly Wed (2-week period, paid Wed)</option>
+                <option value="biweekly_fri_sat_fri">Bi-weekly Thu (2-week period, paid Thu)</option>
+                <option value="monthly_15th_prev_month">Monthly 15th (previous month work)</option>
+                <option value="semimonthly_15th_end">Semi-monthly: 15th & End-of-Month</option>
+                <option value="monthly_last_same_month">Monthly EOM (same month work)</option>
               </select>
             </div>
 
