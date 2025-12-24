@@ -357,7 +357,9 @@ export function forecastPayouts(claims: Claim[], todayDate: Date = new Date()): 
 
       // Only include if work falls in a valid period
       if (workDate >= period.periodStart && workDate <= period.periodEnd) {
-        const key = `${firmNormalized}|${period.payoutDate.toISOString()}`;
+        // Normalize payout date to date-only string (YYYY-MM-DD) to avoid time component differences
+        const payoutDateKey = period.payoutDate.toISOString().split('T')[0];
+        const key = `${firmNormalized}|${payoutDateKey}`;
 
         if (!payoutMap.has(key)) {
           payoutMap.set(key, {
