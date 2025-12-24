@@ -120,27 +120,38 @@ export function getPayPeriod(firm: string, completedDate: Date): PayoutPeriod {
 
     case 'ClaimSolution': {
       // Bi-weekly Thursday payout
-      // Period: Thu-Wed (14 days), paid following Thursday
+      // Period: Thu-Wed (14 days), paid 3 weeks after period start
       // Example: 12/12-12/25 work → paid 1/2
       //          12/26-1/8 work → paid 1/16
-      // Reference: 1/2/2025 (Thu payout) covers period ending 12/25/2024 (Wed)
-      const refCS = new Date('2025-01-02'); // Thursday payout date
+      // Reference: 12/12/2024 (Thu) is a period start
+      const refCS = new Date('2024-12-12'); // Thursday period start reference
 
-      // Find the next Thursday after (or on) the completed date
-      const daysUntilThu = (4 - day + 7) % 7 || 7;
-      let nextThu = addDays(completedDate, daysUntilThu);
+      // Strategy: Find which bi-weekly period CONTAINS the work date
+      // Find the most recent Thursday on or before the work date
+      const daysSinceThu = (day - 4 + 7) % 7;
+      const mostRecentThu = addDays(completedDate, -daysSinceThu);
 
-      // Check if this Thursday is on the bi-weekly schedule
-      const daysSinceRef = daysBetween(refCS, nextThu);
+      // Check if this Thursday is on the bi-weekly schedule (even weeks from ref)
+      const daysSinceRef = daysBetween(refCS, mostRecentThu);
       const weeksSinceRef = Math.floor(daysSinceRef / 7);
-      if (weeksSinceRef % 2 !== 0) {
-        nextThu = addDays(nextThu, 7); // Move to next bi-weekly Thursday
+
+      let periodStartThu;
+      if (weeksSinceRef % 2 === 0) {
+        // This Thursday is on the bi-weekly schedule - it's the period start
+        periodStartThu = mostRecentThu;
+      } else {
+        // This Thursday is NOT on schedule - go back one more week
+        periodStartThu = addDays(mostRecentThu, -7);
       }
 
+      // Period is 2 weeks starting from periodStartThu
+      const periodEnd = addDays(periodStartThu, 13); // Thu + 13 days = next Wed
+      const payoutDate = addDays(periodStartThu, 21); // Thu + 21 days = Thu 3 weeks later
+
       return {
-        periodStart: addDays(nextThu, -21), // Thursday 3 weeks ago (start of 2-week period)
-        periodEnd: addDays(nextThu, -8),    // Wednesday before payout (end of 2-week period)
-        payoutDate: nextThu                  // Thursday payout
+        periodStart: periodStartThu,
+        periodEnd: periodEnd,
+        payoutDate: payoutDate
       };
     }
 

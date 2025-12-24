@@ -15,23 +15,33 @@ function daysBetween(date1, date2) {
 
 function getClaimSolutionPayPeriod(completedDate) {
   const day = completedDate.getDay();
-  const refCS = new Date('2025-01-02'); // Thursday payout date
+  const refCS = new Date('2024-12-12'); // Thursday period start reference
 
-  // Find the next Thursday after (or on) the completed date
-  const daysUntilThu = (4 - day + 7) % 7 || 7;
-  let nextThu = addDays(completedDate, daysUntilThu);
+  // Find the most recent Thursday on or before the work date
+  const daysSinceThu = (day - 4 + 7) % 7;
+  const mostRecentThu = addDays(completedDate, -daysSinceThu);
 
-  // Check if this Thursday is on the bi-weekly schedule
-  const daysSinceRef = daysBetween(refCS, nextThu);
+  // Check if this Thursday is on the bi-weekly schedule (even weeks from ref)
+  const daysSinceRef = daysBetween(refCS, mostRecentThu);
   const weeksSinceRef = Math.floor(daysSinceRef / 7);
-  if (weeksSinceRef % 2 !== 0) {
-    nextThu = addDays(nextThu, 7);
+
+  let periodStartThu;
+  if (weeksSinceRef % 2 === 0) {
+    // This Thursday is on the bi-weekly schedule - it's the period start
+    periodStartThu = mostRecentThu;
+  } else {
+    // This Thursday is NOT on schedule - go back one more week
+    periodStartThu = addDays(mostRecentThu, -7);
   }
 
+  // Period is 2 weeks starting from periodStartThu
+  const periodEnd = addDays(periodStartThu, 13); // Thu + 13 days = next Wed
+  const payoutDate = addDays(periodStartThu, 21); // Thu + 21 days = Thu 3 weeks later
+
   return {
-    periodStart: addDays(nextThu, -21), // Thursday 3 weeks ago
-    periodEnd: addDays(nextThu, -8),    // Wednesday before payout
-    payoutDate: nextThu
+    periodStart: periodStartThu,
+    periodEnd: periodEnd,
+    payoutDate: payoutDate
   };
 }
 
