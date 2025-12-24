@@ -45,6 +45,8 @@ export default function ClaimDetail() {
   const [editAssignedTo, setEditAssignedTo] = useState("");
   const [editPayAmount, setEditPayAmount] = useState("");
   const [editFileTotal, setEditFileTotal] = useState("");
+  const [editFirmName, setEditFirmName] = useState("");
+  const [firms, setFirms] = useState<any[]>([]);
 
   const load = async () => {
     const { data } = await supabase
@@ -70,6 +72,15 @@ export default function ClaimDetail() {
         .select("user_id, full_name, role")
         .order("full_name");
       setUsers(data || []);
+    })();
+    // Load firms for firm dropdown
+    (async () => {
+      const { data } = await supabase
+        .from("vendors")
+        .select("id, name")
+        .eq("active", true)
+        .order("name");
+      setFirms(data || []);
     })();
   }, [id]);
 
@@ -160,6 +171,7 @@ export default function ClaimDetail() {
     setEditAssignedTo(claim?.assigned_to || "");
     setEditPayAmount(claim?.pay_amount?.toString() || "");
     setEditFileTotal(claim?.file_total?.toString() || "");
+    setEditFirmName(claim?.firm_name || "");
     setIsEditing(true);
   };
 
@@ -178,6 +190,7 @@ export default function ClaimDetail() {
       state: editState,
       postal_code: editPostalCode,
       assigned_to: editAssignedTo || null,
+      firm_name: editFirmName || null,
     };
 
     // Add vehicle year if valid
@@ -745,18 +758,45 @@ export default function ClaimDetail() {
             <h4 style={headerStyle}>🏢 Firm</h4>
             <div style={{ marginBottom: "16px" }}>
               <div style={labelStyle}>Vendor</div>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <div
+              {isEditing ? (
+                <select
+                  value={editFirmName}
+                  onChange={(e) => setEditFirmName(e.target.value)}
                   style={{
-                    width: "24px",
-                    height: "24px",
-                    borderRadius: "4px",
-                    background: getFirmColor(claim.firm_name),
-                    border: "2px solid rgba(255,255,255,0.3)",
+                    width: "100%",
+                    padding: "12px 16px",
+                    fontSize: "17px",
+                    border: "2px solid #6b7280",
+                    borderRadius: "8px",
+                    background: "#475569",
+                    color: "#ffffff",
+                    transition: "border-color 0.2s",
+                    cursor: "pointer",
                   }}
-                />
-                <div style={valueStyle}>{claim.firm_name || "Not assigned"}</div>
-              </div>
+                  onFocus={(e) => e.target.style.borderColor = "#667eea"}
+                  onBlur={(e) => e.target.style.borderColor = "#6b7280"}
+                >
+                  <option value="">Select a firm...</option>
+                  {firms.map((firm) => (
+                    <option key={firm.id} value={firm.name}>
+                      {firm.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <div
+                    style={{
+                      width: "24px",
+                      height: "24px",
+                      borderRadius: "4px",
+                      background: getFirmColor(claim.firm_name),
+                      border: "2px solid rgba(255,255,255,0.3)",
+                    }}
+                  />
+                  <div style={valueStyle}>{claim.firm_name || "Not assigned"}</div>
+                </div>
+              )}
             </div>
           </div>
 
