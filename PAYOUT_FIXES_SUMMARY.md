@@ -95,11 +95,40 @@ const amount = claim.status === 'COMPLETED'
 
 ---
 
+### 3. ClaimSolution Payouts Not Grouping Together ✅ FIXED
+
+**Problem:**
+- Multiple ClaimSolution claims all paying on Jan 1st appeared as separate payout rows instead of one grouped row
+- Each claim created its own payout entry even though they had the same firm and payout date
+
+**Root Cause:**
+The grouping key in `src/utils/payoutForecasting.ts` used the full ISO string (`toISOString()`) which includes the time component. If claims had different times (e.g., `2025-01-01T00:00:00.000Z` vs `2025-01-01T08:00:00.000Z`), they created different keys and appeared as separate groups.
+
+**Fix:**
+Updated line 361 in `src/utils/payoutForecasting.ts`:
+
+```typescript
+// Before:
+const key = `${firmNormalized}|${period.payoutDate.toISOString()}`;
+
+// After:
+const payoutDateKey = period.payoutDate.toISOString().split('T')[0];
+const key = `${firmNormalized}|${payoutDateKey}`;
+```
+
+**Impact:**
+- All claims for the same firm with the same payout date now group together into a single payout row
+- Payout dashboard shows correct aggregated totals instead of multiple separate entries
+- Time component in dates no longer affects grouping
+
+---
+
 ## Files Modified
 
 1. `src/utils/firmFeeConfig.ts` - Fixed vendor name normalization
 2. `src/constants/firmColors.ts` - Fixed color mapping for CS/CCS
 3. `src/components/PayoutDetailModal.tsx` - Fixed total calculation logic
+4. `src/utils/payoutForecasting.ts` - Fixed payout grouping by date only
 
 ## Testing
 
@@ -135,6 +164,12 @@ After deploying these fixes:
    - "SEDGWICK" and "Sedgwick" will be treated as the same firm
    - Case-insensitive normalization prevents duplicate listings
 
+5. **ClaimSolution claims group correctly**:
+   - All ClaimSolution claims with the same payout date appear as ONE grouped payout
+   - No more duplicate ClaimSolution rows for the same date (e.g., multiple Jan 1st entries)
+   - Total reflects all claims combined
+
 ---
 
 ## Date: 2024-12-24
+## Last Updated: 2024-12-24 (Added grouping fix)
