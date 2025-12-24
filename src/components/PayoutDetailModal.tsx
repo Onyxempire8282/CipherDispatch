@@ -15,7 +15,7 @@ interface PayoutDetailModalProps {
   payout: PayoutForecast;
   claims: ClaimDetail[];
   onClose: () => void;
-  onUpdateAmount: (claimId: string, newAmount: number) => Promise<void>;
+  onUpdateAmount: (claimId: string, newAmount: number, claim: ClaimDetail) => Promise<void>;
 }
 
 export function PayoutDetailModal({
@@ -26,26 +26,32 @@ export function PayoutDetailModal({
 }: PayoutDetailModalProps) {
   const [editingClaimId, setEditingClaimId] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState<string>('');
+  const [editingClaim, setEditingClaim] = useState<ClaimDetail | null>(null);
 
-  const handleEditAmount = (claimId: string, currentAmount: number) => {
-    setEditingClaimId(claimId);
+  const handleEditAmount = (claim: ClaimDetail, currentAmount: number) => {
+    setEditingClaimId(claim.id);
+    setEditingClaim(claim);
     setEditAmount(currentAmount.toString());
   };
 
-  const handleSaveAmount = async (claimId: string) => {
+  const handleSaveAmount = async () => {
+    if (!editingClaim) return;
+
     const newAmount = parseFloat(editAmount);
     if (isNaN(newAmount) || newAmount < 0) {
       alert('Please enter a valid amount');
       return;
     }
 
-    await onUpdateAmount(claimId, newAmount);
+    await onUpdateAmount(editingClaim.id, newAmount, editingClaim);
     setEditingClaimId(null);
+    setEditingClaim(null);
     setEditAmount('');
   };
 
   const handleCancelEdit = () => {
     setEditingClaimId(null);
+    setEditingClaim(null);
     setEditAmount('');
   };
 
@@ -156,7 +162,7 @@ export function PayoutDetailModal({
                           className="claim-card__save-button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleSaveAmount(claim.id);
+                            handleSaveAmount();
                           }}
                         >
                           ✓
@@ -182,7 +188,7 @@ export function PayoutDetailModal({
                             className="claim-card__edit-button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleEditAmount(claim.id, amount);
+                              handleEditAmount(claim, amount);
                             }}
                           >
                             Edit

@@ -88,21 +88,41 @@ export default function PayoutDashboard() {
     }
   };
 
-  const handleUpdateAmount = async (claimId: string, newAmount: number) => {
+  const handleUpdateAmount = async (claimId: string, newAmount: number, claim: ClaimDetail) => {
     try {
+      // Determine which field to update based on claim status and current values
+      // For COMPLETED claims: update file_total if it exists, otherwise pay_amount
+      // For SCHEDULED claims: always update pay_amount
+      const updateData: any = {};
+
+      if (claim.status === 'COMPLETED') {
+        // For completed claims, update the field that's currently being displayed
+        if (claim.file_total != null) {
+          updateData.file_total = newAmount;
+        } else {
+          updateData.pay_amount = newAmount;
+        }
+      } else {
+        // For scheduled claims, always update pay_amount
+        updateData.pay_amount = newAmount;
+      }
+
       const { error } = await supabase
         .from('claims')
-        .update({ pay_amount: newAmount })
+        .update(updateData)
         .eq('id', claimId);
 
       if (error) throw error;
 
+      // Update local state immediately
       setPayoutClaims(prev => prev.map(c =>
-        c.id === claimId ? { ...c, pay_amount: newAmount } : c
+        c.id === claimId ? { ...c, ...updateData } : c
       ));
 
+      // Reload all data to update totals
       await loadData();
 
+      // Re-fetch claims for this payout to ensure consistency
       if (selectedPayout) {
         const { data: claimDetails } = await supabase
           .from('claims')
