@@ -49,7 +49,17 @@ export function PayoutDetailModal({
     setEditAmount('');
   };
 
-  const totalAmount = claims.reduce((sum, c) => sum + (c.file_total || c.pay_amount || 0), 0);
+  // Calculate total using same logic as forecast:
+  // - COMPLETED claims: file_total || pay_amount
+  // - SCHEDULED claims: pay_amount only (matches calendar entry)
+  const totalAmount = claims.reduce((sum, c) => {
+    if (c.status === 'COMPLETED') {
+      return sum + (c.file_total || c.pay_amount || 0);
+    } else {
+      // For scheduled claims, use pay_amount (what was entered in calendar)
+      return sum + (c.pay_amount || 0);
+    }
+  }, 0);
 
   return (
     <div className="payout-modal-overlay" onClick={onClose}>
@@ -102,7 +112,10 @@ export function PayoutDetailModal({
 
         <div className="payout-modal__claims-list">
           {claims.map((claim) => {
-            const amount = claim.file_total || claim.pay_amount || 0;
+            // Use same logic as forecast for calculating amount
+            const amount = claim.status === 'COMPLETED'
+              ? (claim.file_total || claim.pay_amount || 0)
+              : (claim.pay_amount || 0);
             const isEditing = editingClaimId === claim.id;
             const statusClass = claim.status === 'COMPLETED'
               ? 'claim-card__status--completed'
@@ -191,7 +204,9 @@ export function PayoutDetailModal({
                   </div>
                   <div>
                     Type: <span className="claim-card__footer-value">
-                      {claim.file_total ? 'file_total' : 'pay_amount'}
+                      {claim.status === 'COMPLETED'
+                        ? (claim.file_total ? 'file_total' : 'pay_amount')
+                        : 'pay_amount (scheduled)'}
                     </span>
                   </div>
                 </div>
