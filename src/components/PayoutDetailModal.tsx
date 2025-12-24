@@ -5,6 +5,7 @@
 
 import { useState } from 'react';
 import { PayoutForecast, Claim } from '../utils/payoutForecasting';
+import { calculateExpectedPayout } from '../utils/firmFeeConfig';
 
 interface ClaimDetail extends Claim {
   claim_number?: string;
@@ -57,13 +58,13 @@ export function PayoutDetailModal({
 
   // Calculate total using same logic as forecast:
   // - COMPLETED claims: file_total || pay_amount
-  // - SCHEDULED claims: pay_amount only (matches calendar entry)
+  // - SCHEDULED claims: pay_amount || firm base fee (matches forecast logic)
   const totalAmount = claims.reduce((sum, c) => {
     if (c.status === 'COMPLETED') {
       return sum + (c.file_total || c.pay_amount || 0);
     } else {
-      // For scheduled claims, use pay_amount (what was entered in calendar)
-      return sum + (c.pay_amount || 0);
+      // For scheduled claims, use pay_amount if set, otherwise use firm's base fee
+      return sum + (c.pay_amount || calculateExpectedPayout(c.firm_name) || 0);
     }
   }, 0);
 
@@ -121,7 +122,7 @@ export function PayoutDetailModal({
             // Use same logic as forecast for calculating amount
             const amount = claim.status === 'COMPLETED'
               ? (claim.file_total || claim.pay_amount || 0)
-              : (claim.pay_amount || 0);
+              : (claim.pay_amount || calculateExpectedPayout(claim.firm_name) || 0);
             const isEditing = editingClaimId === claim.id;
             const statusClass = claim.status === 'COMPLETED'
               ? 'claim-card__status--completed'
@@ -212,7 +213,7 @@ export function PayoutDetailModal({
                     Type: <span className="claim-card__footer-value">
                       {claim.status === 'COMPLETED'
                         ? (claim.file_total ? 'file_total' : 'pay_amount')
-                        : 'pay_amount (scheduled)'}
+                        : (claim.pay_amount ? 'pay_amount (scheduled)' : 'base fee (scheduled)')}
                     </span>
                   </div>
                 </div>

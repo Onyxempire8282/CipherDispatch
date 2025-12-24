@@ -16,7 +16,16 @@
       "Bash(npm run deploy:*)",
       "Bash(npx gh-pages-clean)",
       "Bash(if exist \"node_modules\\.cache\\gh-pages\" rmdir /s /q \"node_modules\\.cache\\gh-pages\")",
-      "Bash(npx gh-pages:*)"
+      "Bash(npx gh-pages:*)",
+      "Bash(node test-payout-calc.mjs:*)",
+      "Bash(node check-data.mjs:*)",
+      "Bash(node check-firm-names.mjs:*)",
+      "Bash(node test-firm-normalization.mjs:*)",
+      "Bash(node test-claimsolution-payout.mjs:*)",
+      "Bash(ls:*)",
+      "Bash(node test-claimsolution-debug.mjs:*)",
+      "Bash(node test-vendor-normalization.mjs:*)",
+      "Bash(node:*)"
     ]
   }
 }

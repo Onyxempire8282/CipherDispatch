@@ -21,8 +21,9 @@ export const getFirmColor = (firmName?: string): string => {
   // Check for exact or partial matches using same logic as fee config
   if (normalized.includes('SEDGWK') || normalized.includes('SEDGWICK')) return FIRM_COLORS.Sedgwick;
   if (normalized.includes('AUTOCLAIMSDI') || normalized.includes('AUTOCLAIMS') || normalized.includes('ACD')) return FIRM_COLORS.ACD;
-  if (normalized.includes('CLAIMSOLUTION') || normalized.includes('CLAIM SOLUTION')) return FIRM_COLORS.ClaimSolution;
-  if (normalized.includes('COMPLETE CLAIMS') || normalized === 'CCS') return FIRM_COLORS["Complete Claims"];
+  // ClaimSolution variants: CS, CCS, ClaimSolution
+  if (normalized === 'CS' || normalized === 'CCS' || normalized.includes('CLAIMSOLUTION') || normalized.includes('CLAIM SOLUTION')) return FIRM_COLORS.ClaimSolution;
+  if (normalized.includes('COMPLETE CLAIMS')) return FIRM_COLORS["Complete Claims"];
   if (normalized.includes('SL APPRAISAL') || normalized.includes('DOAN')) return FIRM_COLORS.Doan;
   if (normalized.includes('G T APPRAISALS') || normalized.includes('LEGACY')) return FIRM_COLORS.Legacy;
   if (normalized.includes('AMA')) return FIRM_COLORS.AMA;
