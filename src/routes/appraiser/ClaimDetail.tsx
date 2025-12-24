@@ -4,6 +4,8 @@ import { supabase } from "../../lib/supabase";
 import imageCompression from "browser-image-compression";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { getSupabaseAuthz } from "../../lib/supabaseAuthz";
+import { getFirmColor } from "../../constants/firmColors";
+import { calculateExpectedPayout } from "../../utils/firmFeeConfig";
 import JSZip from "jszip";
 
 export default function ClaimDetail() {
@@ -485,28 +487,48 @@ export default function ClaimDetail() {
               const authz = getSupabaseAuthz();
               const userInfo = authz?.getCurrentUser();
               const isAdmin = userInfo?.role === "admin";
+              const isArchived = claim.status === 'CANCELED';
 
               return isAdmin ? (
                 !isEditing ? (
-                  <button
-                    onClick={startEditing}
-                    style={{
-                      padding: "10px 20px",
-                      background: "rgba(255,255,255,0.2)",
-                      color: "white",
-                      border: "1px solid rgba(255,255,255,0.3)",
-                      borderRadius: "8px",
-                      fontWeight: "600",
-                      fontSize: "15px",
-                      backdropFilter: "blur(10px)",
-                      cursor: "pointer",
-                      transition: "all 0.2s",
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.3)"}
-                    onMouseLeave={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.2)"}
-                  >
-                    ✏️ Edit Claim
-                  </button>
+                  isArchived ? (
+                    <div
+                      style={{
+                        padding: "10px 20px",
+                        background: "rgba(255,255,255,0.1)",
+                        color: "rgba(255,255,255,0.4)",
+                        border: "1px solid rgba(255,255,255,0.2)",
+                        borderRadius: "8px",
+                        fontWeight: "600",
+                        fontSize: "15px",
+                        backdropFilter: "blur(10px)",
+                        cursor: "not-allowed",
+                      }}
+                      title="Editing is disabled for archived claims"
+                    >
+                      🔒 Archived - Edit Disabled
+                    </div>
+                  ) : (
+                    <button
+                      onClick={startEditing}
+                      style={{
+                        padding: "10px 20px",
+                        background: "rgba(255,255,255,0.2)",
+                        color: "white",
+                        border: "1px solid rgba(255,255,255,0.3)",
+                        borderRadius: "8px",
+                        fontWeight: "600",
+                        fontSize: "15px",
+                        backdropFilter: "blur(10px)",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.3)"}
+                      onMouseLeave={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.2)"}
+                    >
+                      ✏️ Edit Claim
+                    </button>
+                  )
                 ) : (
                   <>
                     <button
@@ -579,18 +601,28 @@ export default function ClaimDetail() {
                   to={backLink}
                   style={{
                     padding: "10px 20px",
-                    background: "rgba(255,255,255,0.2)",
+                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
                     color: "white",
                     textDecoration: "none",
                     borderRadius: "8px",
                     fontWeight: "600",
                     fontSize: "15px",
                     backdropFilter: "blur(10px)",
-                    border: "1px solid rgba(255,255,255,0.3)",
+                    border: "1px solid rgba(255,255,255,0.2)",
                     transition: "all 0.2s",
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                    display: "inline-block",
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.3)"}
-                  onMouseLeave={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.2)"}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "linear-gradient(135deg, #818cf8 0%, #8b5fbf 100%)";
+                    e.currentTarget.style.transform = "translateY(-1px)";
+                    e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.3)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
+                  }}
                 >
                   ← Back to {fromCalendar ? "Calendar" : "Claims"}
                 </Link>
@@ -600,18 +632,28 @@ export default function ClaimDetail() {
               to="/"
               style={{
                 padding: "10px 20px",
-                background: "rgba(255,255,255,0.2)",
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
                 color: "white",
                 textDecoration: "none",
                 borderRadius: "8px",
                 fontWeight: "600",
                 fontSize: "15px",
                 backdropFilter: "blur(10px)",
-                border: "1px solid rgba(255,255,255,0.3)",
+                border: "1px solid rgba(255,255,255,0.2)",
                 transition: "all 0.2s",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                display: "inline-block",
               }}
-              onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.3)"}
-              onMouseLeave={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.2)"}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "linear-gradient(135deg, #818cf8 0%, #8b5fbf 100%)";
+                e.currentTarget.style.transform = "translateY(-1px)";
+                e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.3)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
+              }}
             >
               ← Home
             </Link>
@@ -655,6 +697,11 @@ export default function ClaimDetail() {
                     <div style={valueStyle}>
                       ${claim.pay_amount.toFixed(2)}
                     </div>
+                  ) : (claim.status === 'SCHEDULED' || claim.status === 'IN_PROGRESS') && claim.firm_name ? (
+                    <div style={{ ...valueStyle, color: "#f59e0b" }}>
+                      ${calculateExpectedPayout(claim.firm_name, claim.pay_amount).toFixed(2)}
+                      <span style={{ fontSize: "13px", color: "#a0aec0", marginLeft: "8px" }}>(estimated)</span>
+                    </div>
                   ) : (
                     <div style={{ ...valueStyle, color: "#9ca3af", fontStyle: "italic" }}>Not set</div>
                   )}
@@ -692,6 +739,26 @@ export default function ClaimDetail() {
               </div>
             ) : null;
           })()}
+
+          {/* Firm Information */}
+          <div style={sectionStyle}>
+            <h4 style={headerStyle}>🏢 Firm</h4>
+            <div style={{ marginBottom: "16px" }}>
+              <div style={labelStyle}>Vendor</div>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div
+                  style={{
+                    width: "24px",
+                    height: "24px",
+                    borderRadius: "4px",
+                    background: getFirmColor(claim.firm_name),
+                    border: "2px solid rgba(255,255,255,0.3)",
+                  }}
+                />
+                <div style={valueStyle}>{claim.firm_name || "Not assigned"}</div>
+              </div>
+            </div>
+          </div>
 
           {/* Customer Information */}
           <div style={sectionStyle}>

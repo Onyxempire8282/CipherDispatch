@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { getFirmColor } from '../../constants/firmColors';
+import { getFirmColor, FIRM_COLORS } from '../../constants/firmColors';
 import { getSupabaseAuthz } from '../../lib/supabaseAuthz';
 
 interface Appraiser {
@@ -500,6 +500,45 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
           >
             ›
           </button>
+        </div>
+
+        {/* Color Legend */}
+        <div style={{
+          background: '#2d3748',
+          padding: '12px 16px',
+          borderRadius: '8px',
+          marginBottom: '12px'
+        }}>
+          <div style={{ fontSize: '12px', color: '#a0aec0', marginBottom: '8px', fontWeight: 'bold' }}>
+            📊 Firm Color Legend
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            {Object.entries(FIRM_COLORS).map(([firm, color]) => (
+              <div
+                key={firm}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '4px 10px',
+                  background: '#1a202c',
+                  borderRadius: '6px',
+                  fontSize: '12px'
+                }}
+              >
+                <div
+                  style={{
+                    width: '16px',
+                    height: '16px',
+                    borderRadius: '3px',
+                    background: color,
+                    border: '1px solid rgba(255,255,255,0.2)'
+                  }}
+                />
+                <span style={{ color: '#e2e8f0' }}>{firm}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Weekday Headers */}
