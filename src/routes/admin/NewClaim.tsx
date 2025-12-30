@@ -3,6 +3,7 @@ import { supabase } from "../../lib/supabase";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { Link, useNavigate } from "react-router-dom";
 import { FIRM_COLORS } from "../../constants/firmColors";
+import { isHolidayISO, formatHolidayName } from "../../utils/holidays";
 import "leaflet/dist/leaflet.css";
 
 type Claim = {
@@ -422,6 +423,33 @@ export default function NewClaim() {
               }}
               style={inputStyle}
             />
+            {form.appointment_start && (() => {
+              const holiday = isHolidayISO(form.appointment_start);
+              if (holiday) {
+                return (
+                  <div
+                    style={{
+                      marginTop: 8,
+                      padding: 12,
+                      background: "#f59e0b",
+                      border: "2px solid #d97706",
+                      borderRadius: 6,
+                      color: "#1a202c",
+                      fontWeight: "bold",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                    }}
+                  >
+                    <span style={{ fontSize: 20 }}>⚠️</span>
+                    <span>
+                      Warning: This appointment is scheduled on {formatHolidayName(holiday)} (Federal Holiday)
+                    </span>
+                  </div>
+                );
+              }
+              return null;
+            })()}
           </div>
           <div>
             <label
@@ -462,6 +490,33 @@ export default function NewClaim() {
               }}
               style={inputStyle}
             />
+            {form.appointment_end && (() => {
+              const holiday = isHolidayISO(form.appointment_end);
+              if (holiday) {
+                return (
+                  <div
+                    style={{
+                      marginTop: 8,
+                      padding: 12,
+                      background: "#f59e0b",
+                      border: "2px solid #d97706",
+                      borderRadius: 6,
+                      color: "#1a202c",
+                      fontWeight: "bold",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                    }}
+                  >
+                    <span style={{ fontSize: 20 }}>⚠️</span>
+                    <span>
+                      Warning: This appointment is scheduled on {formatHolidayName(holiday)} (Federal Holiday)
+                    </span>
+                  </div>
+                );
+              }
+              return null;
+            })()}
           </div>
         </div>
 
