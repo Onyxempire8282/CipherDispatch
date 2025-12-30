@@ -10,6 +10,7 @@ import AdminVendors from "./routes/admin/Vendors";
 import PayoutDashboard from "./routes/admin/PayoutDashboard";
 import MyClaims from "./routes/appraiser/MyClaims";
 import ClaimDetail from "./routes/appraiser/ClaimDetail";
+import FirmReliabilityAPI from "./routes/api/FirmReliability";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import "./index.css";
 import "leaflet/dist/leaflet.css";
@@ -65,6 +66,14 @@ const router = createBrowserRouter(
       element: (
         <ProtectedRoute>
           <ClaimDetail />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/api/firm-reliability",
+      element: (
+        <ProtectedRoute requiredRole="admin">
+          <FirmReliabilityAPI />
         </ProtectedRoute>
       ),
     },
