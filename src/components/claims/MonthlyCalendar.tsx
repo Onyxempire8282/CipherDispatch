@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { getFirmColor, FIRM_COLORS } from '../../constants/firmColors';
 import { getSupabaseAuthz } from '../../lib/supabaseAuthz';
+import { isHoliday, formatHolidayName } from '../../utils/holidays';
 
 interface Appraiser {
   user_id: string;
@@ -334,6 +335,9 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
       const isToday = date.toDateString() === new Date().toDateString();
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
+      // Check if this day is a holiday
+      const holiday = isHoliday(date);
+
       const daysClaims = scheduledClaims.filter(claim => {
         if (!claim.appointment_start) return false;
         const claimDate = new Date(claim.appointment_start);
@@ -384,6 +388,25 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
           }}>
             {day}
           </div>
+          {holiday && (
+            <div
+              style={{
+                background: 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)',
+                color: '#ffffff',
+                fontSize: '9px',
+                padding: '3px 6px',
+                borderRadius: '4px',
+                marginBottom: '6px',
+                fontWeight: 'bold',
+                textAlign: 'center',
+                boxShadow: '0 2px 4px rgba(220, 38, 38, 0.3)',
+                border: '1px solid #7f1d1d'
+              }}
+              title={formatHolidayName(holiday)}
+            >
+              🇺🇸 {formatHolidayName(holiday)}
+            </div>
+          )}
           {daysClaims.length > 0 && (
             <>
               <div style={{ fontSize: '10px', color: '#a0aec0', marginBottom: '2px' }}>
@@ -632,6 +655,34 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
                 ✕
               </button>
             </div>
+            {(() => {
+              const modalHoliday = isHoliday(new Date(selectedDay.date));
+              if (modalHoliday) {
+                return (
+                  <div
+                    style={{
+                      background: 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)',
+                      color: '#ffffff',
+                      padding: '12px 16px',
+                      borderRadius: '8px',
+                      marginBottom: '16px',
+                      fontWeight: 'bold',
+                      textAlign: 'center',
+                      boxShadow: '0 4px 6px rgba(220, 38, 38, 0.3)',
+                      border: '2px solid #7f1d1d',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <span style={{ fontSize: '20px' }}>🇺🇸</span>
+                    <span style={{ fontSize: '15px' }}>{formatHolidayName(modalHoliday)} - Federal Holiday</span>
+                  </div>
+                );
+              }
+              return null;
+            })()}
             <div style={{ fontSize: '14px', color: '#a0aec0', marginBottom: '16px' }}>
               {selectedDay.claims.length} claim{selectedDay.claims.length !== 1 ? 's' : ''} scheduled
             </div>
@@ -744,6 +795,36 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
                 })}
               </div>
             </div>
+
+            {/* Holiday Warning */}
+            {(() => {
+              const schedulingHoliday = isHoliday(new Date(pendingDate));
+              if (schedulingHoliday) {
+                return (
+                  <div
+                    style={{
+                      marginBottom: '20px',
+                      padding: '12px 16px',
+                      background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                      border: '2px solid #92400e',
+                      borderRadius: '8px',
+                      color: '#1a202c',
+                      fontWeight: 'bold',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      boxShadow: '0 4px 6px rgba(245, 158, 11, 0.3)'
+                    }}
+                  >
+                    <span style={{ fontSize: '20px' }}>⚠️</span>
+                    <span style={{ fontSize: '14px' }}>
+                      Warning: {formatHolidayName(schedulingHoliday)} - Federal Holiday
+                    </span>
+                  </div>
+                );
+              }
+              return null;
+            })()}
 
             {/* Time Picker */}
             <div style={{ marginBottom: '20px' }}>
