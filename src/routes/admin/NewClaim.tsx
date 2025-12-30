@@ -24,6 +24,7 @@ type Claim = {
   appointment_start?: string;
   appointment_end?: string;
   firm_name?: string;
+  pay_amount?: number | null;
 };
 
 const throttle = (() => {
@@ -67,6 +68,7 @@ export default function NewClaim() {
     address_line1: "",
   });
   const [users, setUsers] = useState<any[]>([]);
+  const [firms, setFirms] = useState<any[]>([]);
   const [mapCoords, setMapCoords] = useState<{
     lat: number;
     lng: number;
@@ -80,6 +82,15 @@ export default function NewClaim() {
         .from("profiles")
         .select("user_id, full_name, role");
       setUsers(data || []);
+    })();
+
+    (async () => {
+      const { data } = await supabase
+        .from("vendors")
+        .select("id, name, pay_amount")
+        .eq("active", true)
+        .order("name");
+      setFirms(data || []);
     })();
   }, []);
 
@@ -457,7 +468,15 @@ export default function NewClaim() {
         <h4 style={{ color: "#e2e8f0", marginTop: 16 }}>Firm</h4>
         <select
           value={form.firm_name || ""}
-          onChange={(e) => setForm({ ...form, firm_name: e.target.value || undefined })}
+          onChange={(e) => {
+            const selectedFirmName = e.target.value || undefined;
+            const selectedFirm = firms.find(f => f.name === selectedFirmName);
+            setForm({
+              ...form,
+              firm_name: selectedFirmName,
+              pay_amount: selectedFirm?.pay_amount || null
+            });
+          }}
           style={{
             padding: 12,
             fontSize: 16,
@@ -468,12 +487,35 @@ export default function NewClaim() {
           }}
         >
           <option value="">No Firm</option>
-          {Object.keys(FIRM_COLORS).map((firm) => (
-            <option key={firm} value={firm}>
-              {firm}
+          {firms.map((firm) => (
+            <option key={firm.id} value={firm.name}>
+              {firm.name}
             </option>
           ))}
         </select>
+
+        <h4 style={{ color: "#e2e8f0", marginTop: 16 }}>Pay Amount</h4>
+        <input
+          type="number"
+          step="0.01"
+          placeholder="Pay amount"
+          value={form.pay_amount || ""}
+          onChange={(e) => {
+            const value = e.target.value;
+            setForm({
+              ...form,
+              pay_amount: value ? parseFloat(value) : null
+            });
+          }}
+          style={{
+            padding: 12,
+            fontSize: 16,
+            border: "1px solid #4a5568",
+            borderRadius: 6,
+            background: "#2d3748",
+            color: "#e2e8f0",
+          }}
+        />
 
         <h4 style={{ color: "#e2e8f0", marginTop: 16 }}>Assignment</h4>
         <select

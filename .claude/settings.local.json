@@ -25,7 +25,8 @@
       "Bash(ls:*)",
       "Bash(node test-claimsolution-debug.mjs:*)",
       "Bash(node test-vendor-normalization.mjs:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(find:*)"
     ]
   }
 }
