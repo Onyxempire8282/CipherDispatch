@@ -56,12 +56,14 @@ export default function Intelligence() {
 
       try {
         // Fetch all API data in parallel
+        // Use basename for GitHub Pages deployment
+        const basename = '/CipherDispatch';
         const [reliability, variance, capacity, revenue, runway] = await Promise.all([
-          fetch('/api/firm-reliability').then(r => r.json()),
-          fetch('/api/payout-variance').then(r => r.json()),
-          fetch('/api/capacity-stress').then(r => r.json()),
-          fetch('/api/revenue-risk').then(r => r.json()),
-          fetch('/api/survival-runway').then(r => r.json())
+          fetch(`${basename}/api/firm-reliability`).then(r => r.json()),
+          fetch(`${basename}/api/payout-variance`).then(r => r.json()),
+          fetch(`${basename}/api/capacity-stress`).then(r => r.json()),
+          fetch(`${basename}/api/revenue-risk`).then(r => r.json()),
+          fetch(`${basename}/api/survival-runway`).then(r => r.json())
         ]);
 
         if (reliability.status === 'success') setFirmReliability(reliability.data);
@@ -518,11 +520,11 @@ export default function Intelligence() {
           <p>Data updated: {new Date().toLocaleString()}</p>
           <p className="mt-2">
             APIs:
-            <a href="/api/firm-reliability" className="text-blue-400 hover:underline ml-2">Firm Reliability</a> •
-            <a href="/api/payout-variance" className="text-blue-400 hover:underline ml-2">Payout Variance</a> •
-            <a href="/api/capacity-stress" className="text-blue-400 hover:underline ml-2">Capacity Stress</a> •
-            <a href="/api/revenue-risk" className="text-blue-400 hover:underline ml-2">Revenue Risk</a> •
-            <a href="/api/survival-runway" className="text-blue-400 hover:underline ml-2">Survival Runway</a>
+            <a href="/CipherDispatch/api/firm-reliability" className="text-blue-400 hover:underline ml-2">Firm Reliability</a> •
+            <a href="/CipherDispatch/api/payout-variance" className="text-blue-400 hover:underline ml-2">Payout Variance</a> •
+            <a href="/CipherDispatch/api/capacity-stress" className="text-blue-400 hover:underline ml-2">Capacity Stress</a> •
+            <a href="/CipherDispatch/api/revenue-risk" className="text-blue-400 hover:underline ml-2">Revenue Risk</a> •
+            <a href="/CipherDispatch/api/survival-runway" className="text-blue-400 hover:underline ml-2">Survival Runway</a>
           </p>
         </div>
       </div>
