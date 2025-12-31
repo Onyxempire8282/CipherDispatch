@@ -20,11 +20,11 @@ import {
   Filler
 } from 'chart.js';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
-import { FirmReliabilityReport } from '../../utils/firmReliability';
-import { PayoutVarianceReport } from '../../utils/payoutVariance';
-import { CapacityStressReport } from '../../utils/capacityStress';
-import { RevenueRiskReport } from '../../utils/revenueRisk';
-import { SurvivalRunwayReport } from '../../utils/survivalRunway';
+import { generateFirmReliabilityReport, FirmReliabilityReport } from '../../utils/firmReliability';
+import { generatePayoutVarianceReport, PayoutVarianceReport } from '../../utils/payoutVariance';
+import { generateCapacityStressReport, CapacityStressReport } from '../../utils/capacityStress';
+import { generateRevenueRiskReport, RevenueRiskReport } from '../../utils/revenueRisk';
+import { generateSurvivalRunwayReport, SurvivalRunwayReport } from '../../utils/survivalRunway';
 
 // Register Chart.js components
 ChartJS.register(
@@ -55,22 +55,21 @@ export default function Intelligence() {
       setError(null);
 
       try {
-        // Fetch all API data in parallel
-        // Use basename for GitHub Pages deployment
-        const basename = '/CipherDispatch';
+        // Call utility functions directly instead of fetching
+        // This works on GitHub Pages static hosting
         const [reliability, variance, capacity, revenue, runway] = await Promise.all([
-          fetch(`${basename}/api/firm-reliability`).then(r => r.json()),
-          fetch(`${basename}/api/payout-variance`).then(r => r.json()),
-          fetch(`${basename}/api/capacity-stress`).then(r => r.json()),
-          fetch(`${basename}/api/revenue-risk`).then(r => r.json()),
-          fetch(`${basename}/api/survival-runway`).then(r => r.json())
+          generateFirmReliabilityReport(),
+          generatePayoutVarianceReport(),
+          generateCapacityStressReport(),
+          generateRevenueRiskReport(),
+          generateSurvivalRunwayReport()
         ]);
 
-        if (reliability.status === 'success') setFirmReliability(reliability.data);
-        if (variance.status === 'success') setPayoutVariance(variance.data);
-        if (capacity.status === 'success') setCapacityStress(capacity.data);
-        if (revenue.status === 'success') setRevenueRisk(revenue.data);
-        if (runway.status === 'success') setSurvivalRunway(runway.data);
+        setFirmReliability(reliability);
+        setPayoutVariance(variance);
+        setCapacityStress(capacity);
+        setRevenueRisk(revenue);
+        setSurvivalRunway(runway);
       } catch (err: any) {
         setError(err.message || 'Failed to load intelligence data');
       } finally {
