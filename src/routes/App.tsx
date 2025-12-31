@@ -226,6 +226,34 @@ export default function App() {
                 View upcoming vendor payouts and revenue projections
               </p>
             </Link>
+
+            <Link
+              to="/admin/intelligence"
+              style={{
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                border: "1px solid #8b5cf6",
+                padding: 24,
+                borderRadius: 12,
+                textDecoration: "none",
+                color: "#e2e8f0",
+                boxShadow: "0 4px 6px rgba(0,0,0,0.5)",
+                transition: "transform 0.2s",
+              }}
+              onMouseOver={(e) =>
+                (e.currentTarget.style.transform = "translateY(-2px)")
+              }
+              onMouseOut={(e) =>
+                (e.currentTarget.style.transform = "translateY(0)")
+              }
+            >
+              <div style={{ fontSize: 48, marginBottom: 12 }}>📊</div>
+              <h3 style={{ margin: 0, marginBottom: 8, color: "#e2e8f0" }}>
+                Business Intelligence
+              </h3>
+              <p style={{ margin: 0, color: "#e2e8f0" }}>
+                Analytics dashboard with live metrics, charts, and forecasts
+              </p>
+            </Link>
           </div>
         ) : (
           <div style={{ display: "grid", gap: 16 }}>
