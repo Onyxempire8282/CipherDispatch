@@ -11,6 +11,7 @@ import PayoutDashboard from "./routes/admin/PayoutDashboard";
 import MyClaims from "./routes/appraiser/MyClaims";
 import ClaimDetail from "./routes/appraiser/ClaimDetail";
 import FirmReliabilityAPI from "./routes/api/FirmReliability";
+import PayoutVarianceAPI from "./routes/api/PayoutVariance";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import "./index.css";
 import "leaflet/dist/leaflet.css";
@@ -74,6 +75,14 @@ const router = createBrowserRouter(
       element: (
         <ProtectedRoute requiredRole="admin">
           <FirmReliabilityAPI />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/api/payout-variance",
+      element: (
+        <ProtectedRoute requiredRole="admin">
+          <PayoutVarianceAPI />
         </ProtectedRoute>
       ),
     },
