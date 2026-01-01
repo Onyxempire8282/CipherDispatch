@@ -7,6 +7,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { generateMonthlyPerformanceReport, MonthlyPerformanceReport } from '../../utils/monthlyPerformance';
+import { checkAndLogPreviousMonth } from '../../utils/monthlyHistory';
 
 export default function MonthlyPerformanceAPI() {
   const [searchParams] = useSearchParams();
@@ -23,6 +24,9 @@ export default function MonthlyPerformanceAPI() {
       setError(null);
 
       try {
+        // Auto-check and log previous month if new month detected
+        await checkAndLogPreviousMonth();
+
         const result = await generateMonthlyPerformanceReport();
         setData(result);
       } catch (err: any) {

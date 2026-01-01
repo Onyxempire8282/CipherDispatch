@@ -26,6 +26,7 @@ import { generateCapacityStressReport, CapacityStressReport } from '../../utils/
 import { generateRevenueRiskReport, RevenueRiskReport } from '../../utils/revenueRisk';
 import { generateSurvivalRunwayReport, SurvivalRunwayReport } from '../../utils/survivalRunway';
 import { generateMonthlyPerformanceReport, MonthlyPerformanceReport } from '../../utils/monthlyPerformance';
+import { generateMonthlyHistoryReport, MonthlyHistoryReport } from '../../utils/monthlyHistory';
 
 // Register Chart.js components
 ChartJS.register(
@@ -48,6 +49,7 @@ export default function Intelligence() {
   const [revenueRisk, setRevenueRisk] = useState<RevenueRiskReport | null>(null);
   const [survivalRunway, setSurvivalRunway] = useState<SurvivalRunwayReport | null>(null);
   const [monthlyPerformance, setMonthlyPerformance] = useState<MonthlyPerformanceReport | null>(null);
+  const [monthlyHistory, setMonthlyHistory] = useState<MonthlyHistoryReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,13 +61,14 @@ export default function Intelligence() {
       try {
         // Call utility functions directly instead of fetching
         // This works on GitHub Pages static hosting
-        const [reliability, variance, capacity, revenue, runway, monthly] = await Promise.all([
+        const [reliability, variance, capacity, revenue, runway, monthly, history] = await Promise.all([
           generateFirmReliabilityReport(),
           generatePayoutVarianceReport(),
           generateCapacityStressReport(),
           generateRevenueRiskReport(),
           generateSurvivalRunwayReport(),
-          generateMonthlyPerformanceReport()
+          generateMonthlyPerformanceReport(),
+          generateMonthlyHistoryReport()
         ]);
 
         setFirmReliability(reliability);
@@ -74,6 +77,7 @@ export default function Intelligence() {
         setRevenueRisk(revenue);
         setSurvivalRunway(runway);
         setMonthlyPerformance(monthly);
+        setMonthlyHistory(history);
       } catch (err: any) {
         setError(err.message || 'Failed to load intelligence data');
       } finally {
@@ -232,6 +236,99 @@ export default function Intelligence() {
       }
     ]
   } : null;
+
+  // Chart: Monthly Completed Claims (Bar)
+  const monthlyCompletedClaimsChart = monthlyHistory ? {
+    labels: monthlyHistory.historical_performance.map(m => m.month),
+    datasets: [{
+      label: 'Completed Claims',
+      data: monthlyHistory.historical_performance.map(m => m.completed_claims),
+      backgroundColor: 'rgba(34, 197, 94, 0.8)',
+      borderColor: 'rgba(34, 197, 94, 1)',
+      borderWidth: 2
+    }]
+  } : null;
+
+  // Chart: Monthly Velocity Trend (Line)
+  const monthlyVelocityTrendChart = monthlyHistory ? {
+    labels: monthlyHistory.historical_performance.map(m => m.month),
+    datasets: [{
+      label: 'Avg Velocity (claims/day)',
+      data: monthlyHistory.historical_performance.map(m => m.avg_velocity),
+      borderColor: 'rgba(59, 130, 246, 1)',
+      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+      fill: true,
+      tension: 0.4
+    }]
+  } : null;
+
+  // Chart: Burnout Ratio by Month (Line)
+  const burnoutRatioChart = monthlyHistory ? {
+    labels: monthlyHistory.historical_performance.map(m => m.month),
+    datasets: [{
+      label: 'Burnout Ratio',
+      data: monthlyHistory.historical_performance.map(m => m.burnout_ratio),
+      borderColor: monthlyHistory.historical_performance.map(m =>
+        m.burnout_ratio > 1.05 ? 'rgba(239, 68, 68, 1)' :
+        m.burnout_ratio > 0.85 ? 'rgba(249, 115, 22, 1)' :
+        m.burnout_ratio > 0.6 ? 'rgba(234, 179, 8, 1)' : 'rgba(34, 197, 94, 1)'
+      ),
+      backgroundColor: 'rgba(139, 92, 246, 0.1)',
+      fill: true,
+      tension: 0.4,
+      segment: {
+        borderColor: (ctx: any) => {
+          const value = ctx.p1.parsed.y;
+          return value > 1.05 ? 'rgba(239, 68, 68, 1)' :
+                 value > 0.85 ? 'rgba(249, 115, 22, 1)' :
+                 value > 0.6 ? 'rgba(234, 179, 8, 1)' : 'rgba(34, 197, 94, 1)';
+        }
+      }
+    }]
+  } : null;
+
+  // Chart: Firm × Month Heatmap (prepare data structure)
+  // For a heatmap in Chart.js, we'll create a bar chart with firms on X and months as stacked bars
+  const firmMonthHeatmapData = monthlyHistory ? (() => {
+    // Get unique firms
+    const firms = Array.from(new Set(monthlyHistory.firm_activity.map(f => f.firm_name)));
+    // Get unique months
+    const months = Array.from(new Set(monthlyHistory.firm_activity.map(f => f.month))).sort();
+
+    // Create a dataset for each month
+    const datasets = months.map((month, idx) => {
+      const colorIndex = idx % 6;
+      const colors = [
+        'rgba(59, 130, 246, 0.8)',   // blue
+        'rgba(34, 197, 94, 0.8)',    // green
+        'rgba(234, 179, 8, 0.8)',    // yellow
+        'rgba(249, 115, 22, 0.8)',   // orange
+        'rgba(139, 92, 246, 0.8)',   // purple
+        'rgba(236, 72, 153, 0.8)'    // pink
+      ];
+
+      return {
+        label: month,
+        data: firms.map(firm => {
+          const activity = monthlyHistory.firm_activity.find(
+            a => a.firm_name === firm && a.month === month
+          );
+          return activity ? activity.claims_completed : 0;
+        }),
+        backgroundColor: colors[colorIndex],
+        borderColor: colors[colorIndex].replace('0.8', '1'),
+        borderWidth: 1
+      };
+    });
+
+    return {
+      labels: firms.slice(0, 10), // Top 10 firms
+      datasets: datasets.map(ds => ({
+        ...ds,
+        data: ds.data.slice(0, 10)
+      }))
+    };
+  })() : null;
 
   // Chart options - dark theme
   const darkChartOptions = {
@@ -618,6 +715,79 @@ export default function Intelligence() {
               </div>
             </div>
           )}
+
+          {/* Monthly Completed Claims */}
+          {monthlyCompletedClaimsChart && monthlyHistory && monthlyHistory.historical_performance.length > 0 && (
+            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+              <h2 className="text-xl font-bold mb-4 text-green-400">Monthly Completed Claims</h2>
+              <div style={{ height: '300px' }}>
+                <Bar data={monthlyCompletedClaimsChart} options={darkChartOptions} />
+              </div>
+              <div className="mt-4 text-sm text-gray-400">
+                Historical trend • {monthlyHistory.months_tracked} months tracked
+              </div>
+            </div>
+          )}
+
+          {/* Monthly Velocity Trend */}
+          {monthlyVelocityTrendChart && monthlyHistory && monthlyHistory.historical_performance.length > 0 && (
+            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+              <h2 className="text-xl font-bold mb-4 text-blue-400">Monthly Velocity Trend</h2>
+              <div style={{ height: '300px' }}>
+                <Line data={monthlyVelocityTrendChart} options={darkChartOptions} />
+              </div>
+              <div className="mt-4 text-sm text-gray-400">
+                Average claims per business day • Trend analysis
+              </div>
+            </div>
+          )}
+
+          {/* Burnout Ratio by Month */}
+          {burnoutRatioChart && monthlyHistory && monthlyHistory.historical_performance.length > 0 && (
+            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+              <h2 className="text-xl font-bold mb-4 text-purple-400">Burnout Ratio by Month</h2>
+              <div style={{ height: '300px' }}>
+                <Line data={burnoutRatioChart} options={darkChartOptions} />
+              </div>
+              <div className="mt-4 text-sm text-gray-400">
+                Capacity utilization • Color: Green (&lt;60%), Yellow (60-85%), Orange (85-105%), Red (&gt;105%)
+              </div>
+            </div>
+          )}
+
+          {/* Firm × Month Heatmap */}
+          {firmMonthHeatmapData && monthlyHistory && monthlyHistory.firm_activity.length > 0 && (
+            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 lg:col-span-2">
+              <h2 className="text-xl font-bold mb-4 text-pink-400">Firm Activity Heatmap</h2>
+              <div style={{ height: '300px' }}>
+                <Bar
+                  data={firmMonthHeatmapData}
+                  options={{
+                    ...darkChartOptions,
+                    scales: {
+                      ...darkChartOptions.scales,
+                      x: {
+                        ...darkChartOptions.scales.x,
+                        stacked: true
+                      },
+                      y: {
+                        ...darkChartOptions.scales.y,
+                        stacked: true,
+                        title: {
+                          display: true,
+                          text: 'Claims Completed',
+                          color: '#9ca3af'
+                        }
+                      }
+                    }
+                  }}
+                />
+              </div>
+              <div className="mt-4 text-sm text-gray-400">
+                Top 10 firms • Stacked by month • Claims completed per firm per month
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Recommendations */}
@@ -670,7 +840,9 @@ export default function Intelligence() {
             <a href="/CipherDispatch/api/payout-variance" className="text-blue-400 hover:underline ml-2">Payout Variance</a> •
             <a href="/CipherDispatch/api/capacity-stress" className="text-blue-400 hover:underline ml-2">Capacity Stress</a> •
             <a href="/CipherDispatch/api/revenue-risk" className="text-blue-400 hover:underline ml-2">Revenue Risk</a> •
-            <a href="/CipherDispatch/api/survival-runway" className="text-blue-400 hover:underline ml-2">Survival Runway</a>
+            <a href="/CipherDispatch/api/survival-runway" className="text-blue-400 hover:underline ml-2">Survival Runway</a> •
+            <a href="/CipherDispatch/api/monthly-performance" className="text-blue-400 hover:underline ml-2">Monthly Performance</a> •
+            <a href="/CipherDispatch/api/monthly-history" className="text-blue-400 hover:underline ml-2">Monthly History</a>
           </p>
         </div>
       </div>
