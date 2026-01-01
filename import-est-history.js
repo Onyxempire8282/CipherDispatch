@@ -16,18 +16,20 @@
  *   node import-est-history.js "C:\Archive\EstFiles"
  */
 
-import 'dotenv/config';
-import fs from 'fs';
-import path from 'path';
-import { createClient } from '@supabase/supabase-js';
+import "dotenv/config";
+import fs from "fs";
+import path from "path";
+import { createClient } from "@supabase/supabase-js";
 
 // Supabase configuration
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  console.error('Error: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set in environment');
-  console.error('Create a .env file or set environment variables');
+  console.error(
+    "Error: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set in environment"
+  );
+  console.error("Create a .env file or set environment variables");
   process.exit(1);
 }
 
@@ -44,7 +46,7 @@ function getMonthFromTimestamp(filePath) {
     const stats = fs.statSync(filePath);
     const mtime = stats.mtime;
     const year = mtime.getFullYear();
-    const month = String(mtime.getMonth() + 1).padStart(2, '0');
+    const month = String(mtime.getMonth() + 1).padStart(2, "0");
     return `${year}-${month}`;
   } catch (err) {
     console.error(`Error reading timestamp for ${filePath}:`, err.message);
@@ -72,6 +74,13 @@ function extractFirmName(folderName) {
 }
 
 /**
+ * Derive firm name from root path
+ */
+function deriveFirmName(rootPath) {
+  return path.basename(path.resolve(rootPath));
+}
+
+/**
  * Check if folder matches "CLAIMS M-YYYY" or "CLAIMS 1-2024" pattern
  */
 function isClaimsFolder(folderName) {
@@ -94,7 +103,7 @@ function extractMonthFromFolderName(folderName) {
   const match = folderName.trim().match(numericPattern);
 
   if (match) {
-    const month = match[1].padStart(2, '0');
+    const month = match[1].padStart(2, "0");
     const year = match[2];
     return `${year}-${month}`;
   }
@@ -116,7 +125,7 @@ function scanClaimsFolder(claimsFolderPath, firmName, folderName) {
 
     for (const file of files) {
       // Only process files ending with " EST.pdf"
-      if (!file.endsWith(' EST.pdf')) {
+      if (!file.endsWith(" EST.pdf")) {
         continue;
       }
 
@@ -139,25 +148,30 @@ function scanClaimsFolder(claimsFolderPath, firmName, folderName) {
       }
 
       // Extract claim key (remove " EST.pdf" suffix)
-      const claimKey = file.replace(/ EST\.pdf$/, '');
+      const claimKey = file.replace(/ EST\.pdf$/, "");
 
       // Get file modified date for logging
       const stats = fs.statSync(filePath);
-      const completedDate = stats.mtime.toISOString().split('T')[0];
+      const completedDate = stats.mtime.toISOString().split("T")[0];
 
       // Log each EST file found
-      console.log(`    📄 ${file} → Firm: ${firmName}, Month: ${month}, Date: ${completedDate}`);
+      console.log(
+        `    📄 ${file} → Firm: ${firmName}, Month: ${month}, Date: ${completedDate}`
+      );
 
       results.push({
         firm: firmName,
         month: month,
         claimKey: claimKey,
         filePath: filePath,
-        completedDate: completedDate
+        completedDate: completedDate,
       });
     }
   } catch (err) {
-    console.error(`Error scanning claims folder ${claimsFolderPath}:`, err.message);
+    console.error(
+      `Error scanning claims folder ${claimsFolderPath}:`,
+      err.message
+    );
   }
 
   return results;
@@ -197,7 +211,7 @@ function scanFirmFolder(firmFolderPath, firmName) {
  * Scan root path for firm folders OR CLAIMS folders
  *
  * Logic:
- * - If folder matches "CLAIMS \d{1,2}-\d{4}" pattern, treat as month folder with firm = "A TEAM"
+ * - If folder matches "CLAIMS \d{1,2}-\d{4}" pattern, treat as month folder with firm = root folder name
  * - Otherwise, treat folder as firm folder and scan for CLAIMS folders inside
  */
 function scanRootPath(rootPath) {
@@ -216,10 +230,11 @@ function scanRootPath(rootPath) {
       // Check if this folder matches CLAIMS pattern
       if (isClaimsFolder(entry)) {
         // This is a CLAIMS folder at root level
-        // Treat it as "A TEAM" firm
+        // Use deriveFirmName helper to get firm name from root path
+        const firmName = deriveFirmName(rootPath);
         console.log(`\n📂 Found CLAIMS folder at root: ${entry}`);
-        console.log(`   Treating as firm: A TEAM`);
-        const claimsResults = scanClaimsFolder(entryPath, 'A TEAM', entry);
+        console.log(`   Treating as firm: ${firmName}`);
+        const claimsResults = scanClaimsFolder(entryPath, firmName, entry);
         results.push(...claimsResults);
       } else {
         // This is a firm folder - recurse into it
@@ -252,7 +267,7 @@ function aggregateByFirmAndMonth(estFiles) {
         firm: file.firm,
         month: file.month,
         claimKeys: new Set(),
-        files: []
+        files: [],
       };
     }
 
@@ -261,11 +276,11 @@ function aggregateByFirmAndMonth(estFiles) {
   }
 
   // Convert to array with completed_claims count
-  return Object.values(aggregated).map(item => ({
+  return Object.values(aggregated).map((item) => ({
     firm: item.firm,
     month: item.month,
     completed_claims: item.claimKeys.size,
-    sample_files: item.files.slice(0, 3) // Keep sample files for verification
+    sample_files: item.files.slice(0, 3), // Keep sample files for verification
   }));
 }
 
@@ -280,7 +295,7 @@ function aggregateByMonth(firmMonthData) {
       aggregated[item.month] = {
         month: item.month,
         completed_claims: 0,
-        firms_active: new Set()
+        firms_active: new Set(),
       };
     }
 
@@ -289,13 +304,13 @@ function aggregateByMonth(firmMonthData) {
   }
 
   // Convert to array
-  return Object.values(aggregated).map(item => ({
+  return Object.values(aggregated).map((item) => ({
     month: item.month,
     completed_claims: item.completed_claims,
     firms_active: item.firms_active.size,
     backlog: 0, // Unknown from EST files
     avg_velocity: 0, // Will be calculated
-    burnout_ratio: 0 // Will be calculated
+    burnout_ratio: 0, // Will be calculated
   }));
 }
 
@@ -303,7 +318,7 @@ function aggregateByMonth(firmMonthData) {
  * Calculate business days in a month
  */
 function getBusinessDaysInMonth(yearMonth) {
-  const [year, month] = yearMonth.split('-').map(Number);
+  const [year, month] = yearMonth.split("-").map(Number);
   const firstOfMonth = new Date(year, month - 1, 1);
   const lastOfMonth = new Date(year, month, 0);
 
@@ -325,7 +340,7 @@ function getBusinessDaysInMonth(yearMonth) {
  * Insert monthly performance log entries
  */
 async function insertMonthlyPerformance(monthlyData) {
-  console.log('\n=== Inserting Monthly Performance Logs ===');
+  console.log("\n=== Inserting Monthly Performance Logs ===");
 
   let inserted = 0;
   let skipped = 0;
@@ -333,38 +348,45 @@ async function insertMonthlyPerformance(monthlyData) {
   for (const data of monthlyData) {
     // Check if month already exists
     const { data: existing, error: checkError } = await supabase
-      .from('monthly_performance_log')
-      .select('month')
-      .eq('month', data.month)
+      .from("monthly_performance_log")
+      .select("month")
+      .eq("month", data.month)
       .single();
 
     if (existing) {
-      console.log(`⏭️  ${data.month}: Already exists (${existing.completed_claims} claims)`);
+      console.log(
+        `⏭️  ${data.month}: Already exists (${existing.completed_claims} claims)`
+      );
       skipped++;
       continue;
     }
 
     // Calculate metrics
     const businessDays = getBusinessDaysInMonth(data.month);
-    const avgVelocity = businessDays > 0 ? data.completed_claims / businessDays : 0;
+    const avgVelocity =
+      businessDays > 0 ? data.completed_claims / businessDays : 0;
     const burnoutRatio = data.completed_claims / MAX_SAFE_CAPACITY;
 
     // Insert new record
     const { error: insertError } = await supabase
-      .from('monthly_performance_log')
+      .from("monthly_performance_log")
       .insert({
         month: data.month,
         completed_claims: data.completed_claims,
         backlog: data.backlog,
         avg_velocity: Math.round(avgVelocity * 100) / 100,
         burnout_ratio: Math.round(burnoutRatio * 1000) / 1000,
-        firms_active: data.firms_active
+        firms_active: data.firms_active,
       });
 
     if (insertError) {
       console.error(`❌ ${data.month}: Error - ${insertError.message}`);
     } else {
-      console.log(`✅ ${data.month}: ${data.completed_claims} claims, ${data.firms_active} firms, velocity ${avgVelocity.toFixed(1)}`);
+      console.log(
+        `✅ ${data.month}: ${data.completed_claims} claims, ${
+          data.firms_active
+        } firms, velocity ${avgVelocity.toFixed(1)}`
+      );
       inserted++;
     }
   }
@@ -376,7 +398,7 @@ async function insertMonthlyPerformance(monthlyData) {
  * Insert firm activity entries
  */
 async function insertFirmActivity(firmMonthData) {
-  console.log('\n=== Inserting Firm Activity Logs ===');
+  console.log("\n=== Inserting Firm Activity Logs ===");
 
   let inserted = 0;
   let skipped = 0;
@@ -384,10 +406,10 @@ async function insertFirmActivity(firmMonthData) {
   for (const data of firmMonthData) {
     // Check if entry already exists
     const { data: existing, error: checkError } = await supabase
-      .from('monthly_firm_activity')
-      .select('month, firm_name')
-      .eq('month', data.month)
-      .eq('firm_name', data.firm)
+      .from("monthly_firm_activity")
+      .select("month, firm_name")
+      .eq("month", data.month)
+      .eq("firm_name", data.firm)
       .single();
 
     if (existing) {
@@ -398,18 +420,22 @@ async function insertFirmActivity(firmMonthData) {
 
     // Insert new record
     const { error: insertError } = await supabase
-      .from('monthly_firm_activity')
+      .from("monthly_firm_activity")
       .insert({
         month: data.month,
         firm_name: data.firm,
         claims_completed: data.completed_claims,
-        revenue_generated: 0 // Unknown from EST files
+        revenue_generated: 0, // Unknown from EST files
       });
 
     if (insertError) {
-      console.error(`❌ ${data.month} - ${data.firm}: Error - ${insertError.message}`);
+      console.error(
+        `❌ ${data.month} - ${data.firm}: Error - ${insertError.message}`
+      );
     } else {
-      console.log(`✅ ${data.month} - ${data.firm}: ${data.completed_claims} claims`);
+      console.log(
+        `✅ ${data.month} - ${data.firm}: ${data.completed_claims} claims`
+      );
       inserted++;
     }
   }
@@ -424,8 +450,10 @@ async function main() {
   const args = process.argv.slice(2);
 
   if (args.length === 0) {
-    console.error('Usage: node import-est-history.js <root-path>');
-    console.error('Example: node import-est-history.js "C:\\Archive\\EstFiles"');
+    console.error("Usage: node import-est-history.js <root-path>");
+    console.error(
+      'Example: node import-est-history.js "C:\\Archive\\EstFiles"'
+    );
     process.exit(1);
   }
 
@@ -433,55 +461,63 @@ async function main() {
 
   // Verify root path exists
   if (!isDirectory(rootPath)) {
-    console.error(`Error: Root path does not exist or is not a directory: ${rootPath}`);
+    console.error(
+      `Error: Root path does not exist or is not a directory: ${rootPath}`
+    );
     process.exit(1);
   }
 
-  console.log('=== EST Archive Historical Importer ===');
+  console.log("=== EST Archive Historical Importer ===");
   console.log(`Root path: ${rootPath}\n`);
 
   // Step 1: Scan all EST files
-  console.log('Step 1: Scanning archive folders...');
+  console.log("Step 1: Scanning archive folders...");
   const estFiles = scanRootPath(rootPath);
   console.log(`\nFound ${estFiles.length} EST files`);
 
   if (estFiles.length === 0) {
-    console.log('No EST files found. Exiting.');
+    console.log("No EST files found. Exiting.");
     process.exit(0);
   }
 
   // Step 2: Aggregate by firm and month
-  console.log('\nStep 2: Aggregating by firm and month...');
+  console.log("\nStep 2: Aggregating by firm and month...");
   const firmMonthData = aggregateByFirmAndMonth(estFiles);
   console.log(`Aggregated into ${firmMonthData.length} firm-month entries`);
 
   // Display sample
-  console.log('\nSample firm-month data:');
-  firmMonthData.slice(0, 5).forEach(item => {
-    console.log(`  ${item.month} - ${item.firm}: ${item.completed_claims} claims`);
+  console.log("\nSample firm-month data:");
+  firmMonthData.slice(0, 5).forEach((item) => {
+    console.log(
+      `  ${item.month} - ${item.firm}: ${item.completed_claims} claims`
+    );
   });
 
   // Step 3: Aggregate by month (overall)
-  console.log('\nStep 3: Aggregating overall monthly performance...');
+  console.log("\nStep 3: Aggregating overall monthly performance...");
   const monthlyData = aggregateByMonth(firmMonthData);
   console.log(`Aggregated into ${monthlyData.length} monthly entries`);
 
   // Display sample
-  console.log('\nMonthly performance summary:');
-  monthlyData.sort((a, b) => a.month.localeCompare(b.month)).forEach(item => {
-    console.log(`  ${item.month}: ${item.completed_claims} claims, ${item.firms_active} firms`);
-  });
+  console.log("\nMonthly performance summary:");
+  monthlyData
+    .sort((a, b) => a.month.localeCompare(b.month))
+    .forEach((item) => {
+      console.log(
+        `  ${item.month}: ${item.completed_claims} claims, ${item.firms_active} firms`
+      );
+    });
 
   // Step 4: Insert into database
-  console.log('\nStep 4: Inserting into database...');
+  console.log("\nStep 4: Inserting into database...");
   await insertMonthlyPerformance(monthlyData);
   await insertFirmActivity(firmMonthData);
 
-  console.log('\n=== Import Complete ===');
+  console.log("\n=== Import Complete ===");
 }
 
 // Run the script
-main().catch(err => {
-  console.error('Fatal error:', err);
+main().catch((err) => {
+  console.error("Fatal error:", err);
   process.exit(1);
 });
