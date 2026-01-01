@@ -346,8 +346,8 @@ export default function Intelligence() {
           "Nov",
           "Dec",
         ],
-        datasets: seasonalityProfile.available_years.map((year, index) => {
-          const yearData = seasonalityProfile.yearly_data[year] || [];
+        datasets: Object.keys(seasonalityProfile).map((year, index) => {
+          const yearData = seasonalityProfile[year] || [];
           const colors = [
             "rgba(34, 197, 94, 1)", // Green
             "rgba(59, 130, 246, 1)", // Blue
@@ -1044,8 +1044,7 @@ export default function Intelligence() {
               </div>
               <div className="mt-4 text-sm text-gray-400">
                 Multi-year comparison •{" "}
-                {seasonalityProfile.available_years.join(", ")} • Jan–Dec by
-                year
+                {Object.keys(seasonalityProfile).join(", ")} • Jan–Dec by year
               </div>
             </div>
           )}

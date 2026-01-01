@@ -11,27 +11,8 @@ export interface MonthlyData {
   completedClaims: number;
 }
 
-export interface YearlySeasonalData {
-  [year: string]: MonthlyData[];
-}
-
 export interface SeasonalityProfileReport {
-  yearly_data: YearlySeasonalData;
-  available_years: string[];
-  peak_month: {
-    month: number;
-    monthName: string;
-    avgClaims: number;
-  };
-  low_month: {
-    month: number;
-    monthName: string;
-    avgClaims: number;
-  };
-  overall_avg: number;
-  seasonal_variance: number;
-  status: string;
-  timestamp: string;
+  [year: string]: MonthlyData[];
 }
 
 const MONTH_NAMES = [
