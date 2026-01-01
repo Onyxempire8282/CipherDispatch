@@ -254,10 +254,10 @@ export default function Intelligence() {
             borderWidth: 2,
           },
           {
-            label: "Backlog Growth",
-            data: capacityStress.weekly_data.map((w) => w.backlog_growth),
+            label: "Backlog",
+            data: capacityStress.weekly_data.map((w) => w.claims_assigned - w.claims_completed),
             backgroundColor: capacityStress.weekly_data.map((w) =>
-              w.backlog_growth > 0
+              (w.claims_assigned - w.claims_completed) > 0
                 ? "rgba(239, 68, 68, 0.8)"
                 : "rgba(34, 197, 94, 0.8)"
             ),
@@ -327,19 +327,24 @@ export default function Intelligence() {
       }
     : null;
 
-  // Chart: Monthly Completed Claims (Bar)
-  const monthlyCompletedClaimsChart = monthlyHistory
+  // Chart: Business Seasonality Wave – Avg Claims by Month (Line)
+  const monthlyCompletedClaimsChart = seasonalityProfile
     ? {
-        labels: monthlyHistory.historical_performance.map((m) => m.month),
+        labels: seasonalityProfile.seasonal_data.map((s) =>
+          s.monthName.substring(0, 3)
+        ), // Jan, Feb, etc.
         datasets: [
           {
-            label: "Completed Claims",
-            data: monthlyHistory.historical_performance.map(
-              (m) => m.completed_claims
+            type: 'line' as const,
+            label: "Business Seasonality Wave – Avg Claims by Month",
+            data: seasonalityProfile.seasonal_data.map(
+              (s) => s.avgCompletedClaims
             ),
-            backgroundColor: "rgba(34, 197, 94, 0.8)",
+            backgroundColor: "rgba(34, 197, 94, 0.1)",
             borderColor: "rgba(34, 197, 94, 1)",
             borderWidth: 2,
+            tension: 0.4,
+            fill: true,
           },
         ],
       }
@@ -1002,25 +1007,22 @@ export default function Intelligence() {
           )}
 
           {/* Monthly Completed Claims */}
-          {monthlyCompletedClaimsChart &&
-            monthlyHistory &&
-            monthlyHistory.historical_performance.length > 0 && (
-              <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-                <h2 className="text-xl font-bold mb-4 text-green-400">
-                  Monthly Completed Claims
-                </h2>
-                <div style={{ height: "300px" }}>
-                  <Bar
-                    data={monthlyCompletedClaimsChart}
-                    options={darkChartOptions}
-                  />
-                </div>
-                <div className="mt-4 text-sm text-gray-400">
-                  Historical trend • {monthlyHistory.months_tracked} months
-                  tracked
-                </div>
+          {monthlyCompletedClaimsChart && seasonalityProfile && (
+            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+              <h2 className="text-xl font-bold mb-4 text-green-400">
+                Business Seasonality Wave – Avg Claims by Month
+              </h2>
+              <div style={{ height: "300px" }}>
+                <Line
+                  data={monthlyCompletedClaimsChart}
+                  options={darkChartOptions}
+                />
               </div>
-            )}
+              <div className="mt-4 text-sm text-gray-400">
+                Seasonal patterns • Jan–Dec average across all years
+              </div>
+            </div>
+          )}
 
           {/* Monthly Velocity Trend */}
           {monthlyVelocityTrendChart &&
