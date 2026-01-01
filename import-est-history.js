@@ -72,22 +72,44 @@ function extractFirmName(folderName) {
 }
 
 /**
- * Check if folder matches "CLAIMS M-YYYY" pattern
+ * Check if folder matches "CLAIMS M-YYYY" or "CLAIMS 1-2024" pattern
  */
 function isClaimsFolder(folderName) {
   // Match patterns like:
   // - "CLAIMS M-2024"
-  // - "CLAIMS M-2023"
+  // - "CLAIMS 1-2024" (single digit month)
+  // - "CLAIMS 12-2024" (double digit month)
   // - "Claims M-2024" (case insensitive)
-  const pattern = /^claims\s+m-\d{4}$/i;
+  const pattern = /^claims\s+(\d{1,2}|M)-\d{4}$/i;
   return pattern.test(folderName.trim());
+}
+
+/**
+ * Extract month from CLAIMS folder name
+ * Returns YYYY-MM format or null if can't parse
+ */
+function extractMonthFromFolderName(folderName) {
+  // Match "CLAIMS 1-2024" or "CLAIMS 12-2024"
+  const numericPattern = /^claims\s+(\d{1,2})-(\d{4})$/i;
+  const match = folderName.trim().match(numericPattern);
+
+  if (match) {
+    const month = match[1].padStart(2, '0');
+    const year = match[2];
+    return `${year}-${month}`;
+  }
+
+  return null;
 }
 
 /**
  * Scan a CLAIMS folder for EST.pdf files
  */
-function scanClaimsFolder(claimsFolderPath, firmName) {
+function scanClaimsFolder(claimsFolderPath, firmName, folderName) {
   const results = [];
+
+  // Try to extract month from folder name first (e.g., "CLAIMS 1-2024" → "2024-01")
+  const folderMonth = extractMonthFromFolderName(folderName);
 
   try {
     const files = fs.readdirSync(claimsFolderPath);
@@ -105,20 +127,33 @@ function scanClaimsFolder(claimsFolderPath, firmName) {
         continue;
       }
 
-      // Extract month from file timestamp
-      const month = getMonthFromTimestamp(filePath);
+      // Determine month: use folder name if available, otherwise file timestamp
+      let month = folderMonth;
       if (!month) {
+        month = getMonthFromTimestamp(filePath);
+      }
+
+      if (!month) {
+        console.warn(`  ⚠️  Could not determine month for: ${file}`);
         continue;
       }
 
       // Extract claim key (remove " EST.pdf" suffix)
       const claimKey = file.replace(/ EST\.pdf$/, '');
 
+      // Get file modified date for logging
+      const stats = fs.statSync(filePath);
+      const completedDate = stats.mtime.toISOString().split('T')[0];
+
+      // Log each EST file found
+      console.log(`    📄 ${file} → Firm: ${firmName}, Month: ${month}, Date: ${completedDate}`);
+
       results.push({
         firm: firmName,
         month: month,
         claimKey: claimKey,
-        filePath: filePath
+        filePath: filePath,
+        completedDate: completedDate
       });
     }
   } catch (err) {
@@ -146,8 +181,8 @@ function scanFirmFolder(firmFolderPath, firmName) {
 
       // Check if this is a CLAIMS folder
       if (isClaimsFolder(entry)) {
-        console.log(`  Scanning: ${entry}`);
-        const claimsResults = scanClaimsFolder(entryPath, firmName);
+        console.log(`  📂 Scanning: ${entry}`);
+        const claimsResults = scanClaimsFolder(entryPath, firmName, entry);
         results.push(...claimsResults);
       }
     }
@@ -159,7 +194,11 @@ function scanFirmFolder(firmFolderPath, firmName) {
 }
 
 /**
- * Scan root path for firm folders
+ * Scan root path for firm folders OR CLAIMS folders
+ *
+ * Logic:
+ * - If folder matches "CLAIMS \d{1,2}-\d{4}" pattern, treat as month folder with firm = "A TEAM"
+ * - Otherwise, treat folder as firm folder and scan for CLAIMS folders inside
  */
 function scanRootPath(rootPath) {
   const results = [];
@@ -174,12 +213,22 @@ function scanRootPath(rootPath) {
         continue;
       }
 
-      // Assume each directory is a firm folder
-      const firmName = extractFirmName(entry);
-      console.log(`\nScanning firm: ${firmName}`);
+      // Check if this folder matches CLAIMS pattern
+      if (isClaimsFolder(entry)) {
+        // This is a CLAIMS folder at root level
+        // Treat it as "A TEAM" firm
+        console.log(`\n📂 Found CLAIMS folder at root: ${entry}`);
+        console.log(`   Treating as firm: A TEAM`);
+        const claimsResults = scanClaimsFolder(entryPath, 'A TEAM', entry);
+        results.push(...claimsResults);
+      } else {
+        // This is a firm folder - recurse into it
+        const firmName = extractFirmName(entry);
+        console.log(`\n🏢 Scanning firm: ${firmName}`);
 
-      const firmResults = scanFirmFolder(entryPath, firmName);
-      results.push(...firmResults);
+        const firmResults = scanFirmFolder(entryPath, firmName);
+        results.push(...firmResults);
+      }
     }
   } catch (err) {
     console.error(`Error scanning root path ${rootPath}:`, err.message);
