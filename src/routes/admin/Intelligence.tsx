@@ -255,9 +255,11 @@ export default function Intelligence() {
           },
           {
             label: "Backlog",
-            data: capacityStress.weekly_data.map((w) => w.claims_assigned - w.claims_completed),
+            data: capacityStress.weekly_data.map(
+              (w) => w.claims_assigned - w.claims_completed
+            ),
             backgroundColor: capacityStress.weekly_data.map((w) =>
-              (w.claims_assigned - w.claims_completed) > 0
+              w.claims_assigned - w.claims_completed > 0
                 ? "rgba(239, 68, 68, 0.8)"
                 : "rgba(34, 197, 94, 0.8)"
             ),
@@ -327,26 +329,48 @@ export default function Intelligence() {
       }
     : null;
 
-  // Chart: Business Seasonality Wave – Avg Claims by Month (Line)
-  const monthlyCompletedClaimsChart = seasonalityProfile
+  // Chart: Business Seasonality Wave – Avg Claims by Month
+  const businessSeasonalityChart = seasonalityProfile
     ? {
-        labels: seasonalityProfile.seasonal_data.map((s) =>
-          s.monthName.substring(0, 3)
-        ), // Jan, Feb, etc.
-        datasets: [
-          {
-            type: 'line' as const,
-            label: "Business Seasonality Wave – Avg Claims by Month",
-            data: seasonalityProfile.seasonal_data.map(
-              (s) => s.avgCompletedClaims
+        labels: [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+        ],
+        datasets: seasonalityProfile.available_years.map((year, index) => {
+          const yearData = seasonalityProfile.yearly_data[year] || [];
+          const colors = [
+            "rgba(34, 197, 94, 1)", // Green
+            "rgba(59, 130, 246, 1)", // Blue
+            "rgba(139, 92, 246, 1)", // Purple
+            "rgba(249, 115, 22, 1)", // Orange
+            "rgba(236, 72, 153, 1)", // Pink
+            "rgba(234, 179, 8, 1)", // Yellow
+          ];
+
+          return {
+            type: "line" as const,
+            label: year,
+            data: yearData.map((m) => m.completedClaims),
+            borderColor: colors[index % colors.length],
+            backgroundColor: colors[index % colors.length].replace(
+              "1)",
+              "0.1)"
             ),
-            backgroundColor: "rgba(34, 197, 94, 0.1)",
-            borderColor: "rgba(34, 197, 94, 1)",
             borderWidth: 2,
             tension: 0.4,
-            fill: true,
-          },
-        ],
+            fill: false,
+          };
+        }),
       }
     : null;
 
@@ -1006,20 +1030,22 @@ export default function Intelligence() {
             </div>
           )}
 
-          {/* Monthly Completed Claims */}
-          {monthlyCompletedClaimsChart && seasonalityProfile && (
+          {/* Business Seasonality Wave – Avg Claims by Month */}
+          {businessSeasonalityChart && seasonalityProfile && (
             <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
               <h2 className="text-xl font-bold mb-4 text-green-400">
                 Business Seasonality Wave – Avg Claims by Month
               </h2>
               <div style={{ height: "300px" }}>
                 <Line
-                  data={monthlyCompletedClaimsChart}
+                  data={businessSeasonalityChart}
                   options={darkChartOptions}
                 />
               </div>
               <div className="mt-4 text-sm text-gray-400">
-                Seasonal patterns • Jan–Dec average across all years
+                Multi-year comparison •{" "}
+                {seasonalityProfile.available_years.join(", ")} • Jan–Dec by
+                year
               </div>
             </div>
           )}

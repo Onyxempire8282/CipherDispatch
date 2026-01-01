@@ -1,19 +1,23 @@
 /**
  * Seasonality Profile Analysis
- * Analyzes seasonal patterns in business activity across months
+ * Analyzes seasonal patterns in business activity across months and years
  */
 
 import { supabase } from "../lib/supabase";
 
-export interface SeasonalityData {
+export interface MonthlyData {
   month: number;
   monthName: string;
-  avgCompletedClaims: number;
-  dataPoints: number;
+  completedClaims: number;
+}
+
+export interface YearlySeasonalData {
+  [year: string]: MonthlyData[];
 }
 
 export interface SeasonalityProfileReport {
-  seasonal_data: SeasonalityData[];
+  yearly_data: YearlySeasonalData;
+  available_years: string[];
   peak_month: {
     month: number;
     monthName: string;
@@ -64,60 +68,113 @@ export async function generateSeasonalityProfileReport(): Promise<SeasonalityPro
     throw new Error("No monthly performance data found");
   }
 
-  // Group by month number (1-12) and calculate averages
-  const monthlyGroups: { [key: number]: number[] } = {};
+  // Group by year then by month number
+  const yearlyData: YearlySeasonalData = {};
+  const availableYears: string[] = [];
 
   for (const log of monthlyLogs) {
     const monthDate = new Date(log.month + "-01");
+    const year = monthDate.getFullYear().toString();
     const monthNumber = monthDate.getMonth() + 1; // 1-12
 
-    if (!monthlyGroups[monthNumber]) {
-      monthlyGroups[monthNumber] = [];
+    if (!yearlyData[year]) {
+      yearlyData[year] = [];
+      availableYears.push(year);
     }
 
-    monthlyGroups[monthNumber].push(log.completed_claims || 0);
+    // Find or create entry for this month
+    let monthEntry = yearlyData[year].find((m) => m.month === monthNumber);
+    if (!monthEntry) {
+      monthEntry = {
+        month: monthNumber,
+        monthName: MONTH_NAMES[monthNumber - 1],
+        completedClaims: 0,
+      };
+      yearlyData[year].push(monthEntry);
+    }
+
+    monthEntry.completedClaims = log.completed_claims || 0;
   }
 
-  // Calculate seasonal data
-  const seasonalData: SeasonalityData[] = [];
-  let totalAvg = 0;
-  let dataPointCount = 0;
+  // Sort months within each year and ensure all 12 months are present
+  for (const year in yearlyData) {
+    // Fill missing months with 0 data
+    for (let month = 1; month <= 12; month++) {
+      const existingMonth = yearlyData[year].find((m) => m.month === month);
+      if (!existingMonth) {
+        yearlyData[year].push({
+          month,
+          monthName: MONTH_NAMES[month - 1],
+          completedClaims: 0,
+        });
+      }
+    }
 
+    // Sort by month number
+    yearlyData[year].sort((a, b) => a.month - b.month);
+  }
+
+  availableYears.sort();
+
+  // Calculate overall statistics for backward compatibility
+  const allClaims: number[] = [];
+  const monthlyTotals: { [month: number]: number[] } = {};
+
+  for (const year in yearlyData) {
+    for (const monthData of yearlyData[year]) {
+      if (monthData.completedClaims > 0) {
+        allClaims.push(monthData.completedClaims);
+
+        if (!monthlyTotals[monthData.month]) {
+          monthlyTotals[monthData.month] = [];
+        }
+        monthlyTotals[monthData.month].push(monthData.completedClaims);
+      }
+    }
+  }
+
+  const overallAvg =
+    allClaims.length > 0
+      ? allClaims.reduce((sum, val) => sum + val, 0) / allClaims.length
+      : 0;
+
+  // Calculate average by month for peak/low detection
+  const monthAverages: {
+    month: number;
+    monthName: string;
+    avgClaims: number;
+  }[] = [];
   for (let month = 1; month <= 12; month++) {
-    const claims = monthlyGroups[month] || [];
+    const claims = monthlyTotals[month] || [];
     const avgClaims =
       claims.length > 0
         ? claims.reduce((sum, val) => sum + val, 0) / claims.length
         : 0;
 
-    seasonalData.push({
+    monthAverages.push({
       month,
       monthName: MONTH_NAMES[month - 1],
-      avgCompletedClaims: Math.round(avgClaims * 10) / 10,
-      dataPoints: claims.length,
+      avgClaims,
     });
-
-    if (claims.length > 0) {
-      totalAvg += avgClaims;
-      dataPointCount++;
-    }
   }
 
-  const overallAvg = dataPointCount > 0 ? totalAvg / dataPointCount : 0;
+  const monthsWithData = monthAverages.filter((m) => m.avgClaims > 0);
+  const peakMonth =
+    monthsWithData.length > 0
+      ? monthsWithData.reduce((max, current) =>
+          current.avgClaims > max.avgClaims ? current : max
+        )
+      : { month: 1, monthName: MONTH_NAMES[0], avgClaims: 0 };
 
-  // Find peak and low months (only from months with data)
-  const monthsWithData = seasonalData.filter((m) => m.dataPoints > 0);
+  const lowMonth =
+    monthsWithData.length > 0
+      ? monthsWithData.reduce((min, current) =>
+          current.avgClaims < min.avgClaims ? current : min
+        )
+      : { month: 1, monthName: MONTH_NAMES[0], avgClaims: 0 };
 
-  const peakMonth = monthsWithData.reduce((max, current) =>
-    current.avgCompletedClaims > max.avgCompletedClaims ? current : max
-  );
-
-  const lowMonth = monthsWithData.reduce((min, current) =>
-    current.avgCompletedClaims < min.avgCompletedClaims ? current : min
-  );
-
-  // Calculate seasonal variance (coefficient of variation)
-  const validAverages = monthsWithData.map((m) => m.avgCompletedClaims);
+  // Calculate seasonal variance
+  const validAverages = monthsWithData.map((m) => m.avgClaims);
   const variance =
     validAverages.length > 1
       ? Math.sqrt(
@@ -131,16 +188,17 @@ export async function generateSeasonalityProfileReport(): Promise<SeasonalityPro
   const seasonalVariance = overallAvg > 0 ? (variance / overallAvg) * 100 : 0;
 
   return {
-    seasonal_data: seasonalData,
+    yearly_data: yearlyData,
+    available_years: availableYears,
     peak_month: {
       month: peakMonth.month,
       monthName: peakMonth.monthName,
-      avgClaims: peakMonth.avgCompletedClaims,
+      avgClaims: Math.round(peakMonth.avgClaims * 10) / 10,
     },
     low_month: {
       month: lowMonth.month,
       monthName: lowMonth.monthName,
-      avgClaims: lowMonth.avgCompletedClaims,
+      avgClaims: Math.round(lowMonth.avgClaims * 10) / 10,
     },
     overall_avg: Math.round(overallAvg * 10) / 10,
     seasonal_variance: Math.round(seasonalVariance * 10) / 10,
