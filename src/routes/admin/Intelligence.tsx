@@ -25,6 +25,7 @@ import { generatePayoutVarianceReport, PayoutVarianceReport } from '../../utils/
 import { generateCapacityStressReport, CapacityStressReport } from '../../utils/capacityStress';
 import { generateRevenueRiskReport, RevenueRiskReport } from '../../utils/revenueRisk';
 import { generateSurvivalRunwayReport, SurvivalRunwayReport } from '../../utils/survivalRunway';
+import { generateMonthlyPerformanceReport, MonthlyPerformanceReport } from '../../utils/monthlyPerformance';
 
 // Register Chart.js components
 ChartJS.register(
@@ -46,6 +47,7 @@ export default function Intelligence() {
   const [capacityStress, setCapacityStress] = useState<CapacityStressReport | null>(null);
   const [revenueRisk, setRevenueRisk] = useState<RevenueRiskReport | null>(null);
   const [survivalRunway, setSurvivalRunway] = useState<SurvivalRunwayReport | null>(null);
+  const [monthlyPerformance, setMonthlyPerformance] = useState<MonthlyPerformanceReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,12 +59,13 @@ export default function Intelligence() {
       try {
         // Call utility functions directly instead of fetching
         // This works on GitHub Pages static hosting
-        const [reliability, variance, capacity, revenue, runway] = await Promise.all([
+        const [reliability, variance, capacity, revenue, runway, monthly] = await Promise.all([
           generateFirmReliabilityReport(),
           generatePayoutVarianceReport(),
           generateCapacityStressReport(),
           generateRevenueRiskReport(),
-          generateSurvivalRunwayReport()
+          generateSurvivalRunwayReport(),
+          generateMonthlyPerformanceReport()
         ]);
 
         setFirmReliability(reliability);
@@ -70,6 +73,7 @@ export default function Intelligence() {
         setCapacityStress(capacity);
         setRevenueRisk(revenue);
         setSurvivalRunway(runway);
+        setMonthlyPerformance(monthly);
       } catch (err: any) {
         setError(err.message || 'Failed to load intelligence data');
       } finally {
@@ -369,6 +373,149 @@ export default function Intelligence() {
             </div>
           )}
         </div>
+
+        {/* Monthly Performance Gauge */}
+        {monthlyPerformance && (
+          <div className="mb-8 bg-gradient-to-r from-gray-800 to-gray-900 rounded-lg p-6 border-2 border-gray-700">
+            <h2 className="text-2xl font-bold mb-4 text-cyan-400">
+              Monthly Performance Gauge - {monthlyPerformance.current_month_name} {monthlyPerformance.current_year}
+            </h2>
+
+            {/* Capacity Gauge Visual */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+              {/* Gauge Visual */}
+              <div className="lg:col-span-2">
+                <div className="relative" style={{ height: '200px' }}>
+                  {/* Gauge background */}
+                  <div className="absolute inset-0 flex items-end justify-center">
+                    <div className="relative w-full" style={{ height: '150px' }}>
+                      {/* Color bands */}
+                      <div className="absolute bottom-0 left-0 w-full h-8 flex rounded-lg overflow-hidden">
+                        <div className="flex-1 bg-green-500/30 border-r border-gray-700" title="UNDER-UTILIZED < 60%"></div>
+                        <div className="flex-1 bg-yellow-500/30 border-r border-gray-700" title="OPTIMAL 60-85%"></div>
+                        <div className="flex-1 bg-orange-500/30 border-r border-gray-700" title="STRETCH 85-105%"></div>
+                        <div className="flex-1 bg-red-500/30" title="BURNOUT > 105%"></div>
+                      </div>
+
+                      {/* Needle */}
+                      <div className="absolute bottom-8 left-0 w-full flex justify-center">
+                        <div
+                          className="absolute bottom-0 w-1 bg-white rounded-full shadow-lg"
+                          style={{
+                            height: '100px',
+                            left: `${Math.min(monthlyPerformance.capacity_percentage, 140)}%`,
+                            transformOrigin: 'bottom center',
+                            transform: 'translateX(-50%)',
+                          }}
+                        >
+                          <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white rounded-full shadow-lg"></div>
+                        </div>
+                      </div>
+
+                      {/* Labels */}
+                      <div className="absolute bottom-10 w-full flex justify-between text-xs text-gray-400 px-2">
+                        <span>0%</span>
+                        <span>60%</span>
+                        <span>85%</span>
+                        <span>105%</span>
+                        <span>140%</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Current value display */}
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 text-center">
+                    <div className={`text-5xl font-bold ${
+                      monthlyPerformance.capacity_status === 'UNDER-UTILIZED' ? 'text-green-400' :
+                      monthlyPerformance.capacity_status === 'OPTIMAL' ? 'text-yellow-400' :
+                      monthlyPerformance.capacity_status === 'STRETCH' ? 'text-orange-400' :
+                      'text-red-400'
+                    }`}>
+                      {monthlyPerformance.capacity_percentage.toFixed(1)}%
+                    </div>
+                    <div className={`text-xl font-bold mt-1 ${
+                      monthlyPerformance.capacity_status === 'UNDER-UTILIZED' ? 'text-green-400' :
+                      monthlyPerformance.capacity_status === 'OPTIMAL' ? 'text-yellow-400' :
+                      monthlyPerformance.capacity_status === 'STRETCH' ? 'text-orange-400' :
+                      'text-red-400'
+                    }`}>
+                      {monthlyPerformance.capacity_status}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats Panel */}
+              <div className="space-y-3">
+                <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                  <div className="text-xs text-gray-400">Completed This Month</div>
+                  <div className="text-2xl font-bold text-green-400">
+                    {monthlyPerformance.monthly_completed_claims}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    of {monthlyPerformance.max_safe_capacity} max capacity
+                  </div>
+                </div>
+
+                <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                  <div className="text-xs text-gray-400">Monthly Velocity</div>
+                  <div className="text-2xl font-bold text-blue-400">
+                    {monthlyPerformance.monthly_velocity.toFixed(1)}
+                  </div>
+                  <div className="text-xs text-gray-500">claims/business day</div>
+                </div>
+
+                <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                  <div className="text-xs text-gray-400">Projected End of Month</div>
+                  <div className={`text-2xl font-bold ${
+                    monthlyPerformance.projected_end_of_month > monthlyPerformance.max_safe_capacity
+                      ? 'text-red-400'
+                      : 'text-purple-400'
+                  }`}>
+                    {monthlyPerformance.projected_end_of_month}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {monthlyPerformance.days_remaining} days remaining
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Additional Metrics */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="text-gray-400 text-sm">Backlog</div>
+                <div className="text-2xl font-bold text-orange-400">
+                  {monthlyPerformance.monthly_backlog}
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-gray-400 text-sm">Business Days</div>
+                <div className="text-2xl font-bold text-gray-300">
+                  {monthlyPerformance.business_days_elapsed} / {monthlyPerformance.total_business_days_in_month}
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-gray-400 text-sm">Burnout Ratio</div>
+                <div className={`text-2xl font-bold ${
+                  monthlyPerformance.monthly_burnout_ratio > 1.05 ? 'text-red-400' :
+                  monthlyPerformance.monthly_burnout_ratio > 0.85 ? 'text-orange-400' :
+                  monthlyPerformance.monthly_burnout_ratio > 0.60 ? 'text-yellow-400' :
+                  'text-green-400'
+                }`}>
+                  {monthlyPerformance.monthly_burnout_ratio.toFixed(2)}
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-gray-400 text-sm">Recommended Rate</div>
+                <div className="text-2xl font-bold text-cyan-400">
+                  {monthlyPerformance.recommended_daily_rate.toFixed(1)}
+                </div>
+                <div className="text-xs text-gray-500">claims/day</div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Charts Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

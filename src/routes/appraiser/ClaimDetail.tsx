@@ -247,7 +247,16 @@ export default function ClaimDetail() {
 
   const markComplete = async () => {
     if (confirm("Mark this claim as COMPLETED? This will notify the admin.")) {
-      await update({ status: "COMPLETED" });
+      // Set completed_month to current YYYY-MM when marking as complete
+      const now = new Date();
+      const completedMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const completionDate = now.toISOString();
+
+      await update({
+        status: "COMPLETED",
+        completed_month: completedMonth,
+        completion_date: completionDate
+      });
     }
   };
 

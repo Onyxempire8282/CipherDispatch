@@ -16,6 +16,7 @@ import PayoutVarianceAPI from "./routes/api/PayoutVariance";
 import CapacityStressAPI from "./routes/api/CapacityStress";
 import RevenueRiskAPI from "./routes/api/RevenueRisk";
 import SurvivalRunwayAPI from "./routes/api/SurvivalRunway";
+import MonthlyPerformanceAPI from "./routes/api/MonthlyPerformance";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import "./index.css";
 import "leaflet/dist/leaflet.css";
@@ -119,6 +120,14 @@ const router = createBrowserRouter(
       element: (
         <ProtectedRoute requiredRole="admin">
           <SurvivalRunwayAPI />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/api/monthly-performance",
+      element: (
+        <ProtectedRoute requiredRole="admin">
+          <MonthlyPerformanceAPI />
         </ProtectedRoute>
       ),
     },
