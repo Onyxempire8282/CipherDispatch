@@ -1262,7 +1262,7 @@ export default function ClaimDetail() {
             >
               <option value="">Choose an action...</option>
               <option value="SCHEDULED">📅 Mark as Scheduled</option>
-              <option value="IN_PROGRESS">🔧 Start Work</option>
+              <option value="IN_PROGRESS">🔧 In Progress</option>
               <option value="COMPLETED">✅ Mark as Complete</option>
               <option value="CANCELED">❌ Cancel Claim</option>
               <option value="DELETE" style={{ color: "#ef4444", fontWeight: "bold" }}>
