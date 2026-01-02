@@ -26,7 +26,9 @@
       "Bash(node test-claimsolution-debug.mjs:*)",
       "Bash(node test-vendor-normalization.mjs:*)",
       "Bash(node:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(\" in seasonalityProfile.ts\n- Prevents parsing errors when firm names contain hyphens \\(e.g., \"Nationwide-AMC\"\\)\n- Previous bug: \"Nationwide-AMC-2025-12\".split\\(\"-\"\\) gave wrong results\n- parseInt\\(\"AMC\"\\) = NaN, breaking all charts\n- Now uses \")",
+      "Bash(\" delimiter which won''t appear in firm names\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }

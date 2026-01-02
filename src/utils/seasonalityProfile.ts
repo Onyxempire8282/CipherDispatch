@@ -91,13 +91,13 @@ export async function generateSeasonalityProfileReport(
     const year = completionDate.getUTCFullYear();
     const month = completionDate.getUTCMonth() + 1; // 1-12
 
-    const key = `${claim.firm_name}-${year}-${month}`;
+    const key = `${claim.firm_name}|${year}|${month}`;
     groupedData[key] = (groupedData[key] || 0) + 1;
   }
 
   // Convert grouped data to raw data array
   for (const [key, count] of Object.entries(groupedData)) {
-    const [firm, yearStr, monthStr] = key.split("-");
+    const [firm, yearStr, monthStr] = key.split("|");
     const year = parseInt(yearStr);
     const month = parseInt(monthStr);
 
@@ -209,19 +209,19 @@ async function validateSeasonalityMismatch(
       // Use UTC methods to avoid timezone issues with date-only strings
       const year = date.getUTCFullYear();
       const month = date.getUTCMonth() + 1;
-      claimsCombinations.add(`${claim.firm_name}-${year}-${month}`);
+      claimsCombinations.add(`${claim.firm_name}|${year}|${month}`);
     }
 
     // Build set from seasonality response
     const seasonalityCombinations = new Set<string>();
     for (const item of seasonalityData) {
-      seasonalityCombinations.add(`${item.firm}-${item.year}-${item.month}`);
+      seasonalityCombinations.add(`${item.firm}|${item.year}|${item.month}`);
     }
 
     // Find mismatches
     for (const combination of claimsCombinations) {
       if (!seasonalityCombinations.has(combination)) {
-        const [firm, year, month] = combination.split("-");
+        const [firm, year, month] = combination.split("|");
         console.warn(
           `🚨 SEASONALITY MISMATCH: Claims exist for ${firm} ${year}-${month} but missing from seasonality response`
         );
