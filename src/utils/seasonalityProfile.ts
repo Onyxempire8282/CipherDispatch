@@ -102,10 +102,12 @@ export async function generateSeasonalityProfileReport(
   const groupedData: { [key: string]: number } = {};
 
   for (const claim of claims) {
-    const completionDate = new Date(claim.completion_date);
-    // Use UTC methods to avoid timezone issues with date-only strings
-    const year = completionDate.getUTCFullYear();
-    const month = completionDate.getUTCMonth() + 1; // 1-12
+    // Parse date string directly to avoid ANY timezone conversion issues
+    // Extract YYYY-MM-DD from the completion_date string
+    const dateStr = claim.completion_date.split('T')[0]; // Get "YYYY-MM-DD"
+    const [yearStr, monthStr] = dateStr.split('-');
+    const year = parseInt(yearStr);
+    const month = parseInt(monthStr);
 
     const key = `${claim.firm_name}|${year}|${month}`;
     groupedData[key] = (groupedData[key] || 0) + 1;
@@ -233,10 +235,11 @@ async function validateSeasonalityMismatch(
     // Build set of firm-year-month combinations from claims
     const claimsCombinations = new Set<string>();
     for (const claim of claimsData) {
-      const date = new Date(claim.completion_date);
-      // Use UTC methods to avoid timezone issues with date-only strings
-      const year = date.getUTCFullYear();
-      const month = date.getUTCMonth() + 1;
+      // Parse date string directly to avoid ANY timezone conversion issues
+      const dateStr = claim.completion_date.split('T')[0]; // Get "YYYY-MM-DD"
+      const [yearStr, monthStr] = dateStr.split('-');
+      const year = parseInt(yearStr);
+      const month = parseInt(monthStr);
       claimsCombinations.add(`${claim.firm_name}|${year}|${month}`);
     }
 
