@@ -250,7 +250,12 @@ export default function ClaimDetail() {
       // Set completed_month to current YYYY-MM when marking as complete
       const now = new Date();
       const completedMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-      const completionDate = now.toISOString();
+
+      // Store completion_date as date-only at midnight UTC to avoid timezone issues
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const completionDate = `${year}-${month}-${day}T00:00:00Z`;
 
       await update({
         status: "COMPLETED",
