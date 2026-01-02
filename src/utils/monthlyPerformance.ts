@@ -4,7 +4,7 @@
  * Resets monthly without deleting historical data
  */
 
-import { supabase } from '../lib/supabase';
+import { supabase } from "../lib/supabase";
 
 // Configuration
 export const MAX_SAFE_CAPACITY = 100; // claims per month - configurable
@@ -21,7 +21,7 @@ export interface MonthlyPerformanceReport {
   monthly_velocity: number;
   max_safe_capacity: number;
   monthly_burnout_ratio: number;
-  capacity_status: 'UNDER-UTILIZED' | 'OPTIMAL' | 'STRETCH' | 'BURNOUT';
+  capacity_status: "UNDER-UTILIZED" | "OPTIMAL" | "STRETCH" | "BURNOUT";
   capacity_percentage: number;
   projected_end_of_month: number;
   days_remaining: number;
@@ -31,7 +31,6 @@ export interface MonthlyPerformanceReport {
 interface ClaimForMonthly {
   id: string;
   status: string;
-  completed_month: string | null;
   completion_date: string | null;
   appointment_start: string | null;
 }
@@ -42,7 +41,7 @@ interface ClaimForMonthly {
 function getCurrentMonth(): string {
   const now = new Date();
   const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const month = String(now.getMonth() + 1).padStart(2, "0");
   return `${year}-${month}`;
 }
 
@@ -90,19 +89,24 @@ function getTotalBusinessDaysInMonth(): number {
 function getDaysRemainingInMonth(): number {
   const now = new Date();
   const lastOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  return Math.max(0, Math.ceil((lastOfMonth.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+  return Math.max(
+    0,
+    Math.ceil((lastOfMonth.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+  );
 }
 
 /**
  * Determine capacity status based on burnout ratio
  */
-function determineCapacityStatus(burnoutRatio: number): 'UNDER-UTILIZED' | 'OPTIMAL' | 'STRETCH' | 'BURNOUT' {
+function determineCapacityStatus(
+  burnoutRatio: number
+): "UNDER-UTILIZED" | "OPTIMAL" | "STRETCH" | "BURNOUT" {
   const percentage = burnoutRatio * 100;
 
-  if (percentage < 60) return 'UNDER-UTILIZED';
-  if (percentage >= 60 && percentage < 85) return 'OPTIMAL';
-  if (percentage >= 85 && percentage <= 105) return 'STRETCH';
-  return 'BURNOUT';
+  if (percentage < 60) return "UNDER-UTILIZED";
+  if (percentage >= 60 && percentage < 85) return "OPTIMAL";
+  if (percentage >= 85 && percentage <= 105) return "STRETCH";
+  return "BURNOUT";
 }
 
 /**
@@ -110,11 +114,11 @@ function determineCapacityStatus(burnoutRatio: number): 'UNDER-UTILIZED' | 'OPTI
  */
 async function fetchClaimsForMonthly(): Promise<ClaimForMonthly[]> {
   const { data, error } = await supabase
-    .from('claims')
-    .select('id, status, completed_month, completion_date, appointment_start');
+    .from("claims")
+    .select("id, status, completion_date, appointment_start");
 
   if (error) {
-    console.error('Error fetching claims for monthly performance:', error);
+    console.error("Error fetching claims for monthly performance:", error);
     throw error;
   }
 
@@ -129,21 +133,42 @@ export async function generateMonthlyPerformanceReport(): Promise<MonthlyPerform
   const currentMonth = getCurrentMonth();
   const now = new Date();
   const currentYear = now.getFullYear();
-  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                      'July', 'August', 'September', 'October', 'November', 'December'];
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
   const currentMonthName = monthNames[now.getMonth()];
 
-  // Count completed claims for current month only
-  const monthlyCompletedClaims = claims.filter(
-    c => c.status === 'COMPLETED' && c.completed_month === currentMonth
-  ).length;
+  // Count completed claims for current month only using completion_date
+  const monthlyCompletedClaims = claims.filter((c) => {
+    if (c.status !== "COMPLETED" || !c.completion_date) return false;
+    const completionDate = new Date(c.completion_date);
+    const completionMonth = `${completionDate.getFullYear()}-${(
+      completionDate.getMonth() + 1
+    )
+      .toString()
+      .padStart(2, "0")}`;
+    return completionMonth === currentMonth;
+  }).length;
 
   // Count backlog: claims scheduled this month but not completed
-  const scheduledThisMonth = claims.filter(c => {
+  const scheduledThisMonth = claims.filter((c) => {
     if (!c.appointment_start) return false;
     const appointmentDate = new Date(c.appointment_start);
-    const appointmentMonth = `${appointmentDate.getFullYear()}-${String(appointmentDate.getMonth() + 1).padStart(2, '0')}`;
-    return appointmentMonth === currentMonth && c.status !== 'COMPLETED';
+    const appointmentMonth = `${appointmentDate.getFullYear()}-${String(
+      appointmentDate.getMonth() + 1
+    ).padStart(2, "0")}`;
+    return appointmentMonth === currentMonth && c.status !== "COMPLETED";
   });
   const monthlyBacklog = scheduledThisMonth.length;
 
@@ -153,9 +178,8 @@ export async function generateMonthlyPerformanceReport(): Promise<MonthlyPerform
   const daysRemaining = getDaysRemainingInMonth();
 
   // Calculate velocity (claims per business day)
-  const monthlyVelocity = businessDaysElapsed > 0
-    ? monthlyCompletedClaims / businessDaysElapsed
-    : 0;
+  const monthlyVelocity =
+    businessDaysElapsed > 0 ? monthlyCompletedClaims / businessDaysElapsed : 0;
 
   // Calculate burnout ratio
   const monthlyBurnoutRatio = monthlyCompletedClaims / MAX_SAFE_CAPACITY;
@@ -166,13 +190,13 @@ export async function generateMonthlyPerformanceReport(): Promise<MonthlyPerform
 
   // Project end of month based on current velocity
   const businessDaysRemaining = totalBusinessDaysInMonth - businessDaysElapsed;
-  const projectedEndOfMonth = monthlyCompletedClaims + (monthlyVelocity * businessDaysRemaining);
+  const projectedEndOfMonth =
+    monthlyCompletedClaims + monthlyVelocity * businessDaysRemaining;
 
   // Recommended daily rate to hit max capacity
   const remainingToCapacity = MAX_SAFE_CAPACITY - monthlyCompletedClaims;
-  const recommendedDailyRate = businessDaysRemaining > 0
-    ? remainingToCapacity / businessDaysRemaining
-    : 0;
+  const recommendedDailyRate =
+    businessDaysRemaining > 0 ? remainingToCapacity / businessDaysRemaining : 0;
 
   return {
     generated_at: new Date().toISOString(),
@@ -190,24 +214,40 @@ export async function generateMonthlyPerformanceReport(): Promise<MonthlyPerform
     capacity_percentage: Math.round(capacityPercentage * 10) / 10,
     projected_end_of_month: Math.round(projectedEndOfMonth),
     days_remaining: daysRemaining,
-    recommended_daily_rate: Math.round(recommendedDailyRate * 10) / 10
+    recommended_daily_rate: Math.round(recommendedDailyRate * 10) / 10,
   };
 }
 
 /**
- * Get completed claims count for a specific month
+ * Get completed claims count for a specific month using completion_date
  */
-export async function getMonthlyCompletedCount(yearMonth: string): Promise<number> {
+export async function getMonthlyCompletedCount(
+  yearMonth: string
+): Promise<number> {
   const { data, error } = await supabase
-    .from('claims')
-    .select('id', { count: 'exact', head: true })
-    .eq('status', 'COMPLETED')
-    .eq('completed_month', yearMonth);
+    .from("claims")
+    .select("completion_date")
+    .eq("status", "COMPLETED")
+    .not("completion_date", "is", null);
 
   if (error) {
-    console.error('Error fetching monthly completed count:', error);
+    console.error("Error fetching monthly completed count:", error);
     throw error;
   }
 
-  return data?.length || 0;
+  // Filter by month in the application since PostgreSQL date functions vary
+  const targetMonth = yearMonth; // Expected format: YYYY-MM
+  const filteredClaims =
+    data?.filter((claim) => {
+      if (!claim.completion_date) return false;
+      const completionDate = new Date(claim.completion_date);
+      const claimMonth = `${completionDate.getFullYear()}-${(
+        completionDate.getMonth() + 1
+      )
+        .toString()
+        .padStart(2, "0")}`;
+      return claimMonth === targetMonth;
+    }) || [];
+
+  return filteredClaims.length;
 }

@@ -4,11 +4,11 @@
  * Provides historical trend data for analytics dashboards
  */
 
-import { supabase } from '../lib/supabase';
-import { MAX_SAFE_CAPACITY } from './monthlyPerformance';
+import { supabase } from "../lib/supabase";
+import { MAX_SAFE_CAPACITY } from "./monthlyPerformance";
 
 export interface MonthlyPerformanceLogEntry {
-  month: string;  // YYYY-MM
+  month: string; // YYYY-MM
   completed_claims: number;
   backlog: number;
   avg_velocity: number;
@@ -55,7 +55,7 @@ export interface MonthlyHistoryReport {
 function getCurrentMonth(): string {
   const now = new Date();
   const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const month = String(now.getMonth() + 1).padStart(2, "0");
   return `${year}-${month}`;
 }
 
@@ -64,12 +64,12 @@ function getCurrentMonth(): string {
  */
 function getPreviousMonth(yearMonth?: string): string {
   const base = yearMonth || getCurrentMonth();
-  const [year, month] = base.split('-').map(Number);
+  const [year, month] = base.split("-").map(Number);
 
   if (month === 1) {
     return `${year - 1}-12`;
   }
-  return `${year}-${String(month - 1).padStart(2, '0')}`;
+  return `${year}-${String(month - 1).padStart(2, "0")}`;
 }
 
 /**
@@ -94,7 +94,7 @@ function calculateBusinessDays(startDate: Date, endDate: Date): number {
  * Get total business days in a specific month
  */
 function getBusinessDaysInMonth(yearMonth: string): number {
-  const [year, month] = yearMonth.split('-').map(Number);
+  const [year, month] = yearMonth.split("-").map(Number);
   const firstOfMonth = new Date(year, month - 1, 1);
   const lastOfMonth = new Date(year, month, 0);
   return calculateBusinessDays(firstOfMonth, lastOfMonth);
@@ -110,13 +110,13 @@ export async function checkAndLogPreviousMonth(): Promise<string | null> {
 
   // Check if previous month already logged
   const { data: existing, error: checkError } = await supabase
-    .from('monthly_performance_log')
-    .select('month')
-    .eq('month', previousMonth)
+    .from("monthly_performance_log")
+    .select("month")
+    .eq("month", previousMonth)
     .single();
 
-  if (checkError && checkError.code !== 'PGRST116') {
-    console.error('Error checking monthly log:', checkError);
+  if (checkError && checkError.code !== "PGRST116") {
+    console.error("Error checking monthly log:", checkError);
     return null;
   }
 
@@ -129,29 +129,31 @@ export async function checkAndLogPreviousMonth(): Promise<string | null> {
   console.log(`Logging metrics for ${previousMonth}...`);
 
   const { data: claims, error: claimsError } = await supabase
-    .from('claims')
-    .select('id, status, completed_month, appointment_start, firm, pay_amount');
+    .from("claims")
+    .select("id, status, completed_month, appointment_start, firm, pay_amount");
 
   if (claimsError) {
-    console.error('Error fetching claims for logging:', claimsError);
+    console.error("Error fetching claims for logging:", claimsError);
     return null;
   }
 
   if (!claims) {
-    console.log('No claims data available');
+    console.log("No claims data available");
     return null;
   }
 
   // Calculate metrics for previous month
   const completedClaims = claims.filter(
-    c => c.status === 'COMPLETED' && c.completed_month === previousMonth
+    (c) => c.status === "COMPLETED" && c.completed_month === previousMonth
   ).length;
 
-  const scheduledPrevMonth = claims.filter(c => {
+  const scheduledPrevMonth = claims.filter((c) => {
     if (!c.appointment_start) return false;
     const appointmentDate = new Date(c.appointment_start);
-    const appointmentMonth = `${appointmentDate.getFullYear()}-${String(appointmentDate.getMonth() + 1).padStart(2, '0')}`;
-    return appointmentMonth === previousMonth && c.status !== 'COMPLETED';
+    const appointmentMonth = `${appointmentDate.getFullYear()}-${String(
+      appointmentDate.getMonth() + 1
+    ).padStart(2, "0")}`;
+    return appointmentMonth === previousMonth && c.status !== "COMPLETED";
   });
   const backlog = scheduledPrevMonth.length;
 
@@ -161,10 +163,15 @@ export async function checkAndLogPreviousMonth(): Promise<string | null> {
 
   // Count unique firms that completed claims in previous month
   const firmsSet = new Set<string>();
-  const firmActivity: { [firm: string]: { claims: number; revenue: number } } = {};
+  const firmActivity: { [firm: string]: { claims: number; revenue: number } } =
+    {};
 
-  claims.forEach(claim => {
-    if (claim.status === 'COMPLETED' && claim.completed_month === previousMonth && claim.firm) {
+  claims.forEach((claim) => {
+    if (
+      claim.status === "COMPLETED" &&
+      claim.completed_month === previousMonth &&
+      claim.firm
+    ) {
       firmsSet.add(claim.firm);
 
       if (!firmActivity[claim.firm]) {
@@ -179,36 +186,38 @@ export async function checkAndLogPreviousMonth(): Promise<string | null> {
 
   // Insert monthly performance log
   const { error: logError } = await supabase
-    .from('monthly_performance_log')
+    .from("monthly_performance_log")
     .insert({
       month: previousMonth,
       completed_claims: completedClaims,
       backlog: backlog,
       avg_velocity: Math.round(avgVelocity * 100) / 100,
       burnout_ratio: Math.round(burnoutRatio * 1000) / 1000,
-      firms_active: firmsActive
+      firms_active: firmsActive,
     });
 
   if (logError) {
-    console.error('Error inserting monthly log:', logError);
+    console.error("Error inserting monthly log:", logError);
     return null;
   }
 
   // Insert firm activity records
-  const firmActivityRecords = Object.entries(firmActivity).map(([firm, data]) => ({
-    month: previousMonth,
-    firm_name: firm,
-    claims_completed: data.claims,
-    revenue_generated: data.revenue
-  }));
+  const firmActivityRecords = Object.entries(firmActivity).map(
+    ([firm, data]) => ({
+      month: previousMonth,
+      firm_name: firm,
+      claims_completed: data.claims,
+      revenue_generated: data.revenue,
+    })
+  );
 
   if (firmActivityRecords.length > 0) {
     const { error: activityError } = await supabase
-      .from('monthly_firm_activity')
+      .from("monthly_firm_activity")
       .insert(firmActivityRecords);
 
     if (activityError) {
-      console.error('Error inserting firm activity:', activityError);
+      console.error("Error inserting firm activity:", activityError);
     }
   }
 
@@ -217,45 +226,90 @@ export async function checkAndLogPreviousMonth(): Promise<string | null> {
 }
 
 /**
- * Fetch all historical monthly performance data
+ * Fetch all historical monthly performance data from live claims
  */
 export async function fetchMonthlyHistory(): Promise<MonthlyHistoryReport> {
-  // Fetch monthly performance logs
-  const { data: perfData, error: perfError } = await supabase
-    .from('monthly_performance_log')
-    .select('*')
-    .order('month', { ascending: true });
+  console.log(
+    "🔍 CRITICAL FIX: Fetching live completed claims for monthly history"
+  );
 
-  if (perfError) {
-    console.error('Error fetching monthly history:', perfError);
-    throw perfError;
+  // Get completed claims directly from claims table
+  const { data: completedClaims, error: claimsError } = await supabase
+    .from("claims")
+    .select("firm_name, completion_date, pay_amount, file_total")
+    .eq("status", "COMPLETED")
+    .not("completion_date", "is", null)
+    .not("firm_name", "is", null)
+    .order("completion_date", { ascending: true });
+
+  if (claimsError) {
+    console.error("Error fetching completed claims:", claimsError);
+    throw claimsError;
   }
 
-  // Fetch firm activity data
-  const { data: firmData, error: firmError } = await supabase
-    .from('monthly_firm_activity')
-    .select('*')
-    .order('month', { ascending: true });
+  // Still fetch historical logs for backward compatibility
+  const { data: perfData, error: perfError } = await supabase
+    .from("monthly_performance_log")
+    .select("*")
+    .order("month", { ascending: true });
 
-  if (firmError) {
-    console.error('Error fetching firm activity:', firmError);
-    throw firmError;
+  if (perfError) {
+    console.warn("Warning: Could not fetch performance logs:", perfError);
   }
 
   const historical = perfData || [];
-  const firmActivity = firmData || [];
+  const claims = completedClaims || [];
+  console.log(
+    `✅ Found ${claims.length} completed claims for history analysis`
+  );
+
+  // Build firm activity from live claims instead of monthly_firm_activity
+  const firmActivityMap: { [key: string]: MonthlyFirmActivity } = {};
+
+  for (const claim of claims) {
+    const completionDate = new Date(claim.completion_date);
+    const year = completionDate.getFullYear();
+    const month = completionDate.getMonth() + 1;
+    const monthKey = `${year}-${month.toString().padStart(2, "0")}`;
+    const activityKey = `${claim.firm_name}-${monthKey}`;
+
+    if (!firmActivityMap[activityKey]) {
+      firmActivityMap[activityKey] = {
+        month: monthKey,
+        firm_name: claim.firm_name,
+        claims_completed: 0,
+        revenue_generated: 0,
+      };
+    }
+
+    firmActivityMap[activityKey].claims_completed += 1;
+    firmActivityMap[activityKey].revenue_generated +=
+      claim.file_total || claim.pay_amount || 0;
+  }
+
+  const firmActivity = Object.values(firmActivityMap);
 
   // Build grouped structure: firm → year → month
   const MONTH_NAMES = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
   const firmMonthlyData: FirmMonthlyData = {};
 
-  firmActivity.forEach(activity => {
+  firmActivity.forEach((activity) => {
     const firmName = activity.firm_name;
-    const monthDate = new Date(activity.month + '-01');
+    const monthDate = new Date(activity.month + "-01");
     const year = monthDate.getFullYear().toString();
     const monthNumber = monthDate.getMonth() + 1; // 1-12
     const businessDays = getBusinessDaysInMonth(activity.month);
@@ -269,21 +323,24 @@ export async function fetchMonthlyHistory(): Promise<MonthlyHistoryReport> {
     }
 
     // Find or create month entry
-    let monthEntry = firmMonthlyData[firmName][year].find(m => m.month === monthNumber);
+    let monthEntry = firmMonthlyData[firmName][year].find(
+      (m) => m.month === monthNumber
+    );
     if (!monthEntry) {
       monthEntry = {
         month: monthNumber,
         monthName: MONTH_NAMES[monthNumber - 1],
         claimsCompleted: 0,
         revenueGenerated: 0,
-        avgVelocity: 0
+        avgVelocity: 0,
       };
       firmMonthlyData[firmName][year].push(monthEntry);
     }
 
     monthEntry.claimsCompleted = activity.claims_completed;
     monthEntry.revenueGenerated = activity.revenue_generated;
-    monthEntry.avgVelocity = businessDays > 0 ? activity.claims_completed / businessDays : 0;
+    monthEntry.avgVelocity =
+      businessDays > 0 ? activity.claims_completed / businessDays : 0;
   });
 
   // Fill missing months with zero data and sort
@@ -291,14 +348,16 @@ export async function fetchMonthlyHistory(): Promise<MonthlyHistoryReport> {
     for (const year in firmMonthlyData[firmName]) {
       // Ensure all 12 months are present
       for (let month = 1; month <= 12; month++) {
-        const existingMonth = firmMonthlyData[firmName][year].find(m => m.month === month);
+        const existingMonth = firmMonthlyData[firmName][year].find(
+          (m) => m.month === month
+        );
         if (!existingMonth) {
           firmMonthlyData[firmName][year].push({
             month,
             monthName: MONTH_NAMES[month - 1],
             claimsCompleted: 0,
             revenueGenerated: 0,
-            avgVelocity: 0
+            avgVelocity: 0,
           });
         }
       }
@@ -313,7 +372,8 @@ export async function fetchMonthlyHistory(): Promise<MonthlyHistoryReport> {
     firm_monthly_data: firmMonthlyData,
     months_tracked: historical.length,
     earliest_month: historical.length > 0 ? historical[0].month : null,
-    latest_month: historical.length > 0 ? historical[historical.length - 1].month : null
+    latest_month:
+      historical.length > 0 ? historical[historical.length - 1].month : null,
   };
 }
 

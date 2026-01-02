@@ -8,12 +8,14 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   generateSeasonalityProfileReport,
-  SeasonalityProfileReport,
+  SeasonalityProfileReportWithRaw,
 } from "../../utils/seasonalityProfile";
 
 export default function SeasonalityProfileAPI() {
   const [searchParams] = useSearchParams();
-  const [data, setData] = useState<SeasonalityProfileReport | null>(null);
+  const [data, setData] = useState<SeasonalityProfileReportWithRaw | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,7 +59,12 @@ export default function SeasonalityProfileAPI() {
       };
     }
 
-    return data;
+    return {
+      status: "success",
+      data: data?.aggregated || {},
+      raw_data: data?.raw || [],
+      timestamp: new Date().toISOString(),
+    };
   };
 
   const jsonContent = JSON.stringify(
