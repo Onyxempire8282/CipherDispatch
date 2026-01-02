@@ -87,8 +87,9 @@ export async function generateSeasonalityProfileReport(
 
   for (const claim of claims) {
     const completionDate = new Date(claim.completion_date);
-    const year = completionDate.getFullYear();
-    const month = completionDate.getMonth() + 1; // 1-12
+    // Use UTC methods to avoid timezone issues with date-only strings
+    const year = completionDate.getUTCFullYear();
+    const month = completionDate.getUTCMonth() + 1; // 1-12
 
     const key = `${claim.firm_name}-${year}-${month}`;
     groupedData[key] = (groupedData[key] || 0) + 1;
@@ -205,8 +206,9 @@ async function validateSeasonalityMismatch(
     const claimsCombinations = new Set<string>();
     for (const claim of claimsData) {
       const date = new Date(claim.completion_date);
-      const year = date.getFullYear();
-      const month = date.getMonth() + 1;
+      // Use UTC methods to avoid timezone issues with date-only strings
+      const year = date.getUTCFullYear();
+      const month = date.getUTCMonth() + 1;
       claimsCombinations.add(`${claim.firm_name}-${year}-${month}`);
     }
 

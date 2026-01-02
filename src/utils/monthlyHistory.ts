@@ -268,8 +268,9 @@ export async function fetchMonthlyHistory(): Promise<MonthlyHistoryReport> {
 
   for (const claim of claims) {
     const completionDate = new Date(claim.completion_date);
-    const year = completionDate.getFullYear();
-    const month = completionDate.getMonth() + 1;
+    // Use UTC methods to avoid timezone issues with date-only strings
+    const year = completionDate.getUTCFullYear();
+    const month = completionDate.getUTCMonth() + 1;
     const monthKey = `${year}-${month.toString().padStart(2, "0")}`;
     const activityKey = `${claim.firm_name}-${monthKey}`;
 

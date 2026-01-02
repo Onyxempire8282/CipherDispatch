@@ -153,8 +153,9 @@ export async function generateMonthlyPerformanceReport(): Promise<MonthlyPerform
   const monthlyCompletedClaims = claims.filter((c) => {
     if (c.status !== "COMPLETED" || !c.completion_date) return false;
     const completionDate = new Date(c.completion_date);
-    const completionMonth = `${completionDate.getFullYear()}-${(
-      completionDate.getMonth() + 1
+    // Use UTC methods to avoid timezone issues with date-only strings
+    const completionMonth = `${completionDate.getUTCFullYear()}-${(
+      completionDate.getUTCMonth() + 1
     )
       .toString()
       .padStart(2, "0")}`;
@@ -241,8 +242,9 @@ export async function getMonthlyCompletedCount(
     data?.filter((claim) => {
       if (!claim.completion_date) return false;
       const completionDate = new Date(claim.completion_date);
-      const claimMonth = `${completionDate.getFullYear()}-${(
-        completionDate.getMonth() + 1
+      // Use UTC methods to avoid timezone issues with date-only strings
+      const claimMonth = `${completionDate.getUTCFullYear()}-${(
+        completionDate.getUTCMonth() + 1
       )
         .toString()
         .padStart(2, "0")}`;
