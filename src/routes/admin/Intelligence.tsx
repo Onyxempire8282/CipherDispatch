@@ -916,7 +916,10 @@ export default function Intelligence() {
           {/* Firm Payment Reliability */}
           {firmReliabilityChart && (
             <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-              <h2 className="text-xl font-bold mb-4 text-blue-400">
+              <h2
+                className="text-xl font-bold mb-4 text-blue-400 cursor-help"
+                title="Tracks payment punctuality for top firms. Shows on-time payment percentage and average days late for the 10 firms with highest claim volume."
+              >
                 Firm Payment Reliability
               </h2>
               <div style={{ height: "300px" }}>
@@ -934,7 +937,10 @@ export default function Intelligence() {
           {/* Weekly Expected vs Actual Payouts */}
           {payoutVarianceChart && (
             <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-              <h2 className="text-xl font-bold mb-4 text-green-400">
+              <h2
+                className="text-xl font-bold mb-4 text-green-400 cursor-help"
+                title="Compares forecasted payouts versus actual payments received each week. Helps identify variance patterns and forecast accuracy over time."
+              >
                 Weekly Expected vs Actual Payouts
               </h2>
               <div style={{ height: "300px" }}>
@@ -950,7 +956,10 @@ export default function Intelligence() {
           {/* Capacity Stress Trend */}
           {capacityStressChart && (
             <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-              <h2 className="text-xl font-bold mb-4 text-purple-400">
+              <h2
+                className="text-xl font-bold mb-4 text-purple-400 cursor-help"
+                title="Monitors workload balance by comparing claims assigned versus claims completed each week. Backlog indicates when assignments exceed completion capacity."
+              >
                 Capacity Stress Trend
               </h2>
               <div style={{ height: "300px" }}>
@@ -965,7 +974,10 @@ export default function Intelligence() {
           {/* Revenue Dependency Risk */}
           {revenueRiskChart && (
             <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-              <h2 className="text-xl font-bold mb-4 text-yellow-400">
+              <h2
+                className="text-xl font-bold mb-4 text-yellow-400 cursor-help"
+                title="Shows revenue concentration among top 3 firms. High concentration indicates business risk if a major client relationship ends."
+              >
                 Revenue Dependency Risk
               </h2>
               <div style={{ height: "300px" }}>
@@ -995,7 +1007,10 @@ export default function Intelligence() {
           {/* 30-Day Survival Forecast - Full Width */}
           {survivalRunwayChart && (
             <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 lg:col-span-2">
-              <h2 className="text-xl font-bold mb-4 text-cyan-400">
+              <h2
+                className="text-xl font-bold mb-4 text-cyan-400 cursor-help"
+                title="Projects cumulative cash flow over the next 30 days. Compares expected scenario with delayed payment scenario (7-day delay) to assess liquidity risk."
+              >
                 30-Day Survival Forecast
               </h2>
               <div style={{ height: "300px" }}>
@@ -1042,7 +1057,10 @@ export default function Intelligence() {
           {/* Business Seasonality Wave */}
           {businessSeasonalityChart && seasonalityProfile && (
             <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-              <h2 className="text-xl font-bold mb-4 text-green-400">
+              <h2
+                className="text-xl font-bold mb-4 text-green-400 cursor-help"
+                title="Displays monthly claim completion patterns across multiple years. Each line represents one year, allowing comparison of seasonal trends and identifying peak/low months."
+              >
                 Business Seasonality Wave
               </h2>
               <div style={{ height: "300px" }}>
@@ -1064,7 +1082,10 @@ export default function Intelligence() {
             monthlyHistory &&
             monthlyHistory.historical_performance.length > 0 && (
               <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-                <h2 className="text-xl font-bold mb-4 text-blue-400">
+                <h2
+                  className="text-xl font-bold mb-4 text-blue-400 cursor-help"
+                  title="Tracks average claims processed per business day each month. Shows productivity trends and helps identify months with higher or lower throughput."
+                >
                   Monthly Velocity Trend
                 </h2>
                 <div style={{ height: "300px" }}>
@@ -1084,7 +1105,10 @@ export default function Intelligence() {
             monthlyHistory &&
             monthlyHistory.historical_performance.length > 0 && (
               <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-                <h2 className="text-xl font-bold mb-4 text-purple-400">
+                <h2
+                  className="text-xl font-bold mb-4 text-purple-400 cursor-help"
+                  title="Measures capacity utilization each month. Green (<60%) = under-utilized, Yellow (60-85%) = optimal, Orange (85-105%) = stretch, Red (>105%) = burnout risk."
+                >
                   Burnout Ratio by Month
                 </h2>
                 <div style={{ height: "300px" }}>
@@ -1102,7 +1126,10 @@ export default function Intelligence() {
             monthlyHistory &&
             monthlyHistory.firm_activity.length > 0 && (
               <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 lg:col-span-2">
-                <h2 className="text-xl font-bold mb-4 text-pink-400">
+                <h2
+                  className="text-xl font-bold mb-4 text-pink-400 cursor-help"
+                  title="Visualizes claim distribution across top 10 firms over time. Each color represents a different month, stacked to show total claims completed per firm."
+                >
                   Firm Activity Heatmap
                 </h2>
                 <div style={{ height: "300px" }}>
@@ -1139,7 +1166,10 @@ export default function Intelligence() {
           {/* Operational Dependency Risk – Claim Volume */}
           {volumeDependencyChart && volumeDependencyRisk && (
             <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-              <h2 className="text-xl font-bold mb-4 text-orange-400">
+              <h2
+                className="text-xl font-bold mb-4 text-orange-400 cursor-help"
+                title="Shows claim volume concentration among top 3 firms. High concentration indicates operational risk if a major firm relationship ends or changes significantly."
+              >
                 Operational Dependency Risk – Claim Volume
               </h2>
               <div style={{ height: "300px" }}>
@@ -1169,7 +1199,10 @@ export default function Intelligence() {
           {/* Profit Density by Firm ($ per Claim) */}
           {valueEfficiencyChart && valueEfficiency && (
             <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-              <h2 className="text-xl font-bold mb-4 text-green-400">
+              <h2
+                className="text-xl font-bold mb-4 text-green-400 cursor-help"
+                title="Ranks firms by average revenue per claim. Identifies most valuable client relationships and helps prioritize high-value partnerships."
+              >
                 Profit Density by Firm ($ per Claim)
               </h2>
               <div style={{ height: "300px" }}>
