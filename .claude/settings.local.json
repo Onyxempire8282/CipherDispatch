@@ -28,7 +28,12 @@
       "Bash(node:*)",
       "Bash(find:*)",
       "Bash(\" in seasonalityProfile.ts\n- Prevents parsing errors when firm names contain hyphens \\(e.g., \"Nationwide-AMC\"\\)\n- Previous bug: \"Nationwide-AMC-2025-12\".split\\(\"-\"\\) gave wrong results\n- parseInt\\(\"AMC\"\\) = NaN, breaking all charts\n- Now uses \")",
-      "Bash(\" delimiter which won''t appear in firm names\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(\" delimiter which won''t appear in firm names\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git checkout:*)",
+      "Bash(powershell -Command \"Get-Content src/utils/monthlyHistory.ts | Select-Object -Index 243 | Format-Hex\")",
+      "Bash(powershell -Command \"Get-Content src/utils/monthlyHistory.ts | Select-Object -Index 242 | Format-Hex\")",
+      "Bash(powershell -Command \"Get-Content src/utils/monthlyHistory.ts | Select-Object -Index 241 | Format-Hex\")",
+      "Bash(powershell -Command \"Get-Content src/utils/monthlyHistory.ts | Select-Object -Index 240 | Format-Hex\")"
     ]
   }
 }

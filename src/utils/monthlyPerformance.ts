@@ -5,6 +5,7 @@
  */
 
 import { supabase } from "../lib/supabase";
+import { getSupabaseAuthz } from "../lib/supabaseAuthz";
 
 // Configuration
 export const MAX_SAFE_CAPACITY = 100; // claims per month - configurable
@@ -113,9 +114,21 @@ function determineCapacityStatus(
  * Fetch claims for monthly analysis
  */
 async function fetchClaimsForMonthly(): Promise<ClaimForMonthly[]> {
-  const { data, error } = await supabase
+  // Get authz instance for role-based query scoping
+  const authz = getSupabaseAuthz();
+  if (!authz || !authz.isInitialized) {
+    console.error("❌ Authorization not initialized for monthly performance query");
+    throw new Error("Authorization not initialized");
+  }
+
+  let query = supabase
     .from("claims")
     .select("id, status, completion_date, appointment_start");
+
+  // Apply role-based scoping
+  query = authz.scopedClaimsQuery(query);
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("Error fetching claims for monthly performance:", error);
