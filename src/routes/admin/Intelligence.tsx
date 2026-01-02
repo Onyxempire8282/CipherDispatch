@@ -51,6 +51,7 @@ import {
 import {
   generateSeasonalityProfileReport,
   SeasonalityProfileReport,
+  RawSeasonalityData,
 } from "../../utils/seasonalityProfile";
 import {
   generateVolumeDependencyRiskReport,
@@ -93,12 +94,15 @@ export default function Intelligence() {
     useState<MonthlyHistoryReport | null>(null);
   const [seasonalityProfile, setSeasonalityProfile] =
     useState<SeasonalityProfileReport | null>(null);
+  const [seasonalityRawData, setSeasonalityRawData] =
+    useState<RawSeasonalityData[]>([]);
   const [volumeDependencyRisk, setVolumeDependencyRisk] =
     useState<VolumeDependencyRiskReport | null>(null);
   const [valueEfficiency, setValueEfficiency] =
     useState<ValueEfficiencyReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedFirm, setSelectedFirm] = useState<string>("");
 
   useEffect(() => {
     async function fetchAllData() {
@@ -106,6 +110,10 @@ export default function Intelligence() {
       setError(null);
 
       try {
+        // Check for debug mode in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const debugMode = urlParams.get('debug') === 'true';
+
         // Call utility functions directly instead of fetching
         // This works on GitHub Pages static hosting
         const [
@@ -116,7 +124,7 @@ export default function Intelligence() {
           runway,
           monthly,
           history,
-          seasonality,
+          seasonalityResult,
           volumeDep,
           valueEff,
         ] = await Promise.all([
@@ -127,7 +135,7 @@ export default function Intelligence() {
           generateSurvivalRunwayReport(),
           generateMonthlyPerformanceReport(),
           generateMonthlyHistoryReport(),
-          generateSeasonalityProfileReport(),
+          generateSeasonalityProfileReport(debugMode),
           generateVolumeDependencyRiskReport(),
           generateValueEfficiencyReport(),
         ]);
@@ -139,9 +147,16 @@ export default function Intelligence() {
         setSurvivalRunway(runway);
         setMonthlyPerformance(monthly);
         setMonthlyHistory(history);
-        setSeasonalityProfile(seasonality);
+        setSeasonalityProfile(seasonalityResult.aggregated);
+        setSeasonalityRawData(seasonalityResult.raw);
         setVolumeDependencyRisk(volumeDep);
         setValueEfficiency(valueEff);
+
+        // Set default firm to first available in raw data
+        if (seasonalityResult.raw.length > 0 && !selectedFirm) {
+          const uniqueFirms = Array.from(new Set(seasonalityResult.raw.map(d => d.firm)));
+          setSelectedFirm(uniqueFirms[0]);
+        }
       } catch (err: any) {
         setError(err.message || "Failed to load intelligence data");
       } finally {
@@ -1248,6 +1263,108 @@ export default function Intelligence() {
           )}
         </div>
 
+        {/* Troubleshooter Panel */}
+        {seasonalityRawData.length > 0 && (
+          <div className="mt-8 bg-gray-800 rounded-lg p-6 border-2 border-cyan-500">
+            <h2 className="text-2xl font-bold mb-4 text-cyan-400">
+              🔧 Seasonality Troubleshooter
+            </h2>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Select Firm:
+              </label>
+              <select
+                value={selectedFirm}
+                onChange={(e) => setSelectedFirm(e.target.value)}
+                className="w-full md:w-64 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:border-cyan-500 focus:outline-none"
+              >
+                {Array.from(new Set(seasonalityRawData.map((d) => d.firm)))
+                  .sort()
+                  .map((firm) => (
+                    <option key={firm} value={firm}>
+                      {firm}
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            {selectedFirm && (
+              <div className="mt-4">
+                <h3 className="text-lg font-bold mb-3 text-gray-200">
+                  Completed Claims by Month for {selectedFirm}
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-gray-700">
+                      <tr>
+                        <th className="px-4 py-2 text-cyan-400">Year</th>
+                        <th className="px-4 py-2 text-cyan-400">Month</th>
+                        <th className="px-4 py-2 text-cyan-400">Month Name</th>
+                        <th className="px-4 py-2 text-cyan-400">Completed</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {seasonalityRawData
+                        .filter((d) => d.firm === selectedFirm)
+                        .sort((a, b) => {
+                          if (a.year !== b.year) return a.year - b.year;
+                          return a.month - b.month;
+                        })
+                        .map((data, idx) => {
+                          const monthNames = [
+                            "January",
+                            "February",
+                            "March",
+                            "April",
+                            "May",
+                            "June",
+                            "July",
+                            "August",
+                            "September",
+                            "October",
+                            "November",
+                            "December",
+                          ];
+                          return (
+                            <tr
+                              key={idx}
+                              className={
+                                idx % 2 === 0 ? "bg-gray-800" : "bg-gray-750"
+                              }
+                            >
+                              <td className="px-4 py-2 text-gray-300">
+                                {data.year}
+                              </td>
+                              <td className="px-4 py-2 text-gray-300">
+                                {data.month}
+                              </td>
+                              <td className="px-4 py-2 text-gray-300">
+                                {monthNames[data.month - 1]}
+                              </td>
+                              <td
+                                className={`px-4 py-2 font-bold ${
+                                  data.completed > 0
+                                    ? "text-green-400"
+                                    : "text-gray-500"
+                                }`}
+                              >
+                                {data.completed}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="mt-4 text-xs text-gray-400">
+                  💡 Use this table to verify claim counts by month. Check for
+                  missing data or unexpected zeros.
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Recommendations */}
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
           {survivalRunway &&
@@ -1313,6 +1430,9 @@ export default function Intelligence() {
         {/* Footer */}
         <div className="mt-8 text-center text-sm text-gray-500">
           <p>Data updated: {new Date().toLocaleString()}</p>
+          <p className="mt-2 text-xs text-gray-600">
+            💡 Tip: Add <code className="bg-gray-800 px-2 py-1 rounded">?debug=true</code> to the URL to enable debug mode with console.table() output
+          </p>
           <p className="mt-2">
             APIs:
             <a

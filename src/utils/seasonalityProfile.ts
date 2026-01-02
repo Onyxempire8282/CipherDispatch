@@ -1,9 +1,17 @@
 /**
  * Seasonality Profile Analysis
  * Analyzes seasonal patterns in business activity across months and years
+ * Uses SUM aggregation grouped by year, month, firm
  */
 
 import { supabase } from "../lib/supabase";
+
+export interface RawSeasonalityData {
+  year: number;
+  month: number;
+  firm: string;
+  completed: number;
+}
 
 export interface MonthlyData {
   month: number;
@@ -13,6 +21,11 @@ export interface MonthlyData {
 
 export interface SeasonalityProfileReport {
   [year: string]: MonthlyData[];
+}
+
+export interface SeasonalityProfileReportWithRaw {
+  aggregated: SeasonalityProfileReport;
+  raw: RawSeasonalityData[];
 }
 
 const MONTH_NAMES = [
@@ -31,55 +44,64 @@ const MONTH_NAMES = [
 ];
 
 /**
- * Generate seasonality profile report
+ * Generate seasonality profile report using SUM aggregation
  */
-export async function generateSeasonalityProfileReport(): Promise<SeasonalityProfileReport> {
-  const { data: monthlyLogs, error } = await supabase
-    .from("monthly_performance_log")
-    .select("month, completed_claims")
+export async function generateSeasonalityProfileReport(debug = false): Promise<SeasonalityProfileReportWithRaw> {
+  // Query monthly_firm_activity to get raw firm-level data
+  const { data: firmActivity, error } = await supabase
+    .from("monthly_firm_activity")
+    .select("month, firm_name, claims_completed")
     .order("month");
 
   if (error) {
     throw new Error(
-      `Failed to fetch monthly performance data: ${error.message}`
+      `Failed to fetch firm activity data: ${error.message}`
     );
   }
 
-  if (!monthlyLogs || monthlyLogs.length === 0) {
-    throw new Error("No monthly performance data found");
+  if (!firmActivity || firmActivity.length === 0) {
+    throw new Error("No firm activity data found");
   }
 
-  // Group by year then by month number
+  // Build raw breakdown
+  const rawData: RawSeasonalityData[] = [];
   const yearlyData: SeasonalityProfileReport = {};
-  const availableYears: string[] = [];
 
-  for (const log of monthlyLogs) {
-    const monthDate = new Date(log.month + "-01");
-    const year = monthDate.getFullYear().toString();
+  for (const activity of firmActivity) {
+    const monthDate = new Date(activity.month + "-01");
+    const year = monthDate.getFullYear();
     const monthNumber = monthDate.getMonth() + 1; // 1-12
 
-    if (!yearlyData[year]) {
-      yearlyData[year] = [];
-      availableYears.push(year);
+    // Add to raw breakdown
+    rawData.push({
+      year,
+      month: monthNumber,
+      firm: activity.firm_name,
+      completed: activity.claims_completed || 0,
+    });
+
+    // Aggregate by year and month (SUM across all firms)
+    const yearKey = year.toString();
+    if (!yearlyData[yearKey]) {
+      yearlyData[yearKey] = [];
     }
 
-    // Find or create entry for this month
-    let monthEntry = yearlyData[year].find((m) => m.month === monthNumber);
+    let monthEntry = yearlyData[yearKey].find((m) => m.month === monthNumber);
     if (!monthEntry) {
       monthEntry = {
         month: monthNumber,
         monthName: MONTH_NAMES[monthNumber - 1],
         completedClaims: 0,
       };
-      yearlyData[year].push(monthEntry);
+      yearlyData[yearKey].push(monthEntry);
     }
 
-    monthEntry.completedClaims = log.completed_claims || 0;
+    // SUM the claims (not AVG)
+    monthEntry.completedClaims += activity.claims_completed || 0;
   }
 
-  // Sort months within each year and ensure all 12 months are present
+  // Fill missing months with zeros and sort
   for (const year in yearlyData) {
-    // Fill missing months with 0 data
     for (let month = 1; month <= 12; month++) {
       const existingMonth = yearlyData[year].find((m) => m.month === month);
       if (!existingMonth) {
@@ -90,84 +112,38 @@ export async function generateSeasonalityProfileReport(): Promise<SeasonalityPro
         });
       }
     }
-
-    // Sort by month number
     yearlyData[year].sort((a, b) => a.month - b.month);
   }
 
-  availableYears.sort();
-
-  // Calculate overall statistics for backward compatibility
-  const allClaims: number[] = [];
-  const monthlyTotals: { [month: number]: number[] } = {};
-
-  for (const year in yearlyData) {
-    for (const monthData of yearlyData[year]) {
-      if (monthData.completedClaims > 0) {
-        allClaims.push(monthData.completedClaims);
-
-        if (!monthlyTotals[monthData.month]) {
-          monthlyTotals[monthData.month] = [];
-        }
-        monthlyTotals[monthData.month].push(monthData.completedClaims);
+  // Debug mode: Print console table in browser
+  if (debug) {
+    console.log("🔍 SEASONALITY PROFILE DEBUG MODE");
+    console.log("=================================");
+    console.table(
+      rawData.map((d) => ({
+        Year: d.year,
+        Month: d.month,
+        Firm: d.firm,
+        Completed: d.completed,
+      }))
+    );
+    console.log("\n📊 Aggregated Totals by Year-Month:");
+    const aggregatedTable = [];
+    for (const year in yearlyData) {
+      for (const monthData of yearlyData[year]) {
+        aggregatedTable.push({
+          Year: year,
+          Month: monthData.month,
+          MonthName: monthData.monthName,
+          TotalCompleted: monthData.completedClaims,
+        });
       }
     }
+    console.table(aggregatedTable);
   }
 
-  const overallAvg =
-    allClaims.length > 0
-      ? allClaims.reduce((sum, val) => sum + val, 0) / allClaims.length
-      : 0;
-
-  // Calculate average by month for peak/low detection
-  const monthAverages: {
-    month: number;
-    monthName: string;
-    avgClaims: number;
-  }[] = [];
-  for (let month = 1; month <= 12; month++) {
-    const claims = monthlyTotals[month] || [];
-    const avgClaims =
-      claims.length > 0
-        ? claims.reduce((sum, val) => sum + val, 0) / claims.length
-        : 0;
-
-    monthAverages.push({
-      month,
-      monthName: MONTH_NAMES[month - 1],
-      avgClaims,
-    });
-  }
-
-  const monthsWithData = monthAverages.filter((m) => m.avgClaims > 0);
-  const peakMonth =
-    monthsWithData.length > 0
-      ? monthsWithData.reduce((max, current) =>
-          current.avgClaims > max.avgClaims ? current : max
-        )
-      : { month: 1, monthName: MONTH_NAMES[0], avgClaims: 0 };
-
-  const lowMonth =
-    monthsWithData.length > 0
-      ? monthsWithData.reduce((min, current) =>
-          current.avgClaims < min.avgClaims ? current : min
-        )
-      : { month: 1, monthName: MONTH_NAMES[0], avgClaims: 0 };
-
-  // Calculate seasonal variance
-  const validAverages = monthsWithData.map((m) => m.avgClaims);
-  const variance =
-    validAverages.length > 1
-      ? Math.sqrt(
-          validAverages.reduce(
-            (sum, val) => sum + Math.pow(val - overallAvg, 2),
-            0
-          ) / validAverages.length
-        )
-      : 0;
-
-  const seasonalVariance = overallAvg > 0 ? (variance / overallAvg) * 100 : 0;
-
-  // Return simplified direct year-to-data mapping format
-  return yearlyData;
+  return {
+    aggregated: yearlyData,
+    raw: rawData,
+  };
 }
