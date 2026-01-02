@@ -329,50 +329,84 @@ export default function Intelligence() {
       }
     : null;
 
-  // Chart: Business Seasonality Wave – Avg Claims by Month
-  const businessSeasonalityChart = seasonalityProfile
-    ? {
-        labels: [
-          "Jan",
-          "Feb",
-          "Mar",
-          "Apr",
-          "May",
-          "Jun",
-          "Jul",
-          "Aug",
-          "Sep",
-          "Oct",
-          "Nov",
-          "Dec",
-        ],
-        datasets: Object.keys(seasonalityProfile).map((year, index) => {
-          const yearData = seasonalityProfile[year] || [];
-          const colors = [
-            "rgba(34, 197, 94, 1)", // Green
-            "rgba(59, 130, 246, 1)", // Blue
-            "rgba(139, 92, 246, 1)", // Purple
-            "rgba(249, 115, 22, 1)", // Orange
-            "rgba(236, 72, 153, 1)", // Pink
-            "rgba(234, 179, 8, 1)", // Yellow
-          ];
+  // Log the seasonality profile for debugging
+  console.log("seasonalityProfile data:", seasonalityProfile);
 
-          return {
-            type: "line" as const,
-            label: year,
-            data: yearData.map((m) => m.completedClaims),
-            borderColor: colors[index % colors.length],
-            backgroundColor: colors[index % colors.length].replace(
-              "1)",
-              "0.1)"
-            ),
-            borderWidth: 2,
-            tension: 0.4,
-            fill: false,
-          };
-        }),
-      }
-    : null;
+  // Chart: Business Seasonality Wave – Avg Claims by Month
+  const businessSeasonalityChart =
+    seasonalityProfile
+      ? {
+          labels: [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+          ],
+          datasets: Object.keys(seasonalityProfile).map(
+            (year, index) => {
+              const yearData = seasonalityProfile[year] || [];
+              const colors = [
+                "rgba(34, 197, 94, 1)", // Green
+                "rgba(59, 130, 246, 1)", // Blue
+                "rgba(139, 92, 246, 1)", // Purple
+                "rgba(249, 115, 22, 1)", // Orange
+                "rgba(236, 72, 153, 1)", // Pink
+                "rgba(234, 179, 8, 1)", // Yellow
+              ];
+
+              return {
+                type: "line" as const,
+                label: year,
+                data: yearData.map((m) => m.completedClaims),
+                borderColor: colors[index % colors.length],
+                backgroundColor: colors[index % colors.length].replace(
+                  "1)",
+                  "0.1)"
+                ),
+                borderWidth: 2,
+                tension: 0.4,
+                fill: false,
+              };
+            }
+          ),
+        }
+      : {
+          // Fallback chart with sample data for debugging
+          labels: [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+          ],
+          datasets: [
+            {
+              type: "line" as const,
+              label: "Sample Data",
+              data: [10, 15, 12, 18, 22, 25, 20, 16, 14, 12, 8, 6],
+              borderColor: "rgba(34, 197, 94, 1)",
+              backgroundColor: "rgba(34, 197, 94, 0.1)",
+              borderWidth: 2,
+              tension: 0.4,
+              fill: false,
+            },
+          ],
+        };
 
   // Chart: Monthly Velocity Trend (Line)
   const monthlyVelocityTrendChart = monthlyHistory
@@ -479,31 +513,6 @@ export default function Intelligence() {
           })),
         };
       })()
-    : null;
-
-  // Chart: Business Seasonality Wave
-  const seasonalityChart = seasonalityProfile
-    ? {
-        labels: seasonalityProfile.seasonal_data.map((s) =>
-          s.monthName.substring(0, 3)
-        ), // Jan, Feb, etc.
-        datasets: [
-          {
-            label: "Avg Completed Claims",
-            data: seasonalityProfile.seasonal_data.map(
-              (s) => s.avgCompletedClaims
-            ),
-            borderColor: "rgba(139, 92, 246, 1)",
-            backgroundColor: "rgba(139, 92, 246, 0.1)",
-            fill: true,
-            tension: 0.4,
-            pointBackgroundColor: "rgba(139, 92, 246, 1)",
-            pointBorderColor: "#ffffff",
-            pointBorderWidth: 2,
-            pointRadius: 6,
-          },
-        ],
-      }
     : null;
 
   // Chart: Operational Dependency Risk – Claim Volume (Donut)
@@ -1030,11 +1039,11 @@ export default function Intelligence() {
             </div>
           )}
 
-          {/* Business Seasonality Wave – Avg Claims by Month */}
+          {/* Business Seasonality Wave */}
           {businessSeasonalityChart && seasonalityProfile && (
             <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
               <h2 className="text-xl font-bold mb-4 text-green-400">
-                Business Seasonality Wave – Avg Claims by Month
+                Business Seasonality Wave
               </h2>
               <div style={{ height: "300px" }}>
                 <Line
@@ -1044,7 +1053,8 @@ export default function Intelligence() {
               </div>
               <div className="mt-4 text-sm text-gray-400">
                 Multi-year comparison •{" "}
-                {Object.keys(seasonalityProfile).join(", ")} • Jan–Dec by year
+                {Object.keys(seasonalityProfile).join(", ")}{" "}
+                • Jan–Dec by year
               </div>
             </div>
           )}
@@ -1125,40 +1135,6 @@ export default function Intelligence() {
                 </div>
               </div>
             )}
-
-          {/* Business Seasonality Wave */}
-          {seasonalityChart && seasonalityProfile && (
-            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 lg:col-span-2">
-              <h2 className="text-xl font-bold mb-4 text-purple-400">
-                Business Seasonality Wave
-              </h2>
-              <div style={{ height: "300px" }}>
-                <Line data={seasonalityChart} options={darkChartOptions} />
-              </div>
-              <div className="mt-4 grid grid-cols-3 gap-4 text-sm">
-                <div>
-                  <div className="text-gray-400">Peak Month</div>
-                  <div className="text-purple-400 font-bold">
-                    {seasonalityProfile.peak_month.monthName} (
-                    {seasonalityProfile.peak_month.avgClaims.toFixed(1)} claims)
-                  </div>
-                </div>
-                <div>
-                  <div className="text-gray-400">Low Month</div>
-                  <div className="text-blue-400 font-bold">
-                    {seasonalityProfile.low_month.monthName} (
-                    {seasonalityProfile.low_month.avgClaims.toFixed(1)} claims)
-                  </div>
-                </div>
-                <div>
-                  <div className="text-gray-400">Seasonal Variance</div>
-                  <div className="text-yellow-400 font-bold">
-                    {seasonalityProfile.seasonal_variance.toFixed(1)}%
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Operational Dependency Risk – Claim Volume */}
           {volumeDependencyChart && volumeDependencyRisk && (

@@ -50,7 +50,7 @@ export async function generateSeasonalityProfileReport(): Promise<SeasonalityPro
   }
 
   // Group by year then by month number
-  const yearlyData: YearlySeasonalData = {};
+  const yearlyData: SeasonalityProfileReport = {};
   const availableYears: string[] = [];
 
   for (const log of monthlyLogs) {
@@ -168,22 +168,6 @@ export async function generateSeasonalityProfileReport(): Promise<SeasonalityPro
 
   const seasonalVariance = overallAvg > 0 ? (variance / overallAvg) * 100 : 0;
 
-  return {
-    yearly_data: yearlyData,
-    available_years: availableYears,
-    peak_month: {
-      month: peakMonth.month,
-      monthName: peakMonth.monthName,
-      avgClaims: Math.round(peakMonth.avgClaims * 10) / 10,
-    },
-    low_month: {
-      month: lowMonth.month,
-      monthName: lowMonth.monthName,
-      avgClaims: Math.round(lowMonth.avgClaims * 10) / 10,
-    },
-    overall_avg: Math.round(overallAvg * 10) / 10,
-    seasonal_variance: Math.round(seasonalVariance * 10) / 10,
-    status: "success",
-    timestamp: new Date().toISOString(),
-  };
+  // Return simplified direct year-to-data mapping format
+  return yearlyData;
 }
