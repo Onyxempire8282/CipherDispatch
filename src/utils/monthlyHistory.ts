@@ -24,9 +24,26 @@ export interface MonthlyFirmActivity {
   revenue_generated: number;
 }
 
+export interface MonthData {
+  month: number; // 1-12
+  monthName: string;
+  claimsCompleted: number;
+  revenueGenerated: number;
+  avgVelocity: number;
+}
+
+export interface FirmYearlyData {
+  [year: string]: MonthData[];
+}
+
+export interface FirmMonthlyData {
+  [firmName: string]: FirmYearlyData;
+}
+
 export interface MonthlyHistoryReport {
   historical_performance: MonthlyPerformanceLogEntry[];
   firm_activity: MonthlyFirmActivity[];
+  firm_monthly_data: FirmMonthlyData; // New grouped structure
   months_tracked: number;
   earliest_month: string | null;
   latest_month: string | null;
@@ -228,9 +245,72 @@ export async function fetchMonthlyHistory(): Promise<MonthlyHistoryReport> {
   const historical = perfData || [];
   const firmActivity = firmData || [];
 
+  // Build grouped structure: firm → year → month
+  const MONTH_NAMES = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  const firmMonthlyData: FirmMonthlyData = {};
+
+  firmActivity.forEach(activity => {
+    const firmName = activity.firm_name;
+    const monthDate = new Date(activity.month + '-01');
+    const year = monthDate.getFullYear().toString();
+    const monthNumber = monthDate.getMonth() + 1; // 1-12
+    const businessDays = getBusinessDaysInMonth(activity.month);
+
+    if (!firmMonthlyData[firmName]) {
+      firmMonthlyData[firmName] = {};
+    }
+
+    if (!firmMonthlyData[firmName][year]) {
+      firmMonthlyData[firmName][year] = [];
+    }
+
+    // Find or create month entry
+    let monthEntry = firmMonthlyData[firmName][year].find(m => m.month === monthNumber);
+    if (!monthEntry) {
+      monthEntry = {
+        month: monthNumber,
+        monthName: MONTH_NAMES[monthNumber - 1],
+        claimsCompleted: 0,
+        revenueGenerated: 0,
+        avgVelocity: 0
+      };
+      firmMonthlyData[firmName][year].push(monthEntry);
+    }
+
+    monthEntry.claimsCompleted = activity.claims_completed;
+    monthEntry.revenueGenerated = activity.revenue_generated;
+    monthEntry.avgVelocity = businessDays > 0 ? activity.claims_completed / businessDays : 0;
+  });
+
+  // Fill missing months with zero data and sort
+  for (const firmName in firmMonthlyData) {
+    for (const year in firmMonthlyData[firmName]) {
+      // Ensure all 12 months are present
+      for (let month = 1; month <= 12; month++) {
+        const existingMonth = firmMonthlyData[firmName][year].find(m => m.month === month);
+        if (!existingMonth) {
+          firmMonthlyData[firmName][year].push({
+            month,
+            monthName: MONTH_NAMES[month - 1],
+            claimsCompleted: 0,
+            revenueGenerated: 0,
+            avgVelocity: 0
+          });
+        }
+      }
+      // Sort by month number
+      firmMonthlyData[firmName][year].sort((a, b) => a.month - b.month);
+    }
+  }
+
   return {
     historical_performance: historical,
     firm_activity: firmActivity,
+    firm_monthly_data: firmMonthlyData,
     months_tracked: historical.length,
     earliest_month: historical.length > 0 ? historical[0].month : null,
     latest_month: historical.length > 0 ? historical[historical.length - 1].month : null

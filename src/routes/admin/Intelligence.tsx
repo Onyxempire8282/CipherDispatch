@@ -408,112 +408,173 @@ export default function Intelligence() {
           ],
         };
 
-  // Chart: Monthly Velocity Trend (Line)
-  const monthlyVelocityTrendChart = monthlyHistory
-    ? {
-        labels: monthlyHistory.historical_performance.map((m) => m.month),
-        datasets: [
-          {
-            label: "Avg Velocity (claims/day)",
-            data: monthlyHistory.historical_performance.map(
-              (m) => m.avg_velocity
-            ),
-            borderColor: "rgba(59, 130, 246, 1)",
-            backgroundColor: "rgba(59, 130, 246, 0.1)",
-            fill: true,
-            tension: 0.4,
-          },
-        ],
-      }
-    : null;
-
-  // Chart: Burnout Ratio by Month (Line)
-  const burnoutRatioChart = monthlyHistory
-    ? {
-        labels: monthlyHistory.historical_performance.map((m) => m.month),
-        datasets: [
-          {
-            label: "Burnout Ratio",
-            data: monthlyHistory.historical_performance.map(
-              (m) => m.burnout_ratio
-            ),
-            borderColor: monthlyHistory.historical_performance.map((m) =>
-              m.burnout_ratio > 1.05
-                ? "rgba(239, 68, 68, 1)"
-                : m.burnout_ratio > 0.85
-                ? "rgba(249, 115, 22, 1)"
-                : m.burnout_ratio > 0.6
-                ? "rgba(234, 179, 8, 1)"
-                : "rgba(34, 197, 94, 1)"
-            ),
-            backgroundColor: "rgba(139, 92, 246, 0.1)",
-            fill: true,
-            tension: 0.4,
-            segment: {
-              borderColor: (ctx: any) => {
-                const value = ctx.p1.parsed.y;
-                return value > 1.05
-                  ? "rgba(239, 68, 68, 1)"
-                  : value > 0.85
-                  ? "rgba(249, 115, 22, 1)"
-                  : value > 0.6
-                  ? "rgba(234, 179, 8, 1)"
-                  : "rgba(34, 197, 94, 1)";
-              },
-            },
-          },
-        ],
-      }
-    : null;
-
-  // Chart: Firm × Month Heatmap (prepare data structure)
-  // For a heatmap in Chart.js, we'll create a bar chart with firms on X and months as stacked bars
-  const firmMonthHeatmapData = monthlyHistory
-    ? (() => {
-        // Get unique firms
-        const firms = Array.from(
-          new Set(monthlyHistory.firm_activity.map((f) => f.firm_name))
-        );
-        // Get unique months
-        const months = Array.from(
-          new Set(monthlyHistory.firm_activity.map((f) => f.month))
-        ).sort();
-
-        // Create a dataset for each month
-        const datasets = months.map((month, idx) => {
-          const colorIndex = idx % 6;
+  // Chart: Monthly Velocity Trend (Line) - Per Firm Per Year
+  const monthlyVelocityTrendChart =
+    monthlyHistory && monthlyHistory.firm_monthly_data
+      ? (() => {
+          const datasets = [];
           const colors = [
-            "rgba(59, 130, 246, 0.8)", // blue
-            "rgba(34, 197, 94, 0.8)", // green
-            "rgba(234, 179, 8, 0.8)", // yellow
-            "rgba(249, 115, 22, 0.8)", // orange
-            "rgba(139, 92, 246, 0.8)", // purple
-            "rgba(236, 72, 153, 0.8)", // pink
+            "rgba(59, 130, 246, 1)", // Blue
+            "rgba(34, 197, 94, 1)", // Green
+            "rgba(139, 92, 246, 1)", // Purple
+            "rgba(249, 115, 22, 1)", // Orange
+            "rgba(236, 72, 153, 1)", // Pink
+            "rgba(234, 179, 8, 1)", // Yellow
+            "rgba(239, 68, 68, 1)", // Red
+            "rgba(20, 184, 166, 1)", // Teal
           ];
+          let colorIndex = 0;
+
+          for (const firmName in monthlyHistory.firm_monthly_data) {
+            for (const year in monthlyHistory.firm_monthly_data[firmName]) {
+              const yearData = monthlyHistory.firm_monthly_data[firmName][year];
+              const color = colors[colorIndex % colors.length];
+
+              datasets.push({
+                label: `${firmName} ${year}`,
+                data: yearData.map((m) => m.avgVelocity),
+                borderColor: color,
+                backgroundColor: color.replace("1)", "0.1)"),
+                fill: false,
+                tension: 0.4,
+                borderWidth: 2,
+              });
+
+              colorIndex++;
+            }
+          }
 
           return {
-            label: month,
-            data: firms.map((firm) => {
-              const activity = monthlyHistory.firm_activity.find(
-                (a) => a.firm_name === firm && a.month === month
-              );
-              return activity ? activity.claims_completed : 0;
-            }),
-            backgroundColor: colors[colorIndex],
-            borderColor: colors[colorIndex].replace("0.8", "1"),
-            borderWidth: 1,
+            labels: [
+              "Jan",
+              "Feb",
+              "Mar",
+              "Apr",
+              "May",
+              "Jun",
+              "Jul",
+              "Aug",
+              "Sep",
+              "Oct",
+              "Nov",
+              "Dec",
+            ],
+            datasets,
           };
-        });
+        })()
+      : null;
 
-        return {
-          labels: firms.slice(0, 10), // Top 10 firms
-          datasets: datasets.map((ds) => ({
-            ...ds,
-            data: ds.data.slice(0, 10),
-          })),
-        };
-      })()
-    : null;
+  // Chart: Claims Completed by Month - Per Firm Per Year
+  const burnoutRatioChart =
+    monthlyHistory && monthlyHistory.firm_monthly_data
+      ? (() => {
+          const datasets = [];
+          const colors = [
+            "rgba(34, 197, 94, 1)", // Green
+            "rgba(59, 130, 246, 1)", // Blue
+            "rgba(139, 92, 246, 1)", // Purple
+            "rgba(249, 115, 22, 1)", // Orange
+            "rgba(236, 72, 153, 1)", // Pink
+            "rgba(234, 179, 8, 1)", // Yellow
+            "rgba(239, 68, 68, 1)", // Red
+            "rgba(20, 184, 166, 1)", // Teal
+          ];
+          let colorIndex = 0;
+
+          for (const firmName in monthlyHistory.firm_monthly_data) {
+            for (const year in monthlyHistory.firm_monthly_data[firmName]) {
+              const yearData = monthlyHistory.firm_monthly_data[firmName][year];
+              const color = colors[colorIndex % colors.length];
+
+              datasets.push({
+                label: `${firmName} ${year}`,
+                data: yearData.map((m) => m.claimsCompleted),
+                borderColor: color,
+                backgroundColor: color.replace("1)", "0.1)"),
+                fill: false,
+                tension: 0.4,
+                borderWidth: 2,
+              });
+
+              colorIndex++;
+            }
+          }
+
+          return {
+            labels: [
+              "Jan",
+              "Feb",
+              "Mar",
+              "Apr",
+              "May",
+              "Jun",
+              "Jul",
+              "Aug",
+              "Sep",
+              "Oct",
+              "Nov",
+              "Dec",
+            ],
+            datasets,
+          };
+        })()
+      : null;
+
+  // Chart: Firm Activity - Per Firm Per Year
+  const firmMonthHeatmapData =
+    monthlyHistory && monthlyHistory.firm_monthly_data
+      ? (() => {
+          const datasets = [];
+          const colors = [
+            "rgba(59, 130, 246, 1)", // Blue
+            "rgba(34, 197, 94, 1)", // Green
+            "rgba(139, 92, 246, 1)", // Purple
+            "rgba(249, 115, 22, 1)", // Orange
+            "rgba(236, 72, 153, 1)", // Pink
+            "rgba(234, 179, 8, 1)", // Yellow
+            "rgba(239, 68, 68, 1)", // Red
+            "rgba(20, 184, 166, 1)", // Teal
+          ];
+          let colorIndex = 0;
+
+          for (const firmName in monthlyHistory.firm_monthly_data) {
+            for (const year in monthlyHistory.firm_monthly_data[firmName]) {
+              const yearData = monthlyHistory.firm_monthly_data[firmName][year];
+              const color = colors[colorIndex % colors.length];
+
+              datasets.push({
+                label: `${firmName} ${year}`,
+                data: yearData.map((m) => m.claimsCompleted),
+                borderColor: color,
+                backgroundColor: color.replace("1)", "0.1)"),
+                fill: false,
+                tension: 0.4,
+                borderWidth: 2,
+              });
+
+              colorIndex++;
+            }
+          }
+
+          return {
+            labels: [
+              "Jan",
+              "Feb",
+              "Mar",
+              "Apr",
+              "May",
+              "Jun",
+              "Jul",
+              "Aug",
+              "Sep",
+              "Oct",
+              "Nov",
+              "Dec",
+            ],
+            datasets,
+          };
+        })()
+      : null;
 
   // Chart: Operational Dependency Risk – Claim Volume (Donut)
   const volumeDependencyChart = volumeDependencyRisk
@@ -1078,90 +1139,61 @@ export default function Intelligence() {
           )}
 
           {/* Monthly Velocity Trend */}
-          {monthlyVelocityTrendChart &&
-            monthlyHistory &&
-            monthlyHistory.historical_performance.length > 0 && (
-              <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-                <h2
-                  className="text-xl font-bold mb-4 text-blue-400 cursor-help"
-                  title="Tracks average claims processed per business day each month. Shows productivity trends and helps identify months with higher or lower throughput."
-                >
-                  Monthly Velocity Trend
-                </h2>
-                <div style={{ height: "300px" }}>
-                  <Line
-                    data={monthlyVelocityTrendChart}
-                    options={darkChartOptions}
-                  />
-                </div>
-                <div className="mt-4 text-sm text-gray-400">
-                  Average claims per business day • Trend analysis
-                </div>
+          {monthlyVelocityTrendChart && monthlyHistory && (
+            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+              <h2
+                className="text-xl font-bold mb-4 text-blue-400 cursor-help"
+                title="Tracks average claims processed per business day for each firm by year. Each line represents a firm-year combination showing monthly velocity patterns."
+              >
+                Monthly Velocity Trend
+              </h2>
+              <div style={{ height: "300px" }}>
+                <Line
+                  data={monthlyVelocityTrendChart}
+                  options={darkChartOptions}
+                />
               </div>
-            )}
+              <div className="mt-4 text-sm text-gray-400">
+                Per firm per year • Jan–Dec velocity trends
+              </div>
+            </div>
+          )}
 
-          {/* Burnout Ratio by Month */}
-          {burnoutRatioChart &&
-            monthlyHistory &&
-            monthlyHistory.historical_performance.length > 0 && (
-              <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-                <h2
-                  className="text-xl font-bold mb-4 text-purple-400 cursor-help"
-                  title="Measures capacity utilization each month. Green (<60%) = under-utilized, Yellow (60-85%) = optimal, Orange (85-105%) = stretch, Red (>105%) = burnout risk."
-                >
-                  Burnout Ratio by Month
-                </h2>
-                <div style={{ height: "300px" }}>
-                  <Line data={burnoutRatioChart} options={darkChartOptions} />
-                </div>
-                <div className="mt-4 text-sm text-gray-400">
-                  Capacity utilization • Color: Green (&lt;60%), Yellow
-                  (60-85%), Orange (85-105%), Red (&gt;105%)
-                </div>
+          {/* Claims Completed by Month */}
+          {burnoutRatioChart && monthlyHistory && (
+            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+              <h2
+                className="text-xl font-bold mb-4 text-purple-400 cursor-help"
+                title="Shows monthly claims completed for each firm by year. Each line represents a firm-year combination tracking claim completion volume throughout the year."
+              >
+                Claims Completed by Month
+              </h2>
+              <div style={{ height: "300px" }}>
+                <Line data={burnoutRatioChart} options={darkChartOptions} />
               </div>
-            )}
+              <div className="mt-4 text-sm text-gray-400">
+                Per firm per year • Jan–Dec completion trends
+              </div>
+            </div>
+          )}
 
-          {/* Firm × Month Heatmap */}
-          {firmMonthHeatmapData &&
-            monthlyHistory &&
-            monthlyHistory.firm_activity.length > 0 && (
-              <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 lg:col-span-2">
-                <h2
-                  className="text-xl font-bold mb-4 text-pink-400 cursor-help"
-                  title="Visualizes claim distribution across top 10 firms over time. Each color represents a different month, stacked to show total claims completed per firm."
-                >
-                  Firm Activity Heatmap
-                </h2>
-                <div style={{ height: "300px" }}>
-                  <Bar
-                    data={firmMonthHeatmapData}
-                    options={{
-                      ...darkChartOptions,
-                      scales: {
-                        ...darkChartOptions.scales,
-                        x: {
-                          ...darkChartOptions.scales.x,
-                          stacked: true,
-                        },
-                        y: {
-                          ...darkChartOptions.scales.y,
-                          stacked: true,
-                          title: {
-                            display: true,
-                            text: "Claims Completed",
-                            color: "#9ca3af",
-                          },
-                        },
-                      },
-                    }}
-                  />
-                </div>
-                <div className="mt-4 text-sm text-gray-400">
-                  Top 10 firms • Stacked by month • Claims completed per firm
-                  per month
-                </div>
+          {/* Firm Activity by Year */}
+          {firmMonthHeatmapData && monthlyHistory && (
+            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 lg:col-span-2">
+              <h2
+                className="text-xl font-bold mb-4 text-pink-400 cursor-help"
+                title="Visualizes firm activity patterns across the year. Each line represents a firm-year combination showing monthly claim completion trends."
+              >
+                Firm Activity by Year
+              </h2>
+              <div style={{ height: "300px" }}>
+                <Line data={firmMonthHeatmapData} options={darkChartOptions} />
               </div>
-            )}
+              <div className="mt-4 text-sm text-gray-400">
+                Per firm per year • Jan–Dec activity patterns
+              </div>
+            </div>
+          )}
 
           {/* Operational Dependency Risk – Claim Volume */}
           {volumeDependencyChart && volumeDependencyRisk && (
