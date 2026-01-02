@@ -26,6 +26,7 @@ type Claim = {
   appointment_end?: string;
   firm_name?: string;
   pay_amount?: number | null;
+  status?: string;
 };
 
 const throttle = (() => {
@@ -67,6 +68,7 @@ export default function NewClaim() {
     claim_number: "",
     customer_name: "",
     address_line1: "",
+    status: "IN_PROGRESS", // Default to In Progress (not scheduled yet)
   });
   const [users, setUsers] = useState<any[]>([]);
   const [firms, setFirms] = useState<any[]>([]);
@@ -150,7 +152,7 @@ export default function NewClaim() {
     // Try to insert new claim
     const { error } = await supabase
       .from("claims")
-      .insert([{ ...form, ...coords, status: "SCHEDULED" }]);
+      .insert([{ ...form, ...coords }]);
 
     if (error) {
       if (error.code === "23505") {
@@ -380,8 +382,25 @@ export default function NewClaim() {
           </div>
         )}
 
+        <h4 style={{ color: "#e2e8f0", marginTop: 16 }}>Status</h4>
+        <select
+          value={form.status || "IN_PROGRESS"}
+          onChange={(e) => setForm({ ...form, status: e.target.value })}
+          style={{
+            padding: 12,
+            fontSize: 16,
+            border: "1px solid #4a5568",
+            borderRadius: 6,
+            background: "#2d3748",
+            color: "#e2e8f0",
+          }}
+        >
+          <option value="IN_PROGRESS">🔧 In Progress (Not Scheduled Yet)</option>
+          <option value="SCHEDULED">📅 Scheduled</option>
+        </select>
+
         <h4 style={{ color: "#e2e8f0", marginTop: 16 }}>
-          Appointment Schedule
+          Appointment Schedule {form.status === "IN_PROGRESS" ? "(Optional)" : ""}
         </h4>
         <div style={{ display: "grid", gap: 8 }}>
           <div>

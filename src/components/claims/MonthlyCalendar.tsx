@@ -447,7 +447,7 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
 
   return (
     <div style={{ display: 'flex', gap: '16px', minHeight: '80vh' }}>
-      {/* Backlog Column */}
+      {/* Backlog Column - Sticky */}
       <div
         style={{
           width: '280px',
@@ -455,12 +455,18 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
           border: '2px solid #4a5568',
           borderRadius: '8px',
           padding: '16px',
-          flexShrink: 0
+          flexShrink: 0,
+          position: 'sticky',
+          top: '16px',
+          alignSelf: 'flex-start',
+          maxHeight: 'calc(100vh - 32px)',
+          display: 'flex',
+          flexDirection: 'column'
         }}
         onDragOver={handleDragOver}
         onDrop={handleBacklogDrop}
       >
-        <div style={{ marginBottom: '16px' }}>
+        <div style={{ marginBottom: '16px', flexShrink: 0 }}>
           <h3 style={{ margin: 0, color: '#e2e8f0', fontSize: '18px', fontWeight: 'bold' }}>
             📋 Needs Scheduling
           </h3>
@@ -468,7 +474,7 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
             {unscheduledClaims.length} claim{unscheduledClaims.length !== 1 ? 's' : ''}
           </div>
         </div>
-        <div style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 250px)' }}>
+        <div style={{ overflowY: 'auto', flex: 1, minHeight: 0 }}>
           {unscheduledClaims.map(claim => renderBacklogCard(claim))}
           {unscheduledClaims.length === 0 && (
             <div style={{ textAlign: 'center', color: '#718096', fontSize: '14px', padding: '20px' }}>
