@@ -5,6 +5,7 @@
  */
 
 import { supabase } from "../lib/supabase";
+import { getSupabaseAuthz } from "../lib/supabaseAuthz";
 import { MAX_SAFE_CAPACITY } from "./monthlyPerformance";
 
 export interface MonthlyPerformanceLogEntry {
@@ -234,13 +235,21 @@ export async function fetchMonthlyHistory(): Promise<MonthlyHistoryReport> {
   );
 
   // Get completed claims directly from claims table
-  const { data: completedClaims, error: claimsError } = await supabase
+  const authz = getSupabaseAuthz();
+  if (!authz || !authz.isInitialized) {
+    throw new Error("Authorization not initialized");
+  }
+
+  let query = supabase
     .from("claims")
     .select("firm_name, completion_date, pay_amount, file_total")
     .eq("status", "COMPLETED")
     .not("completion_date", "is", null)
     .not("firm_name", "is", null)
     .order("completion_date", { ascending: true });
+
+  query = authz.scopedClaimsQuery(query);
+  const { data: completedClaims, error: claimsError } = await query;
 
   if (claimsError) {
     console.error("Error fetching completed claims:", claimsError);
