@@ -30,17 +30,20 @@ import { createClient } from "@supabase/supabase-js";
 
 // Supabase configuration
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.error(
-    "Error: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set in environment"
+    "Error: VITE_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set in environment"
   );
-  console.error("Create a .env file or set environment variables");
+  console.error("\nAdd to your .env file:");
+  console.error("VITE_SUPABASE_URL=https://your-project.supabase.co");
+  console.error("SUPABASE_SERVICE_ROLE_KEY=your-service-role-key");
+  console.error("\nGet service role key from: Supabase Dashboard → Settings → API → service_role key");
   process.exit(1);
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 /**
  * Check if a path is a directory
