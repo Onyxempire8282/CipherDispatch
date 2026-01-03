@@ -305,6 +305,7 @@ async function insertClaims(estFiles, dryRun = false) {
       completed_month: completedMonth,
       notes: `Imported from EST archive: ${path.basename(file.filePath)}`,
       created_at: completionDate, // Set created_at to completion date
+      address_line1: "Historical Import", // Required field placeholder
     };
 
     const { error: insertError } = await supabase
