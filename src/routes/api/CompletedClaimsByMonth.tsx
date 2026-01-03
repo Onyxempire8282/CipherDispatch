@@ -51,9 +51,11 @@ export default function CompletedClaimsByMonthAPI() {
         const groupedData: { [key: string]: number } = {};
 
         for (const claim of claims) {
-          const completionDate = new Date(claim.completion_date);
-          const year = completionDate.getFullYear();
-          const month = completionDate.getMonth() + 1; // 1-12
+          // Parse date string directly to avoid timezone conversion issues
+          const dateStr = claim.completion_date.split('T')[0]; // Get "YYYY-MM-DD"
+          const [yearStr, monthStr] = dateStr.split('-');
+          const year = parseInt(yearStr);
+          const month = parseInt(monthStr);
 
           const key = `${claim.firm_name}-${year}-${month}`;
           groupedData[key] = (groupedData[key] || 0) + 1;
