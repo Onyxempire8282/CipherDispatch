@@ -54,6 +54,10 @@ import {
   RawSeasonalityData,
 } from "../../utils/seasonalityProfile";
 import {
+  generateSeasonalPerformanceBenchmarkReport,
+  SeasonalPerformanceBenchmarkReport,
+} from "../../utils/seasonalPerformanceBenchmark";
+import {
   generateVolumeDependencyRiskReport,
   VolumeDependencyRiskReport,
 } from "../../utils/volumeDependencyRisk";
@@ -79,10 +83,10 @@ ChartJS.register(
 
 // localStorage keys for chart filters
 const STORAGE_KEYS = {
-  SEASONALITY_FIRMS: 'intelligence_seasonality_firms',
-  VELOCITY_FIRMS: 'intelligence_velocity_firms',
-  COMPLETED_FIRMS: 'intelligence_completed_firms',
-  ACTIVITY_FIRMS: 'intelligence_activity_firms',
+  SEASONALITY_FIRMS: "intelligence_seasonality_firms",
+  VELOCITY_FIRMS: "intelligence_velocity_firms",
+  COMPLETED_FIRMS: "intelligence_completed_firms",
+  ACTIVITY_FIRMS: "intelligence_activity_firms",
 } as const;
 
 export default function Intelligence() {
@@ -103,8 +107,11 @@ export default function Intelligence() {
     useState<MonthlyHistoryReport | null>(null);
   const [seasonalityProfile, setSeasonalityProfile] =
     useState<SeasonalityProfileReport | null>(null);
-  const [seasonalityRawData, setSeasonalityRawData] =
-    useState<RawSeasonalityData[]>([]);
+  const [seasonalityRawData, setSeasonalityRawData] = useState<
+    RawSeasonalityData[]
+  >([]);
+  const [seasonalPerformanceBenchmark, setSeasonalPerformanceBenchmark] =
+    useState<SeasonalPerformanceBenchmarkReport | null>(null);
   const [volumeDependencyRisk, setVolumeDependencyRisk] =
     useState<VolumeDependencyRiskReport | null>(null);
   const [valueEfficiency, setValueEfficiency] =
@@ -114,14 +121,26 @@ export default function Intelligence() {
   const [selectedFirm, setSelectedFirm] = useState<string>("");
 
   // Firm filter states (one per chart)
-  const [seasonalitySelectedFirms, setSeasonalitySelectedFirms] = useState<string[]>([]);
-  const [velocitySelectedFirms, setVelocitySelectedFirms] = useState<string[]>([]);
-  const [completedSelectedFirms, setCompletedSelectedFirms] = useState<string[]>([]);
-  const [activitySelectedFirms, setActivitySelectedFirms] = useState<string[]>([]);
+  const [seasonalitySelectedFirms, setSeasonalitySelectedFirms] = useState<
+    string[]
+  >([]);
+  const [velocitySelectedFirms, setVelocitySelectedFirms] = useState<string[]>(
+    []
+  );
+  const [completedSelectedFirms, setCompletedSelectedFirms] = useState<
+    string[]
+  >([]);
+  const [activitySelectedFirms, setActivitySelectedFirms] = useState<string[]>(
+    []
+  );
 
   // Available firms lists
-  const [availableFirmsSeasonality, setAvailableFirmsSeasonality] = useState<string[]>([]);
-  const [availableFirmsMonthly, setAvailableFirmsMonthly] = useState<string[]>([]);
+  const [availableFirmsSeasonality, setAvailableFirmsSeasonality] = useState<
+    string[]
+  >([]);
+  const [availableFirmsMonthly, setAvailableFirmsMonthly] = useState<string[]>(
+    []
+  );
 
   useEffect(() => {
     async function fetchAllData() {
@@ -131,7 +150,7 @@ export default function Intelligence() {
       try {
         // Check for debug mode in URL
         const urlParams = new URLSearchParams(window.location.search);
-        const debugMode = urlParams.get('debug') === 'true';
+        const debugMode = urlParams.get("debug") === "true";
 
         // Call utility functions directly instead of fetching
         // This works on GitHub Pages static hosting
@@ -144,6 +163,7 @@ export default function Intelligence() {
           monthly,
           history,
           seasonalityResult,
+          seasonalBenchmark,
           volumeDep,
           valueEff,
         ] = await Promise.all([
@@ -155,6 +175,7 @@ export default function Intelligence() {
           generateMonthlyPerformanceReport(),
           generateMonthlyHistoryReport(),
           generateSeasonalityProfileReport(debugMode),
+          generateSeasonalPerformanceBenchmarkReport(debugMode),
           generateVolumeDependencyRiskReport(),
           generateValueEfficiencyReport(),
         ]);
@@ -168,12 +189,15 @@ export default function Intelligence() {
         setMonthlyHistory(history);
         setSeasonalityProfile(seasonalityResult.aggregated);
         setSeasonalityRawData(seasonalityResult.raw);
+        setSeasonalPerformanceBenchmark(seasonalBenchmark);
         setVolumeDependencyRisk(volumeDep);
         setValueEfficiency(valueEff);
 
         // Set default firm to first available in raw data
         if (seasonalityResult.raw.length > 0 && !selectedFirm) {
-          const uniqueFirms = Array.from(new Set(seasonalityResult.raw.map(d => d.firm)));
+          const uniqueFirms = Array.from(
+            new Set(seasonalityResult.raw.map((d) => d.firm))
+          );
           setSelectedFirm(uniqueFirms[0]);
         }
       } catch (err: any) {
@@ -190,7 +214,9 @@ export default function Intelligence() {
   useEffect(() => {
     if (seasonalityRawData.length > 0) {
       // Extract unique firms from raw data
-      const firms = Array.from(new Set(seasonalityRawData.map(d => d.firm))).sort();
+      const firms = Array.from(
+        new Set(seasonalityRawData.map((d) => d.firm))
+      ).sort();
       setAvailableFirmsSeasonality(firms);
 
       // Load from localStorage or default to all firms
@@ -200,7 +226,9 @@ export default function Intelligence() {
           const parsed = JSON.parse(stored);
           // Validate stored firms still exist in current data
           const validFirms = parsed.filter((f: string) => firms.includes(f));
-          setSeasonalitySelectedFirms(validFirms.length > 0 ? validFirms : firms);
+          setSeasonalitySelectedFirms(
+            validFirms.length > 0 ? validFirms : firms
+          );
         } catch {
           setSeasonalitySelectedFirms(firms);
         }
@@ -231,7 +259,9 @@ export default function Intelligence() {
       }
 
       // Initialize completed chart filter
-      const storedCompleted = localStorage.getItem(STORAGE_KEYS.COMPLETED_FIRMS);
+      const storedCompleted = localStorage.getItem(
+        STORAGE_KEYS.COMPLETED_FIRMS
+      );
       if (storedCompleted) {
         try {
           const parsed = JSON.parse(storedCompleted);
@@ -482,8 +512,18 @@ export default function Intelligence() {
 
   // Month names constant
   const MONTH_NAMES = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
   // Filter and re-aggregate seasonality data based on selected firms
@@ -493,7 +533,7 @@ export default function Intelligence() {
     }
 
     // Filter raw data by selected firms
-    const filtered = seasonalityRawData.filter(d =>
+    const filtered = seasonalityRawData.filter((d) =>
       seasonalitySelectedFirms.includes(d.firm)
     );
 
@@ -506,7 +546,7 @@ export default function Intelligence() {
         yearlyData[yearKey] = [];
       }
 
-      let monthEntry = yearlyData[yearKey].find(m => m.month === item.month);
+      let monthEntry = yearlyData[yearKey].find((m) => m.month === item.month);
       if (!monthEntry) {
         monthEntry = {
           month: item.month,
@@ -523,7 +563,7 @@ export default function Intelligence() {
     // Fill missing months with zeros and sort
     for (const year in yearlyData) {
       for (let month = 1; month <= 12; month++) {
-        if (!yearlyData[year].find(m => m.month === month)) {
+        if (!yearlyData[year].find((m) => m.month === month)) {
           yearlyData[year].push({
             month,
             monthName: MONTH_NAMES[month - 1],
@@ -543,23 +583,32 @@ export default function Intelligence() {
 
     return {
       velocity: Object.fromEntries(
-        Object.entries(monthlyHistory.firm_monthly_data)
-          .filter(([firmName]) => velocitySelectedFirms.includes(firmName))
+        Object.entries(monthlyHistory.firm_monthly_data).filter(([firmName]) =>
+          velocitySelectedFirms.includes(firmName)
+        )
       ),
       completed: Object.fromEntries(
-        Object.entries(monthlyHistory.firm_monthly_data)
-          .filter(([firmName]) => completedSelectedFirms.includes(firmName))
+        Object.entries(monthlyHistory.firm_monthly_data).filter(([firmName]) =>
+          completedSelectedFirms.includes(firmName)
+        )
       ),
       activity: Object.fromEntries(
-        Object.entries(monthlyHistory.firm_monthly_data)
-          .filter(([firmName]) => activitySelectedFirms.includes(firmName))
+        Object.entries(monthlyHistory.firm_monthly_data).filter(([firmName]) =>
+          activitySelectedFirms.includes(firmName)
+        )
       ),
     };
-  }, [monthlyHistory, velocitySelectedFirms, completedSelectedFirms, activitySelectedFirms]);
+  }, [
+    monthlyHistory,
+    velocitySelectedFirms,
+    completedSelectedFirms,
+    activitySelectedFirms,
+  ]);
 
   // Chart: Business Seasonality Wave – Avg Claims by Month
   const businessSeasonalityChart =
-    filteredSeasonalityProfile && Object.keys(filteredSeasonalityProfile).length > 0
+    filteredSeasonalityProfile &&
+    Object.keys(filteredSeasonalityProfile).length > 0
       ? {
           labels: [
             "Jan",
@@ -633,173 +682,204 @@ export default function Intelligence() {
           ],
         };
 
+  // Chart: Seasonal Performance Benchmark
+  const seasonalPerformanceBenchmarkChart = seasonalPerformanceBenchmark
+    ? {
+        labels: seasonalPerformanceBenchmark.data.map((d) => d.month),
+        datasets: [
+          {
+            type: "line" as const,
+            label: `Performance Index ${seasonalPerformanceBenchmark.current_year}`,
+            data: seasonalPerformanceBenchmark.data.map((d) => d.index),
+            borderColor: "rgba(59, 130, 246, 1)", // Blue
+            backgroundColor: "rgba(59, 130, 246, 0.1)",
+            borderWidth: 3,
+            tension: 0.4,
+            fill: false,
+            pointRadius: 6,
+            pointHoverRadius: 8,
+          },
+          {
+            type: "line" as const,
+            label: "Expected Pace",
+            data: Array(12).fill(1.0), // Horizontal line at y=1.0
+            borderColor: "rgba(156, 163, 175, 1)", // Gray
+            backgroundColor: "transparent",
+            borderWidth: 2,
+            borderDash: [5, 5],
+            tension: 0,
+            fill: false,
+            pointRadius: 0,
+            pointHoverRadius: 0,
+          },
+        ],
+      }
+    : null;
+
   // Chart: Monthly Velocity Trend (Line) - Per Firm Per Year
-  const monthlyVelocityTrendChart =
-    filteredMonthlyData?.velocity
-      ? (() => {
-          const datasets = [];
-          const colors = [
-            "rgba(59, 130, 246, 1)", // Blue
-            "rgba(34, 197, 94, 1)", // Green
-            "rgba(139, 92, 246, 1)", // Purple
-            "rgba(249, 115, 22, 1)", // Orange
-            "rgba(236, 72, 153, 1)", // Pink
-            "rgba(234, 179, 8, 1)", // Yellow
-            "rgba(239, 68, 68, 1)", // Red
-            "rgba(20, 184, 166, 1)", // Teal
-          ];
-          let colorIndex = 0;
+  const monthlyVelocityTrendChart = filteredMonthlyData?.velocity
+    ? (() => {
+        const datasets = [];
+        const colors = [
+          "rgba(59, 130, 246, 1)", // Blue
+          "rgba(34, 197, 94, 1)", // Green
+          "rgba(139, 92, 246, 1)", // Purple
+          "rgba(249, 115, 22, 1)", // Orange
+          "rgba(236, 72, 153, 1)", // Pink
+          "rgba(234, 179, 8, 1)", // Yellow
+          "rgba(239, 68, 68, 1)", // Red
+          "rgba(20, 184, 166, 1)", // Teal
+        ];
+        let colorIndex = 0;
 
-          for (const firmName in filteredMonthlyData.velocity) {
-            for (const year in filteredMonthlyData.velocity[firmName]) {
-              const yearData = filteredMonthlyData.velocity[firmName][year];
-              const color = colors[colorIndex % colors.length];
+        for (const firmName in filteredMonthlyData.velocity) {
+          for (const year in filteredMonthlyData.velocity[firmName]) {
+            const yearData = filteredMonthlyData.velocity[firmName][year];
+            const color = colors[colorIndex % colors.length];
 
-              datasets.push({
-                label: `${firmName} ${year}`,
-                data: yearData.map((m) => m.avgVelocity),
-                borderColor: color,
-                backgroundColor: color.replace("1)", "0.1)"),
-                fill: false,
-                tension: 0.4,
-                borderWidth: 2,
-              });
+            datasets.push({
+              label: `${firmName} ${year}`,
+              data: yearData.map((m) => m.avgVelocity),
+              borderColor: color,
+              backgroundColor: color.replace("1)", "0.1)"),
+              fill: false,
+              tension: 0.4,
+              borderWidth: 2,
+            });
 
-              colorIndex++;
-            }
+            colorIndex++;
           }
+        }
 
-          return {
-            labels: [
-              "Jan",
-              "Feb",
-              "Mar",
-              "Apr",
-              "May",
-              "Jun",
-              "Jul",
-              "Aug",
-              "Sep",
-              "Oct",
-              "Nov",
-              "Dec",
-            ],
-            datasets,
-          };
-        })()
-      : null;
+        return {
+          labels: [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+          ],
+          datasets,
+        };
+      })()
+    : null;
 
   // Chart: Claims Completed by Month - Per Firm Per Year
-  const burnoutRatioChart =
-    filteredMonthlyData?.completed
-      ? (() => {
-          const datasets = [];
-          const colors = [
-            "rgba(34, 197, 94, 1)", // Green
-            "rgba(59, 130, 246, 1)", // Blue
-            "rgba(139, 92, 246, 1)", // Purple
-            "rgba(249, 115, 22, 1)", // Orange
-            "rgba(236, 72, 153, 1)", // Pink
-            "rgba(234, 179, 8, 1)", // Yellow
-            "rgba(239, 68, 68, 1)", // Red
-            "rgba(20, 184, 166, 1)", // Teal
-          ];
-          let colorIndex = 0;
+  const burnoutRatioChart = filteredMonthlyData?.completed
+    ? (() => {
+        const datasets = [];
+        const colors = [
+          "rgba(34, 197, 94, 1)", // Green
+          "rgba(59, 130, 246, 1)", // Blue
+          "rgba(139, 92, 246, 1)", // Purple
+          "rgba(249, 115, 22, 1)", // Orange
+          "rgba(236, 72, 153, 1)", // Pink
+          "rgba(234, 179, 8, 1)", // Yellow
+          "rgba(239, 68, 68, 1)", // Red
+          "rgba(20, 184, 166, 1)", // Teal
+        ];
+        let colorIndex = 0;
 
-          for (const firmName in filteredMonthlyData.completed) {
-            for (const year in filteredMonthlyData.completed[firmName]) {
-              const yearData = filteredMonthlyData.completed[firmName][year];
-              const color = colors[colorIndex % colors.length];
+        for (const firmName in filteredMonthlyData.completed) {
+          for (const year in filteredMonthlyData.completed[firmName]) {
+            const yearData = filteredMonthlyData.completed[firmName][year];
+            const color = colors[colorIndex % colors.length];
 
-              datasets.push({
-                label: `${firmName} ${year}`,
-                data: yearData.map((m) => m.claimsCompleted),
-                borderColor: color,
-                backgroundColor: color.replace("1)", "0.1)"),
-                fill: false,
-                tension: 0.4,
-                borderWidth: 2,
-              });
+            datasets.push({
+              label: `${firmName} ${year}`,
+              data: yearData.map((m) => m.claimsCompleted),
+              borderColor: color,
+              backgroundColor: color.replace("1)", "0.1)"),
+              fill: false,
+              tension: 0.4,
+              borderWidth: 2,
+            });
 
-              colorIndex++;
-            }
+            colorIndex++;
           }
+        }
 
-          return {
-            labels: [
-              "Jan",
-              "Feb",
-              "Mar",
-              "Apr",
-              "May",
-              "Jun",
-              "Jul",
-              "Aug",
-              "Sep",
-              "Oct",
-              "Nov",
-              "Dec",
-            ],
-            datasets,
-          };
-        })()
-      : null;
+        return {
+          labels: [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+          ],
+          datasets,
+        };
+      })()
+    : null;
 
   // Chart: Firm Activity - Per Firm Per Year
-  const firmMonthHeatmapData =
-    filteredMonthlyData?.activity
-      ? (() => {
-          const datasets = [];
-          const colors = [
-            "rgba(59, 130, 246, 1)", // Blue
-            "rgba(34, 197, 94, 1)", // Green
-            "rgba(139, 92, 246, 1)", // Purple
-            "rgba(249, 115, 22, 1)", // Orange
-            "rgba(236, 72, 153, 1)", // Pink
-            "rgba(234, 179, 8, 1)", // Yellow
-            "rgba(239, 68, 68, 1)", // Red
-            "rgba(20, 184, 166, 1)", // Teal
-          ];
-          let colorIndex = 0;
+  const firmMonthHeatmapData = filteredMonthlyData?.activity
+    ? (() => {
+        const datasets = [];
+        const colors = [
+          "rgba(59, 130, 246, 1)", // Blue
+          "rgba(34, 197, 94, 1)", // Green
+          "rgba(139, 92, 246, 1)", // Purple
+          "rgba(249, 115, 22, 1)", // Orange
+          "rgba(236, 72, 153, 1)", // Pink
+          "rgba(234, 179, 8, 1)", // Yellow
+          "rgba(239, 68, 68, 1)", // Red
+          "rgba(20, 184, 166, 1)", // Teal
+        ];
+        let colorIndex = 0;
 
-          for (const firmName in filteredMonthlyData.activity) {
-            for (const year in filteredMonthlyData.activity[firmName]) {
-              const yearData = filteredMonthlyData.activity[firmName][year];
-              const color = colors[colorIndex % colors.length];
+        for (const firmName in filteredMonthlyData.activity) {
+          for (const year in filteredMonthlyData.activity[firmName]) {
+            const yearData = filteredMonthlyData.activity[firmName][year];
+            const color = colors[colorIndex % colors.length];
 
-              datasets.push({
-                label: `${firmName} ${year}`,
-                data: yearData.map((m) => m.claimsCompleted),
-                borderColor: color,
-                backgroundColor: color.replace("1)", "0.1)"),
-                fill: false,
-                tension: 0.4,
-                borderWidth: 2,
-              });
+            datasets.push({
+              label: `${firmName} ${year}`,
+              data: yearData.map((m) => m.claimsCompleted),
+              borderColor: color,
+              backgroundColor: color.replace("1)", "0.1)"),
+              fill: false,
+              tension: 0.4,
+              borderWidth: 2,
+            });
 
-              colorIndex++;
-            }
+            colorIndex++;
           }
+        }
 
-          return {
-            labels: [
-              "Jan",
-              "Feb",
-              "Mar",
-              "Apr",
-              "May",
-              "Jun",
-              "Jul",
-              "Aug",
-              "Sep",
-              "Oct",
-              "Nov",
-              "Dec",
-            ],
-            datasets,
-          };
-        })()
-      : null;
+        return {
+          labels: [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+          ],
+          datasets,
+        };
+      })()
+    : null;
 
   // Chart: Operational Dependency Risk – Claim Volume (Donut)
   const volumeDependencyChart = volumeDependencyRisk
@@ -1123,10 +1203,12 @@ export default function Intelligence() {
                     {monthlyPerformance.monthly_completed_claims}
                   </div>
                   <div className="text-xs text-gray-500">
-                    Safe Capacity: {monthlyPerformance.max_safe_capacity} claims/month
+                    Safe Capacity: {monthlyPerformance.max_safe_capacity}{" "}
+                    claims/month
                   </div>
                   <div className="text-xs text-gray-400 mt-1">
-                    Linear Projection: {monthlyPerformance.projected_end_of_month} claims
+                    Linear Projection:{" "}
+                    {monthlyPerformance.projected_end_of_month} claims
                   </div>
                 </div>
 
@@ -1372,11 +1454,81 @@ export default function Intelligence() {
               </div>
               <div className="mt-4 text-sm text-gray-400">
                 Multi-year comparison •{" "}
-                {Object.keys(seasonalityProfile).join(", ")}{" "}
-                • Jan–Dec by year
+                {Object.keys(seasonalityProfile).join(", ")} • Jan–Dec by year
               </div>
             </div>
           )}
+
+          {/* Seasonal Performance Benchmark */}
+          {seasonalPerformanceBenchmarkChart &&
+            seasonalPerformanceBenchmark && (
+              <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                <h2
+                  className="text-xl font-bold mb-4 text-cyan-400 cursor-help"
+                  title="Compares current year monthly performance against historical averages. Performance Index = Current Year / Historical Average. Values above 1.0 indicate above-average performance."
+                >
+                  Seasonal Performance Index – Current Year vs Historical
+                  Average
+                </h2>
+
+                <div style={{ height: "300px" }}>
+                  <Line
+                    data={seasonalPerformanceBenchmarkChart}
+                    options={darkChartOptions}
+                  />
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                  <div className="bg-gray-700/50 rounded p-3">
+                    <div className="text-gray-400">Avg Index</div>
+                    <div
+                      className={`text-lg font-bold ${
+                        seasonalPerformanceBenchmark.summary.avg_index >= 1.0
+                          ? "text-green-400"
+                          : "text-red-400"
+                      }`}
+                    >
+                      {seasonalPerformanceBenchmark.summary.avg_index.toFixed(
+                        2
+                      )}
+                    </div>
+                  </div>
+                  <div className="bg-gray-700/50 rounded p-3">
+                    <div className="text-gray-400">Best Month</div>
+                    <div className="text-green-400 font-bold">
+                      {seasonalPerformanceBenchmark.summary.best_month}
+                    </div>
+                  </div>
+                  <div className="bg-gray-700/50 rounded p-3">
+                    <div className="text-gray-400">Above Expected</div>
+                    <div className="text-green-400 font-bold">
+                      {
+                        seasonalPerformanceBenchmark.summary
+                          .months_above_expected
+                      }
+                      /12
+                    </div>
+                  </div>
+                  <div className="bg-gray-700/50 rounded p-3">
+                    <div className="text-gray-400">Years of Data</div>
+                    <div className="text-blue-400 font-bold">
+                      {seasonalPerformanceBenchmark.years_included.length}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 text-sm text-gray-400">
+                  {seasonalPerformanceBenchmark.current_year} vs Historical
+                  Average • Index &gt; 1.0 = Above Average • Based on{" "}
+                  {
+                    seasonalPerformanceBenchmark.years_included.filter(
+                      (y) => y < seasonalPerformanceBenchmark.current_year
+                    ).length
+                  }{" "}
+                  historical years
+                </div>
+              </div>
+            )}
 
           {/* Monthly Velocity Trend */}
           {monthlyVelocityTrendChart && monthlyHistory && (
@@ -1683,7 +1835,9 @@ export default function Intelligence() {
         <div className="mt-8 text-center text-sm text-gray-500">
           <p>Data updated: {new Date().toLocaleString()}</p>
           <p className="mt-2 text-xs text-gray-600">
-            💡 Tip: Add <code className="bg-gray-800 px-2 py-1 rounded">?debug=true</code> to the URL to enable debug mode with console.table() output
+            💡 Tip: Add{" "}
+            <code className="bg-gray-800 px-2 py-1 rounded">?debug=true</code>{" "}
+            to the URL to enable debug mode with console.table() output
           </p>
           <p className="mt-2">
             APIs:

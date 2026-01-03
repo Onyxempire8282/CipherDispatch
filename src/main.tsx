@@ -19,6 +19,7 @@ import SurvivalRunwayAPI from "./routes/api/SurvivalRunway";
 import MonthlyPerformanceAPI from "./routes/api/MonthlyPerformance";
 import MonthlyHistoryAPI from "./routes/api/MonthlyHistory";
 import SeasonalityProfileAPI from "./routes/api/SeasonalityProfile";
+import SeasonalPerformanceBenchmarkAPI from "./routes/api/SeasonalPerformanceBenchmark";
 import VolumeDependencyRiskAPI from "./routes/api/VolumeDependencyRisk";
 import ValueEfficiencyAPI from "./routes/api/ValueEfficiency";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -148,6 +149,14 @@ const router = createBrowserRouter(
       element: (
         <ProtectedRoute requiredRole="admin">
           <SeasonalityProfileAPI />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/api/seasonal-performance-benchmark",
+      element: (
+        <ProtectedRoute requiredRole="admin">
+          <SeasonalPerformanceBenchmarkAPI />
         </ProtectedRoute>
       ),
     },
