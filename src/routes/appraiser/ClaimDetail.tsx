@@ -6,6 +6,7 @@ import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { getSupabaseAuthz } from "../../lib/supabaseAuthz";
 import { getFirmColor } from "../../constants/firmColors";
 import { calculateExpectedPayout } from "../../utils/firmFeeConfig";
+import { getPayPeriod } from "../../utils/payoutForecasting";
 import JSZip from "jszip";
 
 export default function ClaimDetail() {
@@ -257,10 +258,26 @@ export default function ClaimDetail() {
       const day = String(now.getDate()).padStart(2, '0');
       const completionDate = `${year}-${month}-${day}T00:00:00Z`;
 
+      // Calculate expected payout date based on firm's pay schedule
+      let expectedPayoutDate = null;
+      if (claim.firm_name) {
+        try {
+          const payPeriod = getPayPeriod(claim.firm_name, now);
+          const payYear = payPeriod.payoutDate.getFullYear();
+          const payMonth = String(payPeriod.payoutDate.getMonth() + 1).padStart(2, '0');
+          const payDay = String(payPeriod.payoutDate.getDate()).padStart(2, '0');
+          expectedPayoutDate = `${payYear}-${payMonth}-${payDay}T00:00:00Z`;
+        } catch (err) {
+          console.warn("Could not calculate expected payout date:", err);
+        }
+      }
+
       await update({
         status: "COMPLETED",
         completed_month: completedMonth,
-        completion_date: completionDate
+        completion_date: completionDate,
+        expected_payout_date: expectedPayoutDate,
+        payout_status: "unpaid"
       });
     }
   };
@@ -763,6 +780,105 @@ export default function ClaimDetail() {
                     <div style={{ ...valueStyle, color: "#9ca3af", fontStyle: "italic" }}>Not set</div>
                   )}
                 </div>
+
+                {/* Payout Tracking - Show only for completed claims */}
+                {claim.status === 'COMPLETED' && (
+                  <>
+                    <div style={{ marginTop: "24px", paddingTop: "16px", borderTop: "2px solid #4b5563" }}>
+                      <h5 style={{ ...labelStyle, fontSize: "16px", fontWeight: "bold", color: "#a78bfa", marginBottom: "16px" }}>
+                        💳 Payout Tracking
+                      </h5>
+
+                      {/* Expected Payout Date */}
+                      <div style={{ marginBottom: "16px" }}>
+                        <div style={labelStyle}>Expected Payout Date</div>
+                        <div style={valueStyle}>
+                          {claim.expected_payout_date
+                            ? new Date(claim.expected_payout_date).toLocaleDateString('en-US', {
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })
+                            : <span style={{ color: "#9ca3af", fontStyle: "italic" }}>Not calculated</span>}
+                        </div>
+                      </div>
+
+                      {/* Actual Payout Date */}
+                      <div style={{ marginBottom: "16px" }}>
+                        <div style={labelStyle}>Actual Payout Date</div>
+                        <div style={valueStyle}>
+                          {claim.actual_payout_date
+                            ? new Date(claim.actual_payout_date).toLocaleDateString('en-US', {
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })
+                            : <span style={{ color: "#9ca3af", fontStyle: "italic" }}>Payment not received</span>}
+                        </div>
+                      </div>
+
+                      {/* Payout Status */}
+                      <div style={{ marginBottom: "16px" }}>
+                        <div style={labelStyle}>Payout Status</div>
+                        <div style={{
+                          ...valueStyle,
+                          display: "inline-block",
+                          padding: "6px 16px",
+                          borderRadius: "20px",
+                          background: claim.payout_status === 'paid' ? "#10b981" :
+                                      claim.payout_status === 'overdue' ? "#ef4444" :
+                                      claim.payout_status === 'unpaid' ? "#f59e0b" :
+                                      "#6b7280",
+                          color: "white",
+                          fontWeight: "bold",
+                          textTransform: "uppercase",
+                          fontSize: "14px"
+                        }}>
+                          {claim.payout_status || 'not_applicable'}
+                        </div>
+                      </div>
+
+                      {/* Mark as Paid Button */}
+                      {claim.payout_status !== 'paid' && !claim.actual_payout_date && (
+                        <button
+                          onClick={async () => {
+                            if (confirm("Mark this claim as PAID and record today as the payment date?")) {
+                              const now = new Date();
+                              const year = now.getFullYear();
+                              const month = String(now.getMonth() + 1).padStart(2, '0');
+                              const day = String(now.getDate()).padStart(2, '0');
+                              const actualPayoutDate = `${year}-${month}-${day}T00:00:00Z`;
+
+                              await update({
+                                actual_payout_date: actualPayoutDate,
+                                payout_status: 'paid'
+                              });
+                            }
+                          }}
+                          style={{
+                            width: "100%",
+                            padding: "14px",
+                            fontSize: "16px",
+                            fontWeight: "bold",
+                            color: "white",
+                            background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                            border: "none",
+                            borderRadius: "8px",
+                            cursor: "pointer",
+                            boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                            transition: "transform 0.1s",
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-2px)"}
+                          onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
+                        >
+                          ✓ Mark as Paid Today
+                        </button>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             ) : null;
           })()}
@@ -1237,7 +1353,7 @@ export default function ClaimDetail() {
           <div style={{ marginBottom: "24px" }}>
             <div style={labelStyle}>Update Status</div>
             <select
-              onChange={(e) => {
+              onChange={async (e) => {
                 const value = e.target.value;
                 if (value === "DELETE") {
                   deleteClaim();
@@ -1245,6 +1361,35 @@ export default function ClaimDetail() {
                   if (confirm("Cancel this claim? This will mark it as CANCELED and remove it from active claims.")) {
                     update({ status: "CANCELED" });
                   }
+                } else if (value === "COMPLETED") {
+                  // Calculate expected payout date when marking as COMPLETED
+                  const now = new Date();
+                  const year = now.getFullYear();
+                  const month = String(now.getMonth() + 1).padStart(2, '0');
+                  const day = String(now.getDate()).padStart(2, '0');
+                  const completionDate = `${year}-${month}-${day}T00:00:00Z`;
+                  const completedMonth = `${year}-${month}`;
+
+                  let expectedPayoutDate = null;
+                  if (claim.firm_name) {
+                    try {
+                      const payPeriod = getPayPeriod(claim.firm_name, now);
+                      const payYear = payPeriod.payoutDate.getFullYear();
+                      const payMonth = String(payPeriod.payoutDate.getMonth() + 1).padStart(2, '0');
+                      const payDay = String(payPeriod.payoutDate.getDate()).padStart(2, '0');
+                      expectedPayoutDate = `${payYear}-${payMonth}-${payDay}T00:00:00Z`;
+                    } catch (err) {
+                      console.warn("Could not calculate expected payout date:", err);
+                    }
+                  }
+
+                  update({
+                    status: "COMPLETED",
+                    completion_date: completionDate,
+                    completed_month: completedMonth,
+                    expected_payout_date: expectedPayoutDate,
+                    payout_status: "unpaid"
+                  });
                 } else if (value) {
                   update({ status: value });
                 }
