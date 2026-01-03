@@ -165,13 +165,9 @@ export async function generateMonthlyPerformanceReport(): Promise<MonthlyPerform
   // Count completed claims for current month only using completion_date
   const monthlyCompletedClaims = claims.filter((c) => {
     if (c.status !== "COMPLETED" || !c.completion_date) return false;
-    const completionDate = new Date(c.completion_date);
-    // Use UTC methods to avoid timezone issues with date-only strings
-    const completionMonth = `${completionDate.getUTCFullYear()}-${(
-      completionDate.getUTCMonth() + 1
-    )
-      .toString()
-      .padStart(2, "0")}`;
+    // Parse date string directly to avoid timezone conversion issues
+    const dateStr = c.completion_date.split('T')[0]; // Get "YYYY-MM-DD"
+    const completionMonth = dateStr.substring(0, 7); // Get "YYYY-MM"
     return completionMonth === currentMonth;
   }).length;
 
@@ -254,13 +250,9 @@ export async function getMonthlyCompletedCount(
   const filteredClaims =
     data?.filter((claim) => {
       if (!claim.completion_date) return false;
-      const completionDate = new Date(claim.completion_date);
-      // Use UTC methods to avoid timezone issues with date-only strings
-      const claimMonth = `${completionDate.getUTCFullYear()}-${(
-        completionDate.getUTCMonth() + 1
-      )
-        .toString()
-        .padStart(2, "0")}`;
+      // Parse date string directly to avoid timezone conversion issues
+      const dateStr = claim.completion_date.split('T')[0]; // Get "YYYY-MM-DD"
+      const claimMonth = dateStr.substring(0, 7); // Get "YYYY-MM"
       return claimMonth === targetMonth;
     }) || [];
 
