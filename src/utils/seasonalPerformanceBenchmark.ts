@@ -136,6 +136,28 @@ export async function generateSeasonalPerformanceBenchmarkReport(
       console.log("Current year:", currentYear);
     }
 
+    // If no historical data, return empty benchmark with proper structure
+    if (historicalYears.length === 0) {
+      console.warn("⚠️ No historical data available for benchmark analysis");
+      return {
+        data: MONTH_NAMES.map((month, index) => ({
+          month,
+          historical_avg: 0,
+          current_year: monthlyData[index + 1]?.[currentYear] || 0,
+          index: 0,
+        })),
+        current_year: currentYear,
+        years_included: years,
+        summary: {
+          avg_index: 0,
+          best_month: "",
+          worst_month: "",
+          months_above_expected: 0,
+          months_below_expected: 0,
+        },
+      };
+    }
+
     // Calculate benchmark data for each month
     const benchmarkData: MonthlyBenchmarkData[] = [];
 
