@@ -4,7 +4,7 @@
  * Real-time data from all analytics APIs
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   Chart as ChartJS,
@@ -61,6 +61,7 @@ import {
   generateValueEfficiencyReport,
   ValueEfficiencyReport,
 } from "../../utils/valueEfficiency";
+import FirmFilterCheckboxes from "../../components/admin/FirmFilterCheckboxes";
 
 // Register Chart.js components
 ChartJS.register(
@@ -75,6 +76,14 @@ ChartJS.register(
   Legend,
   Filler
 );
+
+// localStorage keys for chart filters
+const STORAGE_KEYS = {
+  SEASONALITY_FIRMS: 'intelligence_seasonality_firms',
+  VELOCITY_FIRMS: 'intelligence_velocity_firms',
+  COMPLETED_FIRMS: 'intelligence_completed_firms',
+  ACTIVITY_FIRMS: 'intelligence_activity_firms',
+} as const;
 
 export default function Intelligence() {
   const [firmReliability, setFirmReliability] =
@@ -103,6 +112,16 @@ export default function Intelligence() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedFirm, setSelectedFirm] = useState<string>("");
+
+  // Firm filter states (one per chart)
+  const [seasonalitySelectedFirms, setSeasonalitySelectedFirms] = useState<string[]>([]);
+  const [velocitySelectedFirms, setVelocitySelectedFirms] = useState<string[]>([]);
+  const [completedSelectedFirms, setCompletedSelectedFirms] = useState<string[]>([]);
+  const [activitySelectedFirms, setActivitySelectedFirms] = useState<string[]>([]);
+
+  // Available firms lists
+  const [availableFirmsSeasonality, setAvailableFirmsSeasonality] = useState<string[]>([]);
+  const [availableFirmsMonthly, setAvailableFirmsMonthly] = useState<string[]>([]);
 
   useEffect(() => {
     async function fetchAllData() {
@@ -166,6 +185,120 @@ export default function Intelligence() {
 
     fetchAllData();
   }, []);
+
+  // Initialize seasonality firms filter
+  useEffect(() => {
+    if (seasonalityRawData.length > 0) {
+      // Extract unique firms from raw data
+      const firms = Array.from(new Set(seasonalityRawData.map(d => d.firm))).sort();
+      setAvailableFirmsSeasonality(firms);
+
+      // Load from localStorage or default to all firms
+      const stored = localStorage.getItem(STORAGE_KEYS.SEASONALITY_FIRMS);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          // Validate stored firms still exist in current data
+          const validFirms = parsed.filter((f: string) => firms.includes(f));
+          setSeasonalitySelectedFirms(validFirms.length > 0 ? validFirms : firms);
+        } catch {
+          setSeasonalitySelectedFirms(firms);
+        }
+      } else {
+        setSeasonalitySelectedFirms(firms); // Default: all selected
+      }
+    }
+  }, [seasonalityRawData]);
+
+  // Initialize monthly history firms filters
+  useEffect(() => {
+    if (monthlyHistory?.firm_monthly_data) {
+      const firms = Object.keys(monthlyHistory.firm_monthly_data).sort();
+      setAvailableFirmsMonthly(firms);
+
+      // Initialize velocity chart filter
+      const storedVelocity = localStorage.getItem(STORAGE_KEYS.VELOCITY_FIRMS);
+      if (storedVelocity) {
+        try {
+          const parsed = JSON.parse(storedVelocity);
+          const validFirms = parsed.filter((f: string) => firms.includes(f));
+          setVelocitySelectedFirms(validFirms.length > 0 ? validFirms : firms);
+        } catch {
+          setVelocitySelectedFirms(firms);
+        }
+      } else {
+        setVelocitySelectedFirms(firms);
+      }
+
+      // Initialize completed chart filter
+      const storedCompleted = localStorage.getItem(STORAGE_KEYS.COMPLETED_FIRMS);
+      if (storedCompleted) {
+        try {
+          const parsed = JSON.parse(storedCompleted);
+          const validFirms = parsed.filter((f: string) => firms.includes(f));
+          setCompletedSelectedFirms(validFirms.length > 0 ? validFirms : firms);
+        } catch {
+          setCompletedSelectedFirms(firms);
+        }
+      } else {
+        setCompletedSelectedFirms(firms);
+      }
+
+      // Initialize activity chart filter
+      const storedActivity = localStorage.getItem(STORAGE_KEYS.ACTIVITY_FIRMS);
+      if (storedActivity) {
+        try {
+          const parsed = JSON.parse(storedActivity);
+          const validFirms = parsed.filter((f: string) => firms.includes(f));
+          setActivitySelectedFirms(validFirms.length > 0 ? validFirms : firms);
+        } catch {
+          setActivitySelectedFirms(firms);
+        }
+      } else {
+        setActivitySelectedFirms(firms);
+      }
+    }
+  }, [monthlyHistory]);
+
+  // Persist seasonality filter
+  useEffect(() => {
+    if (seasonalitySelectedFirms.length > 0) {
+      localStorage.setItem(
+        STORAGE_KEYS.SEASONALITY_FIRMS,
+        JSON.stringify(seasonalitySelectedFirms)
+      );
+    }
+  }, [seasonalitySelectedFirms]);
+
+  // Persist velocity filter
+  useEffect(() => {
+    if (velocitySelectedFirms.length > 0) {
+      localStorage.setItem(
+        STORAGE_KEYS.VELOCITY_FIRMS,
+        JSON.stringify(velocitySelectedFirms)
+      );
+    }
+  }, [velocitySelectedFirms]);
+
+  // Persist completed filter
+  useEffect(() => {
+    if (completedSelectedFirms.length > 0) {
+      localStorage.setItem(
+        STORAGE_KEYS.COMPLETED_FIRMS,
+        JSON.stringify(completedSelectedFirms)
+      );
+    }
+  }, [completedSelectedFirms]);
+
+  // Persist activity filter
+  useEffect(() => {
+    if (activitySelectedFirms.length > 0) {
+      localStorage.setItem(
+        STORAGE_KEYS.ACTIVITY_FIRMS,
+        JSON.stringify(activitySelectedFirms)
+      );
+    }
+  }, [activitySelectedFirms]);
 
   if (loading) {
     return (
@@ -347,9 +480,86 @@ export default function Intelligence() {
   // Log the seasonality profile for debugging
   console.log("seasonalityProfile data:", seasonalityProfile);
 
+  // Month names constant
+  const MONTH_NAMES = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
+  // Filter and re-aggregate seasonality data based on selected firms
+  const filteredSeasonalityProfile = useMemo(() => {
+    if (!seasonalityRawData.length || !seasonalitySelectedFirms.length) {
+      return seasonalityProfile || {};
+    }
+
+    // Filter raw data by selected firms
+    const filtered = seasonalityRawData.filter(d =>
+      seasonalitySelectedFirms.includes(d.firm)
+    );
+
+    // Re-aggregate by year and month (SUM across selected firms)
+    const yearlyData: SeasonalityProfileReport = {};
+
+    for (const item of filtered) {
+      const yearKey = item.year.toString();
+      if (!yearlyData[yearKey]) {
+        yearlyData[yearKey] = [];
+      }
+
+      let monthEntry = yearlyData[yearKey].find(m => m.month === item.month);
+      if (!monthEntry) {
+        monthEntry = {
+          month: item.month,
+          monthName: MONTH_NAMES[item.month - 1],
+          completedClaims: 0,
+        };
+        yearlyData[yearKey].push(monthEntry);
+      }
+
+      // SUM the claims from selected firms
+      monthEntry.completedClaims += item.completed;
+    }
+
+    // Fill missing months with zeros and sort
+    for (const year in yearlyData) {
+      for (let month = 1; month <= 12; month++) {
+        if (!yearlyData[year].find(m => m.month === month)) {
+          yearlyData[year].push({
+            month,
+            monthName: MONTH_NAMES[month - 1],
+            completedClaims: 0,
+          });
+        }
+      }
+      yearlyData[year].sort((a, b) => a.month - b.month);
+    }
+
+    return yearlyData;
+  }, [seasonalityRawData, seasonalitySelectedFirms, seasonalityProfile]);
+
+  // Filter monthly history data for each chart independently
+  const filteredMonthlyData = useMemo(() => {
+    if (!monthlyHistory?.firm_monthly_data) return null;
+
+    return {
+      velocity: Object.fromEntries(
+        Object.entries(monthlyHistory.firm_monthly_data)
+          .filter(([firmName]) => velocitySelectedFirms.includes(firmName))
+      ),
+      completed: Object.fromEntries(
+        Object.entries(monthlyHistory.firm_monthly_data)
+          .filter(([firmName]) => completedSelectedFirms.includes(firmName))
+      ),
+      activity: Object.fromEntries(
+        Object.entries(monthlyHistory.firm_monthly_data)
+          .filter(([firmName]) => activitySelectedFirms.includes(firmName))
+      ),
+    };
+  }, [monthlyHistory, velocitySelectedFirms, completedSelectedFirms, activitySelectedFirms]);
+
   // Chart: Business Seasonality Wave – Avg Claims by Month
   const businessSeasonalityChart =
-    seasonalityProfile
+    filteredSeasonalityProfile && Object.keys(filteredSeasonalityProfile).length > 0
       ? {
           labels: [
             "Jan",
@@ -365,9 +575,9 @@ export default function Intelligence() {
             "Nov",
             "Dec",
           ],
-          datasets: Object.keys(seasonalityProfile).map(
+          datasets: Object.keys(filteredSeasonalityProfile).map(
             (year, index) => {
-              const yearData = seasonalityProfile[year] || [];
+              const yearData = filteredSeasonalityProfile[year] || [];
               const colors = [
                 "rgba(34, 197, 94, 1)", // Green
                 "rgba(59, 130, 246, 1)", // Blue
@@ -425,7 +635,7 @@ export default function Intelligence() {
 
   // Chart: Monthly Velocity Trend (Line) - Per Firm Per Year
   const monthlyVelocityTrendChart =
-    monthlyHistory && monthlyHistory.firm_monthly_data
+    filteredMonthlyData?.velocity
       ? (() => {
           const datasets = [];
           const colors = [
@@ -440,9 +650,9 @@ export default function Intelligence() {
           ];
           let colorIndex = 0;
 
-          for (const firmName in monthlyHistory.firm_monthly_data) {
-            for (const year in monthlyHistory.firm_monthly_data[firmName]) {
-              const yearData = monthlyHistory.firm_monthly_data[firmName][year];
+          for (const firmName in filteredMonthlyData.velocity) {
+            for (const year in filteredMonthlyData.velocity[firmName]) {
+              const yearData = filteredMonthlyData.velocity[firmName][year];
               const color = colors[colorIndex % colors.length];
 
               datasets.push({
@@ -481,7 +691,7 @@ export default function Intelligence() {
 
   // Chart: Claims Completed by Month - Per Firm Per Year
   const burnoutRatioChart =
-    monthlyHistory && monthlyHistory.firm_monthly_data
+    filteredMonthlyData?.completed
       ? (() => {
           const datasets = [];
           const colors = [
@@ -496,9 +706,9 @@ export default function Intelligence() {
           ];
           let colorIndex = 0;
 
-          for (const firmName in monthlyHistory.firm_monthly_data) {
-            for (const year in monthlyHistory.firm_monthly_data[firmName]) {
-              const yearData = monthlyHistory.firm_monthly_data[firmName][year];
+          for (const firmName in filteredMonthlyData.completed) {
+            for (const year in filteredMonthlyData.completed[firmName]) {
+              const yearData = filteredMonthlyData.completed[firmName][year];
               const color = colors[colorIndex % colors.length];
 
               datasets.push({
@@ -537,7 +747,7 @@ export default function Intelligence() {
 
   // Chart: Firm Activity - Per Firm Per Year
   const firmMonthHeatmapData =
-    monthlyHistory && monthlyHistory.firm_monthly_data
+    filteredMonthlyData?.activity
       ? (() => {
           const datasets = [];
           const colors = [
@@ -552,9 +762,9 @@ export default function Intelligence() {
           ];
           let colorIndex = 0;
 
-          for (const firmName in monthlyHistory.firm_monthly_data) {
-            for (const year in monthlyHistory.firm_monthly_data[firmName]) {
-              const yearData = monthlyHistory.firm_monthly_data[firmName][year];
+          for (const firmName in filteredMonthlyData.activity) {
+            for (const year in filteredMonthlyData.activity[firmName]) {
+              const yearData = filteredMonthlyData.activity[firmName][year];
               const color = colors[colorIndex % colors.length];
 
               datasets.push({
@@ -883,6 +1093,9 @@ export default function Intelligence() {
                     >
                       {monthlyPerformance.capacity_percentage.toFixed(1)}%
                     </div>
+                    <div className="text-sm text-gray-400 mt-1">
+                      of Safe Capacity
+                    </div>
                     <div
                       className={`text-xl font-bold mt-1 ${
                         monthlyPerformance.capacity_status === "UNDER-UTILIZED"
@@ -910,7 +1123,10 @@ export default function Intelligence() {
                     {monthlyPerformance.monthly_completed_claims}
                   </div>
                   <div className="text-xs text-gray-500">
-                    of {monthlyPerformance.max_safe_capacity} max capacity
+                    Safe Capacity: {monthlyPerformance.max_safe_capacity} claims/month
+                  </div>
+                  <div className="text-xs text-gray-400 mt-1">
+                    Linear Projection: {monthlyPerformance.projected_end_of_month} claims
                   </div>
                 </div>
 
@@ -1139,6 +1355,15 @@ export default function Intelligence() {
               >
                 Business Seasonality Wave
               </h2>
+
+              <FirmFilterCheckboxes
+                allFirms={availableFirmsSeasonality}
+                selectedFirms={seasonalitySelectedFirms}
+                onChange={setSeasonalitySelectedFirms}
+                chartId="seasonality"
+                className="mb-4"
+              />
+
               <div style={{ height: "300px" }}>
                 <Line
                   data={businessSeasonalityChart}
@@ -1162,6 +1387,15 @@ export default function Intelligence() {
               >
                 Monthly Velocity Trend
               </h2>
+
+              <FirmFilterCheckboxes
+                allFirms={availableFirmsMonthly}
+                selectedFirms={velocitySelectedFirms}
+                onChange={setVelocitySelectedFirms}
+                chartId="velocity"
+                className="mb-4"
+              />
+
               <div style={{ height: "300px" }}>
                 <Line
                   data={monthlyVelocityTrendChart}
@@ -1183,6 +1417,15 @@ export default function Intelligence() {
               >
                 Claims Completed by Month
               </h2>
+
+              <FirmFilterCheckboxes
+                allFirms={availableFirmsMonthly}
+                selectedFirms={completedSelectedFirms}
+                onChange={setCompletedSelectedFirms}
+                chartId="completed"
+                className="mb-4"
+              />
+
               <div style={{ height: "300px" }}>
                 <Line data={burnoutRatioChart} options={darkChartOptions} />
               </div>
@@ -1201,6 +1444,15 @@ export default function Intelligence() {
               >
                 Firm Activity by Year
               </h2>
+
+              <FirmFilterCheckboxes
+                allFirms={availableFirmsMonthly}
+                selectedFirms={activitySelectedFirms}
+                onChange={setActivitySelectedFirms}
+                chartId="activity"
+                className="mb-4"
+              />
+
               <div style={{ height: "300px" }}>
                 <Line data={firmMonthHeatmapData} options={darkChartOptions} />
               </div>
