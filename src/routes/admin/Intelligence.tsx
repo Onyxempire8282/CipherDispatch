@@ -330,6 +330,85 @@ export default function Intelligence() {
     }
   }, [activitySelectedFirms]);
 
+  // Filter and re-aggregate seasonality data based on selected firms
+  const filteredSeasonalityProfile = useMemo(() => {
+    if (!seasonalityRawData.length || !seasonalitySelectedFirms.length) {
+      return seasonalityProfile || {};
+    }
+
+    // Filter raw data by selected firms
+    const filtered = seasonalityRawData.filter((d) =>
+      seasonalitySelectedFirms.includes(d.firm)
+    );
+
+    // Re-aggregate by year and month (SUM across selected firms)
+    const yearlyData: SeasonalityProfileReport = {};
+
+    for (const item of filtered) {
+      const yearKey = item.year.toString();
+      if (!yearlyData[yearKey]) {
+        yearlyData[yearKey] = [];
+      }
+
+      let monthEntry = yearlyData[yearKey].find((m) => m.month === item.month);
+      if (!monthEntry) {
+        monthEntry = {
+          month: item.month,
+          monthName: MONTH_NAMES[item.month - 1],
+          completedClaims: 0,
+        };
+        yearlyData[yearKey].push(monthEntry);
+      }
+
+      // SUM the claims from selected firms
+      monthEntry.completedClaims += item.completed;
+    }
+
+    // Fill missing months with zeros and sort
+    for (const year in yearlyData) {
+      for (let month = 1; month <= 12; month++) {
+        if (!yearlyData[year].find((m) => m.month === month)) {
+          yearlyData[year].push({
+            month,
+            monthName: MONTH_NAMES[month - 1],
+            completedClaims: 0,
+          });
+        }
+      }
+      yearlyData[year].sort((a, b) => a.month - b.month);
+    }
+
+    return yearlyData;
+  }, [seasonalityRawData, seasonalitySelectedFirms, seasonalityProfile]);
+
+  // Filter monthly history data for each chart independently
+  const filteredMonthlyData = useMemo(() => {
+    if (!monthlyHistory?.firm_monthly_data) return null;
+
+    return {
+      velocity: Object.fromEntries(
+        Object.entries(monthlyHistory.firm_monthly_data).filter(([firmName]) =>
+          velocitySelectedFirms.includes(firmName)
+        )
+      ),
+      completed: Object.fromEntries(
+        Object.entries(monthlyHistory.firm_monthly_data).filter(([firmName]) =>
+          completedSelectedFirms.includes(firmName)
+        )
+      ),
+      activity: Object.fromEntries(
+        Object.entries(monthlyHistory.firm_monthly_data).filter(([firmName]) =>
+          activitySelectedFirms.includes(firmName)
+        )
+      ),
+    };
+  }, [
+    monthlyHistory,
+    velocitySelectedFirms,
+    completedSelectedFirms,
+    activitySelectedFirms,
+  ]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-900 text-white p-8">
@@ -525,85 +604,6 @@ export default function Intelligence() {
     "November",
     "December",
   ];
-
-  // Filter and re-aggregate seasonality data based on selected firms
-  const filteredSeasonalityProfile = useMemo(() => {
-    if (!seasonalityRawData.length || !seasonalitySelectedFirms.length) {
-      return seasonalityProfile || {};
-    }
-
-    // Filter raw data by selected firms
-    const filtered = seasonalityRawData.filter((d) =>
-      seasonalitySelectedFirms.includes(d.firm)
-    );
-
-    // Re-aggregate by year and month (SUM across selected firms)
-    const yearlyData: SeasonalityProfileReport = {};
-
-    for (const item of filtered) {
-      const yearKey = item.year.toString();
-      if (!yearlyData[yearKey]) {
-        yearlyData[yearKey] = [];
-      }
-
-      let monthEntry = yearlyData[yearKey].find((m) => m.month === item.month);
-      if (!monthEntry) {
-        monthEntry = {
-          month: item.month,
-          monthName: MONTH_NAMES[item.month - 1],
-          completedClaims: 0,
-        };
-        yearlyData[yearKey].push(monthEntry);
-      }
-
-      // SUM the claims from selected firms
-      monthEntry.completedClaims += item.completed;
-    }
-
-    // Fill missing months with zeros and sort
-    for (const year in yearlyData) {
-      for (let month = 1; month <= 12; month++) {
-        if (!yearlyData[year].find((m) => m.month === month)) {
-          yearlyData[year].push({
-            month,
-            monthName: MONTH_NAMES[month - 1],
-            completedClaims: 0,
-          });
-        }
-      }
-      yearlyData[year].sort((a, b) => a.month - b.month);
-    }
-
-    return yearlyData;
-  }, [seasonalityRawData, seasonalitySelectedFirms, seasonalityProfile]);
-
-  // Filter monthly history data for each chart independently
-  const filteredMonthlyData = useMemo(() => {
-    if (!monthlyHistory?.firm_monthly_data) return null;
-
-    return {
-      velocity: Object.fromEntries(
-        Object.entries(monthlyHistory.firm_monthly_data).filter(([firmName]) =>
-          velocitySelectedFirms.includes(firmName)
-        )
-      ),
-      completed: Object.fromEntries(
-        Object.entries(monthlyHistory.firm_monthly_data).filter(([firmName]) =>
-          completedSelectedFirms.includes(firmName)
-        )
-      ),
-      activity: Object.fromEntries(
-        Object.entries(monthlyHistory.firm_monthly_data).filter(([firmName]) =>
-          activitySelectedFirms.includes(firmName)
-        )
-      ),
-    };
-  }, [
-    monthlyHistory,
-    velocitySelectedFirms,
-    completedSelectedFirms,
-    activitySelectedFirms,
-  ]);
 
   // Chart: Business Seasonality Wave – Avg Claims by Month
   const businessSeasonalityChart =

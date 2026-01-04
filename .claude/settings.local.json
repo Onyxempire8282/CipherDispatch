@@ -33,7 +33,9 @@
       "Bash(powershell -Command \"Get-Content src/utils/monthlyHistory.ts | Select-Object -Index 243 | Format-Hex\")",
       "Bash(powershell -Command \"Get-Content src/utils/monthlyHistory.ts | Select-Object -Index 242 | Format-Hex\")",
       "Bash(powershell -Command \"Get-Content src/utils/monthlyHistory.ts | Select-Object -Index 241 | Format-Hex\")",
-      "Bash(powershell -Command \"Get-Content src/utils/monthlyHistory.ts | Select-Object -Index 240 | Format-Hex\")"
+      "Bash(powershell -Command \"Get-Content src/utils/monthlyHistory.ts | Select-Object -Index 240 | Format-Hex\")",
+      "WebFetch(domain:reactjs.org)",
+      "WebFetch(domain:legacy.reactjs.org)"
     ]
   }
 }
