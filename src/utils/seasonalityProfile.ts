@@ -71,7 +71,8 @@ export async function generateSeasonalityProfileReport(
     .eq("status", "COMPLETED")
     .not("completion_date", "is", null)
     .not("firm_name", "is", null)
-    .order("completion_date");
+    .order("completion_date")
+    .limit(100000); // Remove default 1000 row limit
 
   // Apply role-based scoping (admin sees all, appraiser sees only their claims)
   query = authz.scopedClaimsQuery(query);

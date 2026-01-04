@@ -246,7 +246,8 @@ export async function fetchMonthlyHistory(): Promise<MonthlyHistoryReport> {
     .eq("status", "COMPLETED")
     .not("completion_date", "is", null)
     .not("firm_name", "is", null)
-    .order("completion_date", { ascending: true });
+    .order("completion_date", { ascending: true })
+    .limit(100000); // Remove default 1000 row limit
 
   query = authz.scopedClaimsQuery(query);
   const { data: completedClaims, error: claimsError } = await query;

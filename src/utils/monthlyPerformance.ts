@@ -123,7 +123,8 @@ async function fetchClaimsForMonthly(): Promise<ClaimForMonthly[]> {
 
   let query = supabase
     .from("claims")
-    .select("id, status, completion_date, appointment_start");
+    .select("id, status, completion_date, appointment_start")
+    .limit(100000); // Remove default 1000 row limit
 
   // Apply role-based scoping
   query = authz.scopedClaimsQuery(query);

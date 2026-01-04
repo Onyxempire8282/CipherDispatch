@@ -56,7 +56,8 @@ async function fetchCompletedClaimsForValue(): Promise<
     .from("claims")
     .select("id, firm_name, status, file_total, pay_amount, completion_date")
     .eq("status", "COMPLETED")
-    .not("firm_name", "is", null);
+    .not("firm_name", "is", null)
+    .limit(100000); // Remove default 1000 row limit
 
   if (error) {
     console.error("Error fetching completed claims for value analysis:", error);

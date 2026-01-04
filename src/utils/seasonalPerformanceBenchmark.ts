@@ -77,7 +77,8 @@ export async function generateSeasonalPerformanceBenchmarkReport(
       .select("completion_date")
       .eq("status", "COMPLETED")
       .not("completion_date", "is", null)
-      .order("completion_date");
+      .order("completion_date")
+      .limit(100000); // Remove default 1000 row limit
 
     // Apply role-based scoping
     if (authz.role === "appraiser" && authz.userId) {

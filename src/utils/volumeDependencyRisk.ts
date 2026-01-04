@@ -49,7 +49,8 @@ async function fetchCompletedClaimsForVolume(): Promise<ClaimForVolume[]> {
     .from("claims")
     .select("id, firm_name, status, completion_date")
     .eq("status", "COMPLETED")
-    .not("firm_name", "is", null);
+    .not("firm_name", "is", null)
+    .limit(100000); // Remove default 1000 row limit
 
   if (error) {
     console.error(
