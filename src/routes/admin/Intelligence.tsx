@@ -89,6 +89,22 @@ const STORAGE_KEYS = {
   ACTIVITY_FIRMS: "intelligence_activity_firms",
 } as const;
 
+// Month names constant
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
 export default function Intelligence() {
   const [firmReliability, setFirmReliability] =
     useState<FirmReliabilityReport | null>(null);
@@ -588,22 +604,6 @@ export default function Intelligence() {
 
   // Log the seasonality profile for debugging
   console.log("seasonalityProfile data:", seasonalityProfile);
-
-  // Month names constant
-  const MONTH_NAMES = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
 
   // Chart: Business Seasonality Wave – Avg Claims by Month
   const businessSeasonalityChart =
