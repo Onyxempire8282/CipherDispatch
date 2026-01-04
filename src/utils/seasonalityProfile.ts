@@ -95,6 +95,12 @@ export async function generateSeasonalityProfileReport(
 
   console.log(`✅ Found ${claims.length} live completed claims`);
 
+  // Debug: Show date range of fetched claims
+  if (claims.length > 0) {
+    const dates = claims.map(c => c.completion_date).sort();
+    console.log(`📅 Date range: ${dates[0]} to ${dates[dates.length - 1]}`);
+  }
+
   // Build raw breakdown from live claims data
   const rawData: RawSeasonalityData[] = [];
   const yearlyData: SeasonalityProfileReport = {};
