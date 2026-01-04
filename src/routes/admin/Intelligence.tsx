@@ -683,7 +683,7 @@ export default function Intelligence() {
         };
 
   // Chart: Seasonal Performance Benchmark
-  const seasonalPerformanceBenchmarkChart = seasonalPerformanceBenchmark?.data
+  const seasonalPerformanceBenchmarkChart = seasonalPerformanceBenchmark?.data && seasonalPerformanceBenchmark.data.length > 0
     ? {
         labels: seasonalPerformanceBenchmark.data.map((d) => d.month),
         datasets: [
@@ -1460,7 +1460,8 @@ export default function Intelligence() {
           )}
 
           {/* Seasonal Performance Benchmark */}
-          {seasonalPerformanceBenchmarkChart && seasonalPerformanceBenchmark?.data?.length > 0 && (
+          {seasonalPerformanceBenchmarkChart &&
+            seasonalPerformanceBenchmark?.data?.length > 0 && (
               <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
                 <h2
                   className="text-xl font-bold mb-4 text-cyan-400 cursor-help"
