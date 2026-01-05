@@ -36,7 +36,8 @@
       "Bash(powershell -Command \"Get-Content src/utils/monthlyHistory.ts | Select-Object -Index 240 | Format-Hex\")",
       "WebFetch(domain:reactjs.org)",
       "WebFetch(domain:legacy.reactjs.org)",
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "WebFetch(domain:onyxempire8282.github.io)"
     ]
   }
 }
