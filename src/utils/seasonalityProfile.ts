@@ -93,7 +93,7 @@ export async function generateSeasonalityProfileReport(
     };
   }
 
-  console.log(`✅ Found ${claims.length} live completed claims`);
+  console.log(`✅ Found ${claims.length} live completed claims [v2]`);
 
   // Debug: Show date range of fetched claims
   if (claims.length > 0) {
