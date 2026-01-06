@@ -103,13 +103,25 @@ export default function AdminClaims() {
 
       // Apply strict live-only filtering
       // Only show claims created on or after Dec 1, 2025
-      query = query.gte('created_at', '2025-12-01');
+      query = query.gte('created_at', '2025-12-01T00:00:00.000Z');
 
       // Only show active statuses: null/unassigned, SCHEDULED, IN_PROGRESS, COMPLETED
       // This excludes all CANCELED claims
       query = query.or("status.is.null,status.in.(SCHEDULED,IN_PROGRESS,COMPLETED)");
 
       const { data, error: queryError } = await query;
+
+      // Debug logging to verify filter is working
+      console.log('📊 Claims loaded:', data?.length || 0);
+      if (data && data.length > 0) {
+        const dates = data.map(c => c.created_at).filter(d => d).sort();
+        console.log('📅 Date range:', dates[0], 'to', dates[dates.length - 1]);
+        const oldClaims = data.filter(c => c.created_at && c.created_at < '2025-12-01');
+        if (oldClaims.length > 0) {
+          console.error('⚠️ WARNING: Found', oldClaims.length, 'claims before Dec 1 2025!');
+          console.error('First old claim:', oldClaims[0]);
+        }
+      }
 
       if (queryError) {
         console.error("Error loading claims:", queryError);
