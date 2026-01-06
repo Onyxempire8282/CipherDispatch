@@ -101,14 +101,13 @@ export default function AdminClaims() {
       // Apply role-based scoping
       query = authz.scopedClaimsQuery(query);
 
-      // Apply archived filtering - only show CANCELED claims when archived view is active
-      if (showArchived) {
-        // Show only canceled claims in "archived" view
-        query = query.eq("status", "CANCELED");
-      } else {
-        // Show all active claims (COMPLETED is in active view but can be filtered separately)
-        query = query.or("status.is.null,status.in.(SCHEDULED,IN_PROGRESS,COMPLETED)");
-      }
+      // Apply strict live-only filtering
+      // Only show claims created on or after Dec 1, 2025
+      query = query.gte('created_at', '2025-12-01');
+
+      // Only show active statuses: null/unassigned, SCHEDULED, IN_PROGRESS, COMPLETED
+      // This excludes all CANCELED claims
+      query = query.or("status.is.null,status.in.(SCHEDULED,IN_PROGRESS,COMPLETED)");
 
       const { data, error: queryError } = await query;
 

@@ -38,7 +38,11 @@
       "WebFetch(domain:legacy.reactjs.org)",
       "Bash(xargs:*)",
       "WebFetch(domain:onyxempire8282.github.io)",
-      "Bash(git remote get-url:*)"
+      "Bash(git remote get-url:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(git fetch:*)",
+      "WebSearch",
+      "Bash(npx tsc:*)"
     ]
   }
 }

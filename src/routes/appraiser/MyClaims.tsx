@@ -86,6 +86,10 @@ export default function MyClaims() {
 
       // Apply role-based scoping
       query = authz.scopedClaimsQuery(query);
+
+      // Filter to only show claims created on or after Dec 1, 2025
+      query = query.gte('created_at', '2025-12-01');
+
       query = query.order("appointment_start");
 
       const { data, error: queryError } = await query;
