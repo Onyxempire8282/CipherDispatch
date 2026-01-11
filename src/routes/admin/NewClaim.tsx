@@ -15,6 +15,8 @@ type Claim = {
   vehicle_model?: string;
   vehicle_year?: number;
   vin?: string;
+  date_of_loss?: string;
+  insurance_company?: string;
   address_line1: string;
   address_line2?: string;
   city?: string;
@@ -298,6 +300,30 @@ export default function NewClaim() {
           placeholder="Model"
           value={form.vehicle_model || ""}
           onChange={(e) => setForm({ ...form, vehicle_model: e.target.value })}
+          style={inputStyle}
+        />
+        <div>
+          <label
+            style={{
+              display: "block",
+              marginBottom: 4,
+              fontWeight: "bold",
+              color: "#e2e8f0",
+            }}
+          >
+            Date of Loss
+          </label>
+          <input
+            type="date"
+            value={form.date_of_loss || ""}
+            onChange={(e) => setForm({ ...form, date_of_loss: e.target.value })}
+            style={inputStyle}
+          />
+        </div>
+        <input
+          placeholder="Insurance Company"
+          value={form.insurance_company || ""}
+          onChange={(e) => setForm({ ...form, insurance_company: e.target.value })}
           style={inputStyle}
         />
 

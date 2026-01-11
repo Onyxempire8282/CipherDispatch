@@ -35,6 +35,8 @@ export default function ClaimDetail() {
   const [editVehicleMake, setEditVehicleMake] = useState("");
   const [editVehicleModel, setEditVehicleModel] = useState("");
   const [editVin, setEditVin] = useState("");
+  const [editDateOfLoss, setEditDateOfLoss] = useState("");
+  const [editInsuranceCompany, setEditInsuranceCompany] = useState("");
   const [editNotes, setEditNotes] = useState("");
   const [editAddressLine1, setEditAddressLine1] = useState("");
   const [editAddressLine2, setEditAddressLine2] = useState("");
@@ -137,6 +139,8 @@ export default function ClaimDetail() {
     setEditVehicleMake(claim?.vehicle_make || "");
     setEditVehicleModel(claim?.vehicle_model || "");
     setEditVin(claim?.vin || "");
+    setEditDateOfLoss(claim?.date_of_loss || "");
+    setEditInsuranceCompany(claim?.insurance_company || "");
     setEditNotes(claim?.notes || "");
     setEditAddressLine1(claim?.address_line1 || "");
     setEditAddressLine2(claim?.address_line2 || "");
@@ -184,6 +188,8 @@ export default function ClaimDetail() {
       vehicle_make: editVehicleMake,
       vehicle_model: editVehicleModel,
       vin: editVin,
+      date_of_loss: editDateOfLoss || null,
+      insurance_company: editInsuranceCompany || null,
       notes: editNotes,
       address_line1: editAddressLine1,
       address_line2: editAddressLine2,
@@ -1144,6 +1150,61 @@ export default function ClaimDetail() {
                   />
                 ) : claim.vehicle_model ? (
                   <div style={valueStyle}>{claim.vehicle_model}</div>
+                ) : (
+                  <div style={{ ...valueStyle, color: "#9ca3af", fontStyle: "italic" }}>-</div>
+                )}
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px", marginTop: "16px" }}>
+              <div>
+                <div style={labelStyle}>Date of Loss</div>
+                {isEditing ? (
+                  <input
+                    type="date"
+                    value={editDateOfLoss}
+                    onChange={(e) => setEditDateOfLoss(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "12px 16px",
+                      fontSize: "17px",
+                      border: "2px solid #6b7280",
+                      borderRadius: "8px",
+                      background: "#475569",
+                      color: "#ffffff",
+                      transition: "border-color 0.2s",
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = "#667eea"}
+                    onBlur={(e) => e.target.style.borderColor = "#6b7280"}
+                  />
+                ) : claim.date_of_loss ? (
+                  <div style={valueStyle}>{new Date(claim.date_of_loss).toLocaleDateString()}</div>
+                ) : (
+                  <div style={{ ...valueStyle, color: "#9ca3af", fontStyle: "italic" }}>-</div>
+                )}
+              </div>
+              <div>
+                <div style={labelStyle}>Insurance Company</div>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editInsuranceCompany}
+                    onChange={(e) => setEditInsuranceCompany(e.target.value)}
+                    placeholder="Insurance Company"
+                    style={{
+                      width: "100%",
+                      padding: "12px 16px",
+                      fontSize: "17px",
+                      border: "2px solid #6b7280",
+                      borderRadius: "8px",
+                      background: "#475569",
+                      color: "#ffffff",
+                      transition: "border-color 0.2s",
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = "#667eea"}
+                    onBlur={(e) => e.target.style.borderColor = "#6b7280"}
+                  />
+                ) : claim.insurance_company ? (
+                  <div style={valueStyle}>{claim.insurance_company}</div>
                 ) : (
                   <div style={{ ...valueStyle, color: "#9ca3af", fontStyle: "italic" }}>-</div>
                 )}
