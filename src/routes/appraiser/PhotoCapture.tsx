@@ -103,6 +103,9 @@ export default function PhotoCapture() {
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        videoRef.current.muted = true;
+        videoRef.current.playsInline = true;
+        await videoRef.current.play(); // Explicit play() for iOS Safari
       }
       setCameraActive(true);
     } catch (error) {
@@ -496,6 +499,7 @@ export default function PhotoCapture() {
                   ref={videoRef}
                   autoPlay
                   playsInline
+                  muted
                   style={{ width: '100%', borderRadius: 8, background: '#000' }}
                 />
                 <div style={{
