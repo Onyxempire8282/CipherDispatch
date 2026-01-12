@@ -22,6 +22,8 @@ export default function PhotoCapture() {
   const [cameraActive, setCameraActive] = useState(false);
   const [uploadStatus, setUploadStatus] = useState({ allComplete: true, uploading: 0, failed: 0, pending: 0 });
   const [showLabelPrompt, setShowLabelPrompt] = useState(false);
+  const [isLandscape, setIsLandscape] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -90,8 +92,21 @@ export default function PhotoCapture() {
     });
   };
 
+  const checkVideoOrientation = () => {
+    if (videoRef.current) {
+      const width = videoRef.current.videoWidth;
+      const height = videoRef.current.videoHeight;
+      const landscape = width > height;
+      setIsLandscape(landscape);
+      setVideoReady(true);
+    }
+  };
+
   const startCamera = async () => {
     try {
+      setVideoReady(false);
+      setIsLandscape(false);
+
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: 'environment',
@@ -105,6 +120,12 @@ export default function PhotoCapture() {
         videoRef.current.srcObject = stream;
         videoRef.current.muted = true;
         videoRef.current.playsInline = true;
+
+        // Check orientation when video metadata loads
+        videoRef.current.onloadedmetadata = () => {
+          checkVideoOrientation();
+        };
+
         await videoRef.current.play(); // Explicit play() for iOS Safari
       }
       setCameraActive(true);
@@ -119,15 +140,22 @@ export default function PhotoCapture() {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
+    if (videoRef.current) {
+      videoRef.current.onloadedmetadata = null;
+    }
     setCameraActive(false);
+    setVideoReady(false);
+    setIsLandscape(false);
   };
 
   const capturePhoto = async () => {
     if (!videoRef.current || !streamRef.current) return;
 
-    // Check orientation
-    const orientation = screen.orientation?.type || 'portrait-primary';
-    if (orientation.includes('portrait')) {
+    // Check orientation based on actual video dimensions
+    const videoWidth = videoRef.current.videoWidth;
+    const videoHeight = videoRef.current.videoHeight;
+
+    if (videoWidth <= videoHeight) {
       alert('⚠️ LANDSCAPE MODE REQUIRED\n\nPlease rotate your device to landscape orientation to capture photos.');
       return;
     }
@@ -502,17 +530,32 @@ export default function PhotoCapture() {
                   muted
                   style={{ width: '100%', borderRadius: 8, background: '#000' }}
                 />
-                <div style={{
-                  padding: 12,
-                  background: '#f59e0b',
-                  borderRadius: 6,
-                  marginTop: 10,
-                  color: '#1a202c',
-                  fontWeight: 'bold',
-                  textAlign: 'center'
-                }}>
-                  ⚠️ LANDSCAPE MODE REQUIRED - Rotate device if needed
-                </div>
+                {videoReady && !isLandscape && (
+                  <div style={{
+                    padding: 12,
+                    background: '#f59e0b',
+                    borderRadius: 6,
+                    marginTop: 10,
+                    color: '#1a202c',
+                    fontWeight: 'bold',
+                    textAlign: 'center'
+                  }}>
+                    ⚠️ LANDSCAPE MODE REQUIRED - Rotate your device to landscape
+                  </div>
+                )}
+                {videoReady && isLandscape && (
+                  <div style={{
+                    padding: 12,
+                    background: '#10b981',
+                    borderRadius: 6,
+                    marginTop: 10,
+                    color: 'white',
+                    fontWeight: 'bold',
+                    textAlign: 'center'
+                  }}>
+                    ✓ Ready to capture - Device is in landscape mode
+                  </div>
+                )}
               </div>
             )}
 
@@ -563,16 +606,18 @@ export default function PhotoCapture() {
                 <>
                   <button
                     onClick={capturePhoto}
+                    disabled={!videoReady || !isLandscape}
                     style={{
                       flex: 1,
                       padding: 15,
-                      background: '#10b981',
+                      background: (videoReady && isLandscape) ? '#10b981' : '#6b7280',
                       color: 'white',
                       border: 'none',
                       borderRadius: 8,
                       fontSize: 18,
                       fontWeight: 'bold',
-                      cursor: 'pointer'
+                      cursor: (videoReady && isLandscape) ? 'pointer' : 'not-allowed',
+                      opacity: (videoReady && isLandscape) ? 1 : 0.6
                     }}
                   >
                     ✓ Take Photo
