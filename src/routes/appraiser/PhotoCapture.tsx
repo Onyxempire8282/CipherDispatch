@@ -106,15 +106,22 @@ export default function PhotoCapture() {
     });
   };
 
+  // NOTE: iOS Safari reports unreliable video dimensions for orientation.
+  // UI-level landscape detection must use window dimensions.
   const checkVideoOrientation = () => {
     if (videoRef.current) {
       const width = videoRef.current.videoWidth;
       const height = videoRef.current.videoHeight;
-      const landscape = width > height;
-      setIsLandscape(landscape);
-      setVideoReady(true);
+      if (width > 0 && height > 0) {
+        setVideoReady(true);
+        setIsLandscape(window.innerWidth > window.innerHeight);
+      }
     }
   };
+
+  // ⚠️ iOS Safari requires video element to be mounted
+  // BEFORE attaching MediaStream and calling play().
+  // Do NOT reorder this logic.
 
   const startCamera = async () => {
     try {
