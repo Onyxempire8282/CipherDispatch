@@ -533,6 +533,34 @@ export default function ClaimDetail() {
             </p>
           </div>
           <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+            {/* Guided Photo Capture Button */}
+            <Link
+              to={`/appraiser/claim/${id}/photos`}
+              style={{
+                padding: "10px 20px",
+                background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+                color: "white",
+                textDecoration: "none",
+                borderRadius: "8px",
+                fontWeight: "600",
+                fontSize: "15px",
+                cursor: "pointer",
+                transition: "all 0.2s",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                display: "inline-block",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-1px)";
+                e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.3)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
+              }}
+            >
+              📷 Guided Photo Capture
+            </Link>
+
             {(() => {
               const authz = getSupabaseAuthz();
               const userInfo = authz?.getCurrentUser();
