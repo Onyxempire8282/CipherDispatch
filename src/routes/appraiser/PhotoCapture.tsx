@@ -117,16 +117,38 @@ export default function PhotoCapture() {
 
       streamRef.current = stream;
       if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.muted = true;
-        videoRef.current.playsInline = true;
+        const video = videoRef.current;
 
-        // Check orientation when video metadata loads
-        videoRef.current.onloadedmetadata = () => {
+        // Attach event handler BEFORE setting srcObject
+        video.onloadedmetadata = () => {
           checkVideoOrientation();
         };
 
-        await videoRef.current.play(); // Explicit play() for iOS Safari
+        // Also check on playing event as fallback for iOS
+        video.onplaying = () => {
+          if (!videoReady) {
+            checkVideoOrientation();
+          }
+        };
+
+        // Set required properties for iOS Safari
+        video.muted = true;
+        video.playsInline = true;
+        video.srcObject = stream;
+
+        // Explicit play() call for iOS Safari
+        try {
+          await video.play();
+        } catch (playError) {
+          console.error('Video play error:', playError);
+        }
+
+        // Final fallback: check after a short delay if still not ready
+        setTimeout(() => {
+          if (!videoReady && video.videoWidth > 0) {
+            checkVideoOrientation();
+          }
+        }, 500);
       }
       setCameraActive(true);
     } catch (error) {
@@ -142,6 +164,7 @@ export default function PhotoCapture() {
     }
     if (videoRef.current) {
       videoRef.current.onloadedmetadata = null;
+      videoRef.current.onplaying = null;
     }
     setCameraActive(false);
     setVideoReady(false);
