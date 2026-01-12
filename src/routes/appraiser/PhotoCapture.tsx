@@ -41,6 +41,7 @@ export default function PhotoCapture() {
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const orientationHandlerRef = useRef<(() => void) | null>(null);
 
   // Store claim ID and inspection type globally for upload manager
   useEffect(() => {
@@ -162,6 +163,14 @@ export default function PhotoCapture() {
             }
           };
 
+          // Listen for device rotation
+          const handleOrientationChange = () => {
+            setIsLandscape(window.innerWidth > window.innerHeight);
+          };
+          orientationHandlerRef.current = handleOrientationChange;
+          window.addEventListener("resize", handleOrientationChange);
+          window.addEventListener("orientationchange", handleOrientationChange);
+
           // Attach stream and force playback
           video.srcObject = stream;
           await video.play();
@@ -190,6 +199,11 @@ export default function PhotoCapture() {
     if (videoRef.current) {
       videoRef.current.onloadedmetadata = null;
       videoRef.current.onplaying = null;
+    }
+    if (orientationHandlerRef.current) {
+      window.removeEventListener("resize", orientationHandlerRef.current);
+      window.removeEventListener("orientationchange", orientationHandlerRef.current);
+      orientationHandlerRef.current = null;
     }
     setCameraActive(false);
     setVideoReady(false);
