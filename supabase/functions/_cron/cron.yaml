@@ -1,0 +1,5 @@
+- name: cleanup-old-photos
+  schedule: "0 2 * * *" # daily at 2 AM UTC
+  function: cleanup-old-photos
+  headers:
+    x-cron-secret: RTa14YlgS7rxQokzFGd0c8PtIh2fMnLV3HwDWbi9smK5pey6

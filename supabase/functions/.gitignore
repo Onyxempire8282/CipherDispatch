@@ -1,0 +1,16 @@
+# Deno
+.deno/
+deno.lock
+
+# Environment files (NEVER commit these)
+.env
+.env.local
+.env.*.local
+
+# Editor
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
