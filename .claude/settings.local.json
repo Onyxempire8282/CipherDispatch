@@ -42,7 +42,9 @@
       "WebFetch(domain:github.com)",
       "Bash(git fetch:*)",
       "WebSearch",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(supabase --version:*)",
+      "Bash(npx supabase:*)"
     ]
   }
 }

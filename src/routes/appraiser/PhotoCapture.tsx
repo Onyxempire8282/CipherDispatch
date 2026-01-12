@@ -116,40 +116,43 @@ export default function PhotoCapture() {
       });
 
       streamRef.current = stream;
-      if (videoRef.current) {
-        const video = videoRef.current;
 
-        // Attach event handler BEFORE setting srcObject
-        video.onloadedmetadata = () => {
-          checkVideoOrientation();
-        };
+      // Wait for DOM to be fully mounted before attaching stream
+      requestAnimationFrame(() => {
+        if (videoRef.current) {
+          const video = videoRef.current;
 
-        // Also check on playing event as fallback for iOS
-        video.onplaying = () => {
-          if (!videoReady) {
+          // Attach event handler BEFORE setting srcObject
+          video.onloadedmetadata = () => {
             checkVideoOrientation();
-          }
-        };
+          };
 
-        // Set required properties for iOS Safari
-        video.muted = true;
-        video.playsInline = true;
-        video.srcObject = stream;
+          // Also check on playing event as fallback for iOS
+          video.onplaying = () => {
+            if (!videoReady) {
+              checkVideoOrientation();
+            }
+          };
 
-        // Explicit play() call for iOS Safari
-        try {
-          await video.play();
-        } catch (playError) {
-          console.error('Video play error:', playError);
+          // Set required properties for iOS Safari
+          video.muted = true;
+          video.playsInline = true;
+          video.srcObject = stream;
+
+          // Explicit play() call for iOS Safari
+          video.play().catch(playError => {
+            console.error('Video play error:', playError);
+          });
+
+          // Final fallback: check after a short delay if still not ready
+          setTimeout(() => {
+            if (!videoReady && video.videoWidth > 0) {
+              checkVideoOrientation();
+            }
+          }, 500);
         }
+      });
 
-        // Final fallback: check after a short delay if still not ready
-        setTimeout(() => {
-          if (!videoReady && video.videoWidth > 0) {
-            checkVideoOrientation();
-          }
-        }, 500);
-      }
       setCameraActive(true);
     } catch (error) {
       console.error('Camera error:', error);
