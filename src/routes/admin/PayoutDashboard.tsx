@@ -50,6 +50,7 @@ export default function PayoutDashboard() {
       const { data: claimsData, error } = await supabase
         .from('claims')
         .select('id, firm_name, completion_date, appointment_start, file_total, pay_amount, status')
+        .is('archived_at', null)
         .or('status.eq.COMPLETED,status.eq.SCHEDULED,status.eq.IN_PROGRESS')
         .or('completion_date.not.is.null,appointment_start.not.is.null');
 
@@ -78,6 +79,7 @@ export default function PayoutDashboard() {
       const { data: claimDetails, error } = await supabase
         .from('claims')
         .select('id, claim_number, customer_name, firm_name, pay_amount, file_total, status, appointment_start, completion_date')
+        .is('archived_at', null)
         .in('id', payout.claimIds);
 
       if (error) throw error;
@@ -127,6 +129,7 @@ export default function PayoutDashboard() {
         const { data: claimDetails } = await supabase
           .from('claims')
           .select('id, claim_number, customer_name, firm_name, pay_amount, file_total, status, appointment_start, completion_date')
+          .is('archived_at', null)
           .in('id', selectedPayout.claimIds);
         setPayoutClaims(claimDetails || []);
       }

@@ -109,17 +109,20 @@ export class SupabaseAuthz {
       userId: this.currentUser?.id,
     });
 
+    // Always exclude archived claims from UI queries
+    let query = baseQuery.is("archived_at", null);
+
     if (this.isAdmin) {
-      // Admins can see all claims
-      console.log("Admin access: returning unfiltered query");
-      return baseQuery;
+      // Admins can see all active claims
+      console.log("Admin access: returning active claims only");
+      return query;
     } else {
-      // Appraisers can only see claims assigned to them
+      // Appraisers can only see active claims assigned to them
       console.log(
         "Appraiser access: filtering by assigned_to =",
         this.currentUser.id
       );
-      return baseQuery.eq("assigned_to", this.currentUser.id);
+      return query.eq("assigned_to", this.currentUser.id);
     }
   }
 
