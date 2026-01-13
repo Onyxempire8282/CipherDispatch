@@ -232,33 +232,12 @@ export default function PhotoCapture() {
   const capturePhoto = async () => {
     if (!videoRef.current || !streamRef.current) return;
 
-    // Check orientation based on actual video dimensions
-    const videoWidth = videoRef.current.videoWidth;
-    const videoHeight = videoRef.current.videoHeight;
-
-    if (videoWidth <= videoHeight) {
-      alert(
-        "⚠️ LANDSCAPE MODE REQUIRED\n\nPlease rotate your device to landscape orientation to capture photos."
-      );
-      return;
-    }
-
     try {
       const videoTrack = streamRef.current.getVideoTracks()[0];
       const imageCapture = new ImageCapture(videoTrack);
 
       const blob = await imageCapture.takePhoto();
 
-      // Validate dimensions
-      const img = await createImageBitmap(blob);
-      if (img.width <= img.height) {
-        alert(
-          "⚠️ LANDSCAPE MODE REQUIRED\n\nPhoto must be wider than it is tall. Please rotate your device."
-        );
-        return;
-      }
-
-      // Haptic feedback
       if (navigator.vibrate) {
         navigator.vibrate(30);
       }
@@ -268,7 +247,6 @@ export default function PhotoCapture() {
 
       if (!currentSlot) return;
 
-      // Create local preview URL
       const url = URL.createObjectURL(blob);
       const photoId = crypto.randomUUID();
 
@@ -280,7 +258,6 @@ export default function PhotoCapture() {
         uploaded: false,
       };
 
-      // Update state
       setState((prev) => {
         const newPhotos = new Map(prev.captured_photos);
         const existing = newPhotos.get(currentSlot.id) || [];
@@ -288,20 +265,16 @@ export default function PhotoCapture() {
         return { ...prev, captured_photos: newPhotos };
       });
 
-      // Upload in background
       uploadManager.addPhoto(currentSlot.id, blob);
 
       stopCamera();
 
-      // Auto-advance if single photo slot
-      if (currentSlot.max_photos === 1) {
-        setTimeout(() => {
-          const nextIndex = currentSlotIndex + 1;
-          if (nextIndex < activeSlots.length) {
-            setCurrentSlotIndex(nextIndex);
-          }
-        }, 500);
-      }
+      setTimeout(() => {
+        const nextIndex = currentSlotIndex + 1;
+        if (nextIndex < activeSlots.length) {
+          setCurrentSlotIndex(nextIndex);
+        }
+      }, 300);
     } catch (error) {
       console.error("Capture error:", error);
       alert("Failed to capture photo. Please try again.");
