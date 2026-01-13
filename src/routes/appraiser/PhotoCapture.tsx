@@ -785,24 +785,47 @@ export default function PhotoCapture() {
             inset: 0,
             zIndex: 9999,
             background: '#000',
-            display: 'flex',
-            flexDirection: 'column',
           }}
         >
-          {/* Video Preview Wrapper */}
-          <div style={{ flex: 1, position: 'relative' }}>
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-              }}
-            />
-          </div>
+          {/* Video fills entire viewport */}
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+            }}
+          />
+
+          {/* Next Photo Instruction Banner */}
+          {(() => {
+            const activeSlots = getActiveSlots(state);
+            const nextIndex = currentSlotIndex + 1;
+            const nextSlot = activeSlots[nextIndex];
+
+            return nextSlot ? (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 'max(20px, env(safe-area-inset-top))',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  padding: '8px 16px',
+                  background: 'rgba(45, 55, 72, 0.9)',
+                  borderRadius: 8,
+                  color: '#e2e8f0',
+                  fontSize: 13,
+                  maxWidth: '80%',
+                  textAlign: 'center',
+                }}
+              >
+                Next: {nextSlot.label}
+              </div>
+            ) : null;
+          })()}
 
           {/* Orientation Warning Overlay */}
           {videoReady && !isLandscape && (
@@ -828,89 +851,59 @@ export default function PhotoCapture() {
             </div>
           )}
 
-          {/* Bottom Control Bar */}
-          <div
+          {/* Cancel Button - Top Right */}
+          <button
+            onClick={stopCamera}
             style={{
-              position: 'fixed',
-              bottom: 0,
-              left: 0,
-              right: 0,
+              position: 'absolute',
+              top: 'max(20px, env(safe-area-inset-top))',
+              right: 20,
+              width: 44,
+              height: 44,
+              background: 'rgba(0, 0, 0, 0.6)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '50%',
+              fontSize: 24,
+              cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '24px 28px',
-              minHeight: 90,
-              background: 'linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.7))',
-              gap: 16,
+              justifyContent: 'center',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.4)',
             }}
           >
-            {/* Cancel Button */}
-            <button
-              onClick={stopCamera}
-              style={{
-                padding: '14px 24px',
-                background: '#ef4444',
-                color: 'white',
-                border: 'none',
-                borderRadius: 8,
-                fontSize: 16,
-                fontWeight: '600',
-                cursor: 'pointer',
-                minWidth: 100,
-              }}
-            >
-              Cancel
-            </button>
+            ✕
+          </button>
 
-            {/* Take Photo Button */}
-            <button
-              onClick={capturePhoto}
-              disabled={!videoReady || !isLandscape}
-              style={{
-                flex: 1,
-                padding: '20px 32px',
-                background: videoReady && isLandscape
-                  ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-                  : '#6b7280',
-                color: 'white',
-                border: 'none',
-                borderRadius: 12,
-                fontSize: 20,
-                fontWeight: 'bold',
-                cursor: videoReady && isLandscape ? 'pointer' : 'not-allowed',
-                opacity: videoReady && isLandscape ? 1 : 0.6,
-                boxShadow: videoReady && isLandscape
-                  ? '0 4px 12px rgba(16, 185, 129, 0.4)'
-                  : 'none',
-              }}
-            >
-              {!videoReady
-                ? 'Starting camera…'
-                : !isLandscape
-                  ? 'Rotate device'
-                  : '📷 TAKE PHOTO'}
-            </button>
-          </div>
-
-          {/* Ready Indicator */}
-          {videoReady && isLandscape && (
-            <div
-              style={{
-                position: 'absolute',
-                top: 20,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                padding: '10px 20px',
-                background: 'rgba(16, 185, 129, 0.9)',
-                borderRadius: 8,
-                color: 'white',
-                fontWeight: 'bold',
-                fontSize: 14,
-              }}
-            >
-              ✓ Ready to capture
-            </div>
-          )}
+          {/* Circular Shutter Button - Bottom Right */}
+          <button
+            onClick={capturePhoto}
+            disabled={!videoReady || !isLandscape}
+            style={{
+              position: 'absolute',
+              bottom: 'max(30px, env(safe-area-inset-bottom))',
+              right: 30,
+              width: 80,
+              height: 80,
+              background: videoReady && isLandscape
+                ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                : 'rgba(107, 114, 128, 0.8)',
+              color: 'white',
+              border: '4px solid white',
+              borderRadius: '50%',
+              fontSize: 32,
+              cursor: videoReady && isLandscape ? 'pointer' : 'not-allowed',
+              opacity: videoReady && isLandscape ? 1 : 0.6,
+              boxShadow: videoReady && isLandscape
+                ? '0 6px 20px rgba(16, 185, 129, 0.6)'
+                : '0 4px 12px rgba(0, 0, 0, 0.4)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            📷
+          </button>
         </div>
       )}
     </div>
