@@ -78,6 +78,25 @@ export default function PhotoCapture() {
     checkExisting();
   }, [claimId]);
 
+  // Lock body scroll when camera is active
+  useEffect(() => {
+    if (cameraActive) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+    };
+  }, [cameraActive]);
+
   const selectInspectionType = (type: InspectionType) => {
     setState((prev) => ({ ...prev, inspection_type: type }));
 
@@ -237,6 +256,11 @@ export default function PhotoCapture() {
           "⚠️ LANDSCAPE MODE REQUIRED\n\nPhoto must be wider than it is tall. Please rotate your device."
         );
         return;
+      }
+
+      // Haptic feedback
+      if (navigator.vibrate) {
+        navigator.vibrate(30);
       }
 
       const activeSlots = getActiveSlots(state);
@@ -644,52 +668,9 @@ export default function PhotoCapture() {
               </div>
             ))}
 
-            {/* Camera view */}
-            {cameraActive && (
-              <div style={{ marginBottom: 15 }}>
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  style={{ width: "100%", borderRadius: 8, background: "#000" }}
-                />
-                {videoReady && !isLandscape && (
-                  <div
-                    style={{
-                      padding: 12,
-                      background: "#f59e0b",
-                      borderRadius: 6,
-                      marginTop: 10,
-                      color: "#1a202c",
-                      fontWeight: "bold",
-                      textAlign: "center",
-                    }}
-                  >
-                    ⚠️ LANDSCAPE MODE REQUIRED - Rotate your device to landscape
-                  </div>
-                )}
-                {videoReady && isLandscape && (
-                  <div
-                    style={{
-                      padding: 12,
-                      background: "#10b981",
-                      borderRadius: 6,
-                      marginTop: 10,
-                      color: "white",
-                      fontWeight: "bold",
-                      textAlign: "center",
-                    }}
-                  >
-                    ✓ Ready to capture - Device is in landscape mode
-                  </div>
-                )}
-              </div>
-            )}
-
             {/* Action buttons */}
             <div style={{ display: "flex", gap: 10 }}>
-              {!cameraActive ? (
+              {!cameraActive && (
                 <>
                   <button
                     onClick={startCamera}
@@ -730,43 +711,6 @@ export default function PhotoCapture() {
                         Next →
                       </button>
                     )}
-                </>
-              ) : (
-                <>
-                  <button
-                    onClick={capturePhoto}
-                    disabled={!videoReady || !isLandscape}
-                    style={{
-                      flex: 1,
-                      padding: 15,
-                      background:
-                        videoReady && isLandscape ? "#10b981" : "#6b7280",
-                      color: "white",
-                      border: "none",
-                      borderRadius: 8,
-                      fontSize: 18,
-                      fontWeight: "bold",
-                      cursor:
-                        videoReady && isLandscape ? "pointer" : "not-allowed",
-                      opacity: videoReady && isLandscape ? 1 : 0.6,
-                    }}
-                  >
-                    ✓ Take Photo
-                  </button>
-                  <button
-                    onClick={stopCamera}
-                    style={{
-                      padding: 15,
-                      background: "#ef4444",
-                      color: "white",
-                      border: "none",
-                      borderRadius: 8,
-                      fontWeight: "bold",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Cancel
-                  </button>
                 </>
               )}
             </div>
@@ -859,6 +803,143 @@ export default function PhotoCapture() {
           ← Back to Claim
         </button>
       </div>
+
+      {/* Full-Screen Camera Capture Mode */}
+      {cameraActive && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            background: '#000',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          {/* Video Preview Wrapper */}
+          <div style={{ flex: 1, position: 'relative' }}>
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+              }}
+            />
+          </div>
+
+          {/* Orientation Warning Overlay */}
+          {videoReady && !isLandscape && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                padding: 24,
+                background: 'rgba(245, 158, 11, 0.95)',
+                borderRadius: 12,
+                color: '#1a202c',
+                fontWeight: 'bold',
+                fontSize: 18,
+                textAlign: 'center',
+                maxWidth: '80%',
+              }}
+            >
+              ⚠️ LANDSCAPE MODE REQUIRED
+              <br />
+              Rotate your device to landscape
+            </div>
+          )}
+
+          {/* Bottom Control Bar */}
+          <div
+            style={{
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '24px 28px',
+              minHeight: 90,
+              background: 'linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.7))',
+              gap: 16,
+            }}
+          >
+            {/* Cancel Button */}
+            <button
+              onClick={stopCamera}
+              style={{
+                padding: '14px 24px',
+                background: '#ef4444',
+                color: 'white',
+                border: 'none',
+                borderRadius: 8,
+                fontSize: 16,
+                fontWeight: '600',
+                cursor: 'pointer',
+                minWidth: 100,
+              }}
+            >
+              Cancel
+            </button>
+
+            {/* Take Photo Button */}
+            <button
+              onClick={capturePhoto}
+              disabled={!videoReady || !isLandscape}
+              style={{
+                flex: 1,
+                padding: '20px 32px',
+                background: videoReady && isLandscape
+                  ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                  : '#6b7280',
+                color: 'white',
+                border: 'none',
+                borderRadius: 12,
+                fontSize: 20,
+                fontWeight: 'bold',
+                cursor: videoReady && isLandscape ? 'pointer' : 'not-allowed',
+                opacity: videoReady && isLandscape ? 1 : 0.6,
+                boxShadow: videoReady && isLandscape
+                  ? '0 4px 12px rgba(16, 185, 129, 0.4)'
+                  : 'none',
+              }}
+            >
+              {!videoReady
+                ? 'Starting camera…'
+                : !isLandscape
+                  ? 'Rotate device'
+                  : '📷 TAKE PHOTO'}
+            </button>
+          </div>
+
+          {/* Ready Indicator */}
+          {videoReady && isLandscape && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 20,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                padding: '10px 20px',
+                background: 'rgba(16, 185, 129, 0.9)',
+                borderRadius: 8,
+                color: 'white',
+                fontWeight: 'bold',
+                fontSize: 14,
+              }}
+            >
+              ✓ Ready to capture
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
