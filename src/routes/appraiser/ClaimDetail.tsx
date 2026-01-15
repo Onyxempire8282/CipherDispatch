@@ -7,6 +7,8 @@ import { getSupabaseAuthz } from "../../lib/supabaseAuthz";
 import { getFirmColor } from "../../constants/firmColors";
 import { calculateExpectedPayout } from "../../utils/firmFeeConfig";
 import { getPayPeriod } from "../../utils/payoutForecasting";
+import { useIsMobile } from "../../hooks/useIsMobile";
+import MobileClaimDetail from "../../components/claims/MobileClaimDetail";
 import JSZip from "jszip";
 
 export default function ClaimDetail() {
@@ -18,6 +20,9 @@ export default function ClaimDetail() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [isEditing, setIsEditing] = useState(false);
+
+  // Mobile breakpoint detection: <=600px shows MobileClaimDetail
+  const isMobile = useIsMobile();
 
   // Photo viewer state
   const [rotation, setRotation] = useState(0);
@@ -457,6 +462,210 @@ export default function ClaimDetail() {
 
   if (!claim) return null;
 
+  // Calculate auth info for mobile view
+  const authz = getSupabaseAuthz();
+  const userInfo = authz?.getCurrentUser();
+  const isAdmin = userInfo?.role === "admin";
+  const fromCalendar = searchParams.get("from") === "calendar";
+  const backLink = (isAdmin ? "/admin/claims" : "/my-claims") + (fromCalendar ? "?view=calendar" : "");
+
+  // Handle status change for mobile view
+  const handleStatusChange = async (status: string) => {
+    if (status === "DELETE") {
+      deleteClaim();
+      return;
+    }
+    if (status === "CANCELED") {
+      if (confirm("Cancel this claim? This will mark it as CANCELED and remove it from active claims.")) {
+        update({ status: "CANCELED" });
+      }
+      return;
+    }
+    if (status === "COMPLETED") {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const completionDate = `${year}-${month}-${day}T00:00:00Z`;
+      const completedMonth = `${year}-${month}`;
+
+      let expectedPayoutDate = null;
+      if (claim.firm_name) {
+        try {
+          const payPeriod = getPayPeriod(claim.firm_name, now);
+          const payYear = payPeriod.payoutDate.getFullYear();
+          const payMonth = String(payPeriod.payoutDate.getMonth() + 1).padStart(2, '0');
+          const payDay = String(payPeriod.payoutDate.getDate()).padStart(2, '0');
+          expectedPayoutDate = `${payYear}-${payMonth}-${payDay}T00:00:00Z`;
+        } catch (err) {
+          console.warn("Could not calculate expected payout date:", err);
+        }
+      }
+
+      update({
+        status: "COMPLETED",
+        completion_date: completionDate,
+        completed_month: completedMonth,
+        expected_payout_date: expectedPayoutDate,
+        payout_status: "unpaid"
+      });
+      return;
+    }
+    update({ status });
+  };
+
+  // Mobile view: render MobileClaimDetail component
+  if (isMobile) {
+    return (
+      <>
+        <MobileClaimDetail
+          claim={claim}
+          photos={photos}
+          users={users}
+          isAdmin={isAdmin}
+          isEditing={isEditing}
+          backLink={backLink}
+          onStartEditing={startEditing}
+          onSaveEdits={saveEdits}
+          onCancelEdits={cancelEdits}
+          onStatusChange={handleStatusChange}
+          onMarkComplete={markComplete}
+          onPhotoClick={setLightboxIndex}
+          onPhotoCapture={`/appraiser/claim/${id}/photos`}
+        />
+
+        {/* Lightbox Modal - shared between mobile and desktop */}
+        {lightboxIndex !== null && (
+          <div
+            onClick={() => {
+              setLightboxIndex(null);
+              resetViewerState();
+            }}
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: "rgba(0,0,0,0.95)",
+              zIndex: 9999,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexDirection: "column",
+            }}
+          >
+            <button
+              onClick={() => {
+                setLightboxIndex(null);
+                resetViewerState();
+              }}
+              style={{
+                position: "absolute",
+                top: 20,
+                right: 20,
+                background: "white",
+                border: "none",
+                borderRadius: 50,
+                width: 40,
+                height: 40,
+                fontSize: 24,
+                cursor: "pointer",
+                fontWeight: "bold",
+                zIndex: 10000,
+              }}
+            >
+              ×
+            </button>
+
+            <div
+              style={{
+                position: "relative",
+                maxWidth: "90%",
+                maxHeight: "80%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img
+                src={
+                  supabase.storage
+                    .from("claim-photos")
+                    .getPublicUrl(photos[lightboxIndex].storage_path).data
+                    .publicUrl
+                }
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "80vh",
+                  objectFit: "contain",
+                }}
+              />
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                gap: 16,
+                marginTop: 20,
+                alignItems: "center",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLightboxIndex(
+                    lightboxIndex > 0 ? lightboxIndex - 1 : photos.length - 1
+                  );
+                }}
+                style={{
+                  padding: "12px 24px",
+                  background: "#667eea",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 6,
+                  fontSize: 16,
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                }}
+              >
+                ← Prev
+              </button>
+
+              <span style={{ color: "white", fontSize: 16 }}>
+                {lightboxIndex + 1} / {photos.length}
+              </span>
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLightboxIndex(
+                    lightboxIndex < photos.length - 1 ? lightboxIndex + 1 : 0
+                  );
+                }}
+                style={{
+                  padding: "12px 24px",
+                  background: "#667eea",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 6,
+                  fontSize: 16,
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                }}
+              >
+                Next →
+              </button>
+            </div>
+          </div>
+        )}
+      </>
+    );
+  }
+
+  // Desktop view: existing code below
   const openInMaps = () => {
     const q = encodeURIComponent(
       `${claim.address_line1} ${claim.city || ""} ${claim.state || ""} ${
@@ -1439,123 +1648,85 @@ export default function ClaimDetail() {
             </div>
           </div>
 
-          <div style={{ marginBottom: "24px" }}>
-            <div style={labelStyle}>Update Status</div>
-            <select
-              onChange={async (e) => {
-                const value = e.target.value;
-                if (value === "DELETE") {
-                  deleteClaim();
-                } else if (value === "CANCELED") {
-                  if (confirm("Cancel this claim? This will mark it as CANCELED and remove it from active claims.")) {
-                    update({ status: "CANCELED" });
-                  }
-                } else if (value === "COMPLETED") {
-                  // Calculate expected payout date when marking as COMPLETED
-                  const now = new Date();
-                  const year = now.getFullYear();
-                  const month = String(now.getMonth() + 1).padStart(2, '0');
-                  const day = String(now.getDate()).padStart(2, '0');
-                  const completionDate = `${year}-${month}-${day}T00:00:00Z`;
-                  const completedMonth = `${year}-${month}`;
-
-                  let expectedPayoutDate = null;
-                  if (claim.firm_name) {
-                    try {
-                      const payPeriod = getPayPeriod(claim.firm_name, now);
-                      const payYear = payPeriod.payoutDate.getFullYear();
-                      const payMonth = String(payPeriod.payoutDate.getMonth() + 1).padStart(2, '0');
-                      const payDay = String(payPeriod.payoutDate.getDate()).padStart(2, '0');
-                      expectedPayoutDate = `${payYear}-${payMonth}-${payDay}T00:00:00Z`;
-                    } catch (err) {
-                      console.warn("Could not calculate expected payout date:", err);
+          {/*
+            ROLE GATING: Update Status - Admin only
+            Appraisers must NOT see status change controls (view + photo capture only)
+          */}
+          {isAdmin && (
+            <div style={{ marginBottom: "24px" }}>
+              <div style={labelStyle}>Update Status</div>
+              <select
+                onChange={async (e) => {
+                  const value = e.target.value;
+                  if (value === "DELETE") {
+                    deleteClaim();
+                  } else if (value === "CANCELED") {
+                    if (confirm("Cancel this claim? This will mark it as CANCELED and remove it from active claims.")) {
+                      update({ status: "CANCELED" });
                     }
+                  } else if (value === "COMPLETED") {
+                    // Calculate expected payout date when marking as COMPLETED
+                    const now = new Date();
+                    const year = now.getFullYear();
+                    const month = String(now.getMonth() + 1).padStart(2, '0');
+                    const day = String(now.getDate()).padStart(2, '0');
+                    const completionDate = `${year}-${month}-${day}T00:00:00Z`;
+                    const completedMonth = `${year}-${month}`;
+
+                    let expectedPayoutDate = null;
+                    if (claim.firm_name) {
+                      try {
+                        const payPeriod = getPayPeriod(claim.firm_name, now);
+                        const payYear = payPeriod.payoutDate.getFullYear();
+                        const payMonth = String(payPeriod.payoutDate.getMonth() + 1).padStart(2, '0');
+                        const payDay = String(payPeriod.payoutDate.getDate()).padStart(2, '0');
+                        expectedPayoutDate = `${payYear}-${payMonth}-${payDay}T00:00:00Z`;
+                      } catch (err) {
+                        console.warn("Could not calculate expected payout date:", err);
+                      }
+                    }
+
+                    update({
+                      status: "COMPLETED",
+                      completion_date: completionDate,
+                      completed_month: completedMonth,
+                      expected_payout_date: expectedPayoutDate,
+                      payout_status: "unpaid"
+                    });
+                  } else if (value) {
+                    update({ status: value });
                   }
-
-                  update({
-                    status: "COMPLETED",
-                    completion_date: completionDate,
-                    completed_month: completedMonth,
-                    expected_payout_date: expectedPayoutDate,
-                    payout_status: "unpaid"
-                  });
-                } else if (value) {
-                  update({ status: value });
-                }
-                e.target.value = ""; // Reset dropdown
-              }}
-              style={{
-                width: "100%",
-                padding: "12px 16px",
-                fontSize: "17px",
-                border: "2px solid #6b7280",
-                borderRadius: "8px",
-                background: "#475569",
-                color: "#ffffff",
-                cursor: "pointer",
-                fontWeight: "600",
-                transition: "border-color 0.2s",
-              }}
-              onFocus={(e) => e.target.style.borderColor = "#667eea"}
-              onBlur={(e) => e.target.style.borderColor = "#6b7280"}
-            >
-              <option value="">Choose an action...</option>
-              <option value="SCHEDULED">📅 Mark as Scheduled</option>
-              <option value="IN_PROGRESS">🔧 In Progress</option>
-              <option value="COMPLETED">✅ Mark as Complete</option>
-              <option value="CANCELED">❌ Cancel Claim</option>
-              <option value="DELETE" style={{ color: "#ef4444", fontWeight: "bold" }}>
-                🗑️ Permanently Delete Claim
-              </option>
-            </select>
-            <p style={{ fontSize: "14px", color: "#cbd5e1", marginTop: "8px", fontStyle: "italic" }}>
-              ⚠️ Permanent delete cannot be undone. All photos and data will be lost.
-            </p>
-          </div>
-
-          {/* Complete Claim Button for Appraisers */}
-          {(() => {
-            const authz = getSupabaseAuthz();
-            const userInfo = authz?.getCurrentUser();
-            const isAppraiser = userInfo?.role === "appraiser";
-            const hasPhotos = photos.length > 0;
-            const isCompleted = claim.status === "COMPLETED";
-
-            return isAppraiser && hasPhotos && !isCompleted ? (
-              <div style={{ marginTop: "24px", paddingTop: "24px", borderTop: "2px solid #4b5563" }}>
-                <div style={labelStyle}>Ready to Submit?</div>
-                <button
-                  onClick={markComplete}
-                  style={{
-                    width: "100%",
-                    padding: "16px 24px",
-                    background: "linear-gradient(135deg, #4CAF50 0%, #45a049 100%)",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "8px",
-                    fontWeight: "600",
-                    fontSize: "18px",
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                    boxShadow: "0 4px 6px rgba(0,0,0,0.3)",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "translateY(-2px)";
-                    e.currentTarget.style.boxShadow = "0 6px 12px rgba(0,0,0,0.4)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "translateY(0)";
-                    e.currentTarget.style.boxShadow = "0 4px 6px rgba(0,0,0,0.3)";
-                  }}
-                >
-                  ✅ Mark Claim as Complete
-                </button>
-                <p style={{ fontSize: "13px", color: "#cbd5e1", marginTop: "8px", fontStyle: "italic", textAlign: "center" }}>
-                  This will notify the admin that you've finished this claim
-                </p>
-              </div>
-            ) : null;
-          })()}
+                  e.target.value = ""; // Reset dropdown
+                }}
+                style={{
+                  width: "100%",
+                  padding: "12px 16px",
+                  fontSize: "17px",
+                  border: "2px solid #6b7280",
+                  borderRadius: "8px",
+                  background: "#475569",
+                  color: "#ffffff",
+                  cursor: "pointer",
+                  fontWeight: "600",
+                  transition: "border-color 0.2s",
+                }}
+                onFocus={(e) => e.target.style.borderColor = "#667eea"}
+                onBlur={(e) => e.target.style.borderColor = "#6b7280"}
+              >
+                <option value="">Choose an action...</option>
+                <option value="SCHEDULED">📅 Mark as Scheduled</option>
+                <option value="IN_PROGRESS">🔧 In Progress</option>
+                <option value="COMPLETED">✅ Mark as Complete</option>
+                <option value="CANCELED">❌ Cancel Claim</option>
+                <option value="DELETE" style={{ color: "#ef4444", fontWeight: "bold" }}>
+                  🗑️ Permanently Delete Claim
+                </option>
+              </select>
+              <p style={{ fontSize: "14px", color: "#cbd5e1", marginTop: "8px", fontStyle: "italic" }}>
+                ⚠️ Permanent delete cannot be undone. All photos and data will be lost.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Location & Map */}

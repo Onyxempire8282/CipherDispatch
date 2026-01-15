@@ -9,6 +9,7 @@ import { getFirmColor } from "../../constants/firmColors";
 import { downloadClaimsCSV } from "../../utils/csvExport";
 import MonthlyCalendar from "../../components/claims/MonthlyCalendar";
 import MobileAgendaView from "../../components/claims/MobileAgendaView";
+import MobileClaimsList from "../../components/claims/MobileClaimsList";
 import PayoutForecast from "../../components/admin/PayoutForecast";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import JSZip from "jszip";
@@ -666,6 +667,7 @@ export default function AdminClaims() {
       )}
 
       {/* Calendar View: Mobile shows MobileAgendaView, Desktop shows MonthlyCalendar */}
+      {/* List View: Mobile shows MobileClaimsList, Desktop shows firm-grouped list */}
       {showCalendar && !showArchived ? (
         isMobile ? (
           <MobileAgendaView claims={rows} onClaimUpdate={load} />
@@ -676,8 +678,15 @@ export default function AdminClaims() {
         <div style={{ textAlign: "center", padding: 48, color: "#a0aec0" }}>
           No claims found matching your filters.
         </div>
+      ) : isMobile ? (
+        /* Mobile list view - vertical cards with filter bar and FAB for creating */
+        <MobileClaimsList
+          claims={rows}
+          showCreateButton={true}
+          createButtonPath="/admin/claims/new"
+        />
       ) : (
-        /* List View - Grouped by Firm */
+        /* Desktop List View - Grouped by Firm */
         <div>
           {Object.entries(firmGroups).map(([firmName, claims]) => {
             const pendingCount = getPendingCountForFirm(claims);

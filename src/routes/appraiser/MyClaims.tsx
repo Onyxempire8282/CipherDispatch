@@ -7,6 +7,7 @@ import {
 } from "../../lib/supabaseAuthz";
 import MonthlyCalendar from "../../components/claims/MonthlyCalendar";
 import MobileAgendaView from "../../components/claims/MobileAgendaView";
+import MobileClaimsList from "../../components/claims/MobileClaimsList";
 import { useIsMobile } from "../../hooks/useIsMobile";
 
 type Claim = {
@@ -681,15 +682,19 @@ export default function MyClaims() {
       </div>
 
       {/* Calendar View: Mobile shows MobileAgendaView, Desktop shows MonthlyCalendar */}
+      {/* List View: Mobile shows MobileClaimsList, Desktop shows full list with filters */}
       {showCalendar ? (
         isMobile ? (
           <MobileAgendaView claims={allClaims} onClaimUpdate={load} />
         ) : (
           <MonthlyCalendar claims={allClaims} onClaimUpdate={load} />
         )
+      ) : isMobile ? (
+        /* Mobile list view - vertical cards with filter bar */
+        <MobileClaimsList claims={rows} />
       ) : (
         <>
-          {/* Status Summary Pills */}
+          {/* Desktop List View - Status Summary Pills */}
           <div
             style={{
               display: "flex",

@@ -1,0 +1,230 @@
+/**
+ * Mobile Claims List Styles
+ *
+ * Mobile-only styles for the claims list view.
+ * Designed for field use: large tap targets, clear hierarchy, fast scanning.
+ *
+ * Color palette matches existing app (dark theme):
+ * - Background: #1a202c
+ * - Card bg: #2d3748
+ * - Border: #4a5568
+ * - Text primary: #e2e8f0
+ * - Text secondary: #a0aec0
+ */
+
+.mobile-claims {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+  padding: 12px;
+  padding-bottom: 80px; /* Space for FAB */
+}
+
+/* ========================================
+   Filter Bar - Horizontal scrollable pills
+   ======================================== */
+
+.mobile-claims__filters {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  margin-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.mobile-claims__filters::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-claims__filter-btn {
+  flex-shrink: 0;
+  background: #374151;
+  border: none;
+  color: #a0aec0;
+  padding: 10px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 40px;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.mobile-claims__filter-btn:active {
+  background: #4a5568;
+}
+
+.mobile-claims__filter-btn--active {
+  background: var(--filter-color, #667eea);
+  color: white;
+}
+
+/* ========================================
+   Sort Bar
+   ======================================== */
+
+.mobile-claims__sort {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #4a5568;
+}
+
+.mobile-claims__sort-label {
+  font-size: 13px;
+  color: #718096;
+  margin-right: 4px;
+}
+
+.mobile-claims__sort-btn {
+  background: transparent;
+  border: 1px solid #4a5568;
+  color: #a0aec0;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.mobile-claims__sort-btn--active {
+  background: #4a5568;
+  color: #e2e8f0;
+  border-color: #667eea;
+}
+
+/* ========================================
+   Claims List
+   ======================================== */
+
+.mobile-claims__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Empty State */
+.mobile-claims__empty {
+  text-align: center;
+  padding: 48px 24px;
+}
+
+.mobile-claims__empty-text {
+  font-size: 16px;
+  font-weight: 500;
+  color: #e2e8f0;
+  margin-bottom: 8px;
+}
+
+.mobile-claims__empty-subtext {
+  font-size: 14px;
+  color: #718096;
+}
+
+/* ========================================
+   Claim Card
+   Dense layout for scanning:
+   Row 1: CLAIM # + STATUS
+   Row 2: CUSTOMER NAME
+   Row 3: APPOINTMENT + FIRM
+   ======================================== */
+
+.mobile-claims__card {
+  display: block;
+  background: #2d3748;
+  border-radius: 8px;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: #e2e8f0;
+  border-left: 4px solid #9CA3AF;
+  transition: transform 0.1s;
+}
+
+.mobile-claims__card:active {
+  transform: scale(0.98);
+}
+
+/* Row 1: Claim # + Status */
+.mobile-claims__card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.mobile-claims__card-number {
+  font-size: 16px;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+.mobile-claims__card-status {
+  font-size: 10px;
+  font-weight: 700;
+  color: white;
+  padding: 3px 8px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+/* Row 2: Customer Name */
+.mobile-claims__card-customer {
+  font-size: 15px;
+  font-weight: 500;
+  color: #cbd5e0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 6px;
+}
+
+/* Row 3: Appointment + Firm */
+.mobile-claims__card-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.mobile-claims__card-appointment {
+  color: #a0aec0;
+}
+
+.mobile-claims__card-firm {
+  font-weight: 600;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+/* ========================================
+   Floating Action Button
+   ======================================== */
+
+.mobile-claims__fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 300;
+  text-decoration: none;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  z-index: 50;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.mobile-claims__fab:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}

@@ -1,0 +1,460 @@
+/**
+ * Mobile Claim Detail Styles
+ *
+ * Mobile-only styles for claim detail view.
+ * Uses collapsible sections for better organization on small screens.
+ *
+ * Layout:
+ * - Sticky header with back nav
+ * - Scrollable content with collapsible cards
+ * - Bottom sticky action bar
+ */
+
+.mobile-detail {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ========================================
+   Sticky Header
+   ======================================== */
+
+.mobile-detail__header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.mobile-detail__back {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  text-decoration: none;
+  font-size: 24px;
+  font-weight: 300;
+}
+
+.mobile-detail__back:active {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.mobile-detail__header-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mobile-detail__claim-number {
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+}
+
+.mobile-detail__status {
+  font-size: 10px;
+  font-weight: 700;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.mobile-detail__edit-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mobile-detail__edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.mobile-detail__save-btn {
+  background: #10b981;
+  border: none;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mobile-detail__cancel-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ========================================
+   Customer Banner
+   ======================================== */
+
+.mobile-detail__banner {
+  padding: 16px;
+  background: #1e293b;
+  border-bottom: 1px solid #374151;
+}
+
+.mobile-detail__customer-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin-bottom: 8px;
+}
+
+.mobile-detail__firm-badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border: 2px solid;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+/* ========================================
+   Scrollable Content
+   ======================================== */
+
+.mobile-detail__content {
+  flex: 1;
+  padding: 12px;
+  padding-bottom: 100px; /* Space for action bar */
+  overflow-y: auto;
+}
+
+/* Photo Capture Button */
+.mobile-detail__photo-capture-btn {
+  display: block;
+  width: 100%;
+  padding: 16px;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  text-align: center;
+  text-decoration: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.mobile-detail__photo-capture-btn:active {
+  transform: scale(0.98);
+}
+
+/* ========================================
+   Collapsible Sections
+   ======================================== */
+
+.mobile-detail__section {
+  background: #374151;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.mobile-detail__section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 14px 16px;
+  background: transparent;
+  border: none;
+  color: #e2e8f0;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+
+.mobile-detail__section-header:active {
+  background: #4a5568;
+}
+
+.mobile-detail__section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mobile-detail__section-chevron {
+  font-size: 20px;
+  color: #a0aec0;
+  transition: transform 0.2s;
+}
+
+.mobile-detail__section-chevron--open {
+  transform: rotate(90deg);
+}
+
+.mobile-detail__section-content {
+  padding: 0 16px 16px;
+  border-top: 1px solid #4a5568;
+}
+
+/* ========================================
+   Field Display
+   ======================================== */
+
+.mobile-detail__field {
+  margin-top: 12px;
+}
+
+.mobile-detail__field-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #a0aec0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.mobile-detail__field-value {
+  font-size: 15px;
+  color: #e2e8f0;
+}
+
+.mobile-detail__field-value--link {
+  color: #818cf8;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.mobile-detail__field-empty {
+  color: #718096;
+  font-style: italic;
+}
+
+.mobile-detail__field-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+/* ========================================
+   Maps Button
+   ======================================== */
+
+.mobile-detail__maps-btn {
+  width: 100%;
+  margin-top: 12px;
+  padding: 14px;
+  background: #10b981;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mobile-detail__maps-btn:active {
+  background: #059669;
+}
+
+/* ========================================
+   Notes
+   ======================================== */
+
+.mobile-detail__notes {
+  margin-top: 12px;
+  padding: 12px;
+  background: #2d3748;
+  border-radius: 6px;
+  color: #e2e8f0;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+/* ========================================
+   Photos Grid - 2 columns
+   ======================================== */
+
+.mobile-detail__photos-empty {
+  margin-top: 12px;
+  padding: 24px;
+  text-align: center;
+  color: #718096;
+  font-size: 14px;
+}
+
+.mobile-detail__photos-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.mobile-detail__photo {
+  aspect-ratio: 1;
+  background-size: cover;
+  background-position: center;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 2px solid #4a5568;
+}
+
+.mobile-detail__photo:active {
+  opacity: 0.8;
+}
+
+/* ========================================
+   Status & Actions
+   ======================================== */
+
+.mobile-detail__status-current {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 12px;
+  background: #2d3748;
+  border-radius: 6px;
+}
+
+.mobile-detail__status-label {
+  font-size: 13px;
+  color: #a0aec0;
+}
+
+.mobile-detail__status-badge {
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.mobile-detail__status-actions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.mobile-detail__action-btn {
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+}
+
+.mobile-detail__action-btn--scheduled {
+  background: #2196F3;
+}
+
+.mobile-detail__action-btn--progress {
+  background: #FF9800;
+}
+
+.mobile-detail__action-btn--complete {
+  background: #4CAF50;
+}
+
+.mobile-detail__action-btn--cancel {
+  background: #ef4444;
+}
+
+.mobile-detail__action-btn:active {
+  opacity: 0.8;
+}
+
+/* ========================================
+   Danger Zone
+   ======================================== */
+
+.mobile-detail__danger-warning {
+  margin-top: 12px;
+  padding: 12px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid #ef4444;
+  border-radius: 6px;
+  color: #fca5a5;
+  font-size: 13px;
+}
+
+.mobile-detail__delete-btn {
+  width: 100%;
+  margin-top: 12px;
+  padding: 14px;
+  background: #ef4444;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mobile-detail__delete-btn:active {
+  background: #dc2626;
+}
+
+/* ========================================
+   Bottom Action Bar
+   ======================================== */
+
+.mobile-detail__action-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px;
+  background: #1e293b;
+  border-top: 1px solid #374151;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
+  z-index: 40;
+}
+
+.mobile-detail__complete-btn {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.mobile-detail__complete-btn:active {
+  transform: scale(0.98);
+}

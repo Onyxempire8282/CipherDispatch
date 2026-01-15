@@ -81,19 +81,19 @@ export default function PhotoCapture() {
   // Lock body scroll when camera is active
   useEffect(() => {
     if (cameraActive) {
-      document.body.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.width = '100%';
+      document.body.style.overflow = "hidden";
+      document.body.style.position = "fixed";
+      document.body.style.width = "100%";
     } else {
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.width = '';
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.width = "";
     }
 
     return () => {
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.width = '';
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.width = "";
     };
   }, [cameraActive]);
 
@@ -221,7 +221,10 @@ export default function PhotoCapture() {
     }
     if (orientationHandlerRef.current) {
       window.removeEventListener("resize", orientationHandlerRef.current);
-      window.removeEventListener("orientationchange", orientationHandlerRef.current);
+      window.removeEventListener(
+        "orientationchange",
+        orientationHandlerRef.current
+      );
       orientationHandlerRef.current = null;
     }
     setCameraActive(false);
@@ -781,10 +784,10 @@ export default function PhotoCapture() {
       {cameraActive && (
         <div
           style={{
-            position: 'fixed',
+            position: "fixed",
             inset: 0,
             zIndex: 9999,
-            background: '#000',
+            background: "#000",
           }}
         >
           {/* Video fills entire viewport */}
@@ -794,9 +797,9 @@ export default function PhotoCapture() {
             playsInline
             muted
             style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
             }}
           />
 
@@ -809,17 +812,17 @@ export default function PhotoCapture() {
             return nextSlot ? (
               <div
                 style={{
-                  position: 'absolute',
-                  top: 'max(20px, env(safe-area-inset-top))',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  padding: '8px 16px',
-                  background: 'rgba(45, 55, 72, 0.9)',
+                  position: "absolute",
+                  top: "max(20px, env(safe-area-inset-top))",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  padding: "8px 16px",
+                  background: "rgba(45, 55, 72, 0.9)",
                   borderRadius: 8,
-                  color: '#e2e8f0',
+                  color: "#e2e8f0",
                   fontSize: 13,
-                  maxWidth: '80%',
-                  textAlign: 'center',
+                  maxWidth: "80%",
+                  textAlign: "center",
                 }}
               >
                 Next: {nextSlot.label}
@@ -831,18 +834,18 @@ export default function PhotoCapture() {
           {videoReady && !isLandscape && (
             <div
               style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
                 padding: 24,
-                background: 'rgba(245, 158, 11, 0.95)',
+                background: "rgba(245, 158, 11, 0.95)",
                 borderRadius: 12,
-                color: '#1a202c',
-                fontWeight: 'bold',
+                color: "#1a202c",
+                fontWeight: "bold",
                 fontSize: 18,
-                textAlign: 'center',
-                maxWidth: '80%',
+                textAlign: "center",
+                maxWidth: "80%",
               }}
             >
               ⚠️ LANDSCAPE MODE REQUIRED
@@ -855,21 +858,21 @@ export default function PhotoCapture() {
           <button
             onClick={stopCamera}
             style={{
-              position: 'absolute',
-              top: 'max(20px, env(safe-area-inset-top))',
+              position: "absolute",
+              top: "max(20px, env(safe-area-inset-top))",
               right: 20,
               width: 44,
               height: 44,
-              background: 'rgba(0, 0, 0, 0.6)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '50%',
+              background: "rgba(0, 0, 0, 0.6)",
+              color: "white",
+              border: "none",
+              borderRadius: "50%",
               fontSize: 24,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.4)',
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.4)",
             }}
           >
             ✕
@@ -880,26 +883,28 @@ export default function PhotoCapture() {
             onClick={capturePhoto}
             disabled={!videoReady || !isLandscape}
             style={{
-              position: 'absolute',
-              bottom: 'max(30px, env(safe-area-inset-bottom))',
+              position: "absolute",
+              bottom: "max(30px, env(safe-area-inset-bottom))",
               right: 30,
               width: 80,
               height: 80,
-              background: videoReady && isLandscape
-                ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-                : 'rgba(107, 114, 128, 0.8)',
-              color: 'white',
-              border: '4px solid white',
-              borderRadius: '50%',
+              background:
+                videoReady && isLandscape
+                  ? "linear-gradient(135deg, #10b981 0%, #059669 100%)"
+                  : "rgba(107, 114, 128, 0.8)",
+              color: "white",
+              border: "4px solid white",
+              borderRadius: "50%",
               fontSize: 32,
-              cursor: videoReady && isLandscape ? 'pointer' : 'not-allowed',
+              cursor: videoReady && isLandscape ? "pointer" : "not-allowed",
               opacity: videoReady && isLandscape ? 1 : 0.6,
-              boxShadow: videoReady && isLandscape
-                ? '0 6px 20px rgba(16, 185, 129, 0.6)'
-                : '0 4px 12px rgba(0, 0, 0, 0.4)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              boxShadow:
+                videoReady && isLandscape
+                  ? "0 6px 20px rgba(16, 185, 129, 0.6)"
+                  : "0 4px 12px rgba(0, 0, 0, 0.4)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
             📷
