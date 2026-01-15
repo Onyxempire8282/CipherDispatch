@@ -8,7 +8,9 @@ import {
 import { getFirmColor } from "../../constants/firmColors";
 import { downloadClaimsCSV } from "../../utils/csvExport";
 import MonthlyCalendar from "../../components/claims/MonthlyCalendar";
+import MobileAgendaView from "../../components/claims/MobileAgendaView";
 import PayoutForecast from "../../components/admin/PayoutForecast";
+import { useIsMobile } from "../../hooks/useIsMobile";
 import JSZip from "jszip";
 
 type Claim = {
@@ -56,6 +58,9 @@ export default function AdminClaims() {
   );
   const [selectedStatus, setSelectedStatus] = useState<ClaimStatus>("ALL");
   const [draggingClaimId, setDraggingClaimId] = useState<string | null>(null);
+
+  // Mobile breakpoint detection: <=600px shows MobileAgendaView instead of MonthlyCalendar
+  const isMobile = useIsMobile();
 
   const initializeAuth = async () => {
     try {
@@ -660,9 +665,13 @@ export default function AdminClaims() {
         </div>
       )}
 
-      {/* Calendar View */}
+      {/* Calendar View: Mobile shows MobileAgendaView, Desktop shows MonthlyCalendar */}
       {showCalendar && !showArchived ? (
-        <MonthlyCalendar claims={rows} onClaimUpdate={load} />
+        isMobile ? (
+          <MobileAgendaView claims={rows} onClaimUpdate={load} />
+        ) : (
+          <MonthlyCalendar claims={rows} onClaimUpdate={load} />
+        )
       ) : rows.length === 0 ? (
         <div style={{ textAlign: "center", padding: 48, color: "#a0aec0" }}>
           No claims found matching your filters.

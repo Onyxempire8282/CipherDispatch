@@ -6,6 +6,8 @@ import {
   getSupabaseAuthz,
 } from "../../lib/supabaseAuthz";
 import MonthlyCalendar from "../../components/claims/MonthlyCalendar";
+import MobileAgendaView from "../../components/claims/MobileAgendaView";
+import { useIsMobile } from "../../hooks/useIsMobile";
 
 type Claim = {
   id: string;
@@ -43,6 +45,9 @@ export default function MyClaims() {
   const [draggingClaimId, setDraggingClaimId] = useState<string | null>(null);
   const [showCalendar, setShowCalendar] = useState(searchParams.get("view") === "calendar");
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Mobile breakpoint detection: <=600px shows MobileAgendaView instead of MonthlyCalendar
+  const isMobile = useIsMobile();
 
   const initializeAuth = async () => {
     try {
@@ -675,9 +680,13 @@ export default function MyClaims() {
         </div>
       </div>
 
-      {/* Calendar View */}
+      {/* Calendar View: Mobile shows MobileAgendaView, Desktop shows MonthlyCalendar */}
       {showCalendar ? (
-        <MonthlyCalendar claims={allClaims} onClaimUpdate={load} />
+        isMobile ? (
+          <MobileAgendaView claims={allClaims} onClaimUpdate={load} />
+        ) : (
+          <MonthlyCalendar claims={allClaims} onClaimUpdate={load} />
+        )
       ) : (
         <>
           {/* Status Summary Pills */}
