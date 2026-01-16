@@ -44,7 +44,11 @@
       "WebSearch",
       "Bash(npx tsc:*)",
       "Bash(supabase --version:*)",
-      "Bash(npx supabase:*)"
+      "Bash(npx supabase:*)",
+      "Bash(archive_unassigned.sql:*)",
+      "Bash(npx tsx:*)",
+      "Bash(dir:*)",
+      "Bash(findstr:*)"
     ]
   }
 }

@@ -1,12 +1,18 @@
 /**
  * Mobile Claims List Styles
  *
- * Mobile-only styles for the claims list view.
+ * Mobile-only styles for the "My Claims" view (<=600px).
  * Designed for field use: large tap targets, clear hierarchy, fast scanning.
  *
- * Color palette matches existing app (dark theme):
- * - Background: #1a202c
- * - Card bg: #2d3748
+ * LAYOUT HIERARCHY:
+ * - Header: Title + search icon
+ * - Filters: Horizontal scrollable pills
+ * - Sort: Single dropdown (secondary priority)
+ * - Cards: 4-row layout with firm color as left border
+ *
+ * COLOR PALETTE (dark theme):
+ * - Background: #0f172a / #1e293b gradient
+ * - Card bg: #374151
  * - Border: #4a5568
  * - Text primary: #e2e8f0
  * - Text secondary: #a0aec0
@@ -14,37 +20,117 @@
 
 .mobile-claims {
   min-height: 100vh;
-  background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
-  padding: 12px;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
   padding-bottom: 80px; /* Space for FAB */
 }
 
 /* ========================================
-   Filter Bar - Horizontal scrollable pills
+   Header: Title + Search Icon
+   - "My Claims" title on left
+   - Search icon on right (expands to full input)
+   ======================================== */
+
+.mobile-claims__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.mobile-claims__title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: white;
+}
+
+.mobile-claims__search-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 8px;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.mobile-claims__search-btn:active {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Search Bar (expanded state) */
+.mobile-claims__search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.mobile-claims__search-input {
+  flex: 1;
+  padding: 10px 14px;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #1e293b;
+}
+
+.mobile-claims__search-input::placeholder {
+  color: #64748b;
+}
+
+.mobile-claims__search-close {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.mobile-claims__search-close:active {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* ========================================
+   Filter Pills: Horizontal scrollable
+   - One active state at a time
+   - No wrapping, no dropdowns
    ======================================== */
 
 .mobile-claims__filters {
   display: flex;
   gap: 8px;
+  padding: 12px 16px;
   overflow-x: auto;
-  padding-bottom: 12px;
-  margin-bottom: 8px;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  background: #1e293b;
 }
 
 .mobile-claims__filters::-webkit-scrollbar {
   display: none;
 }
 
-.mobile-claims__filter-btn {
+.mobile-claims__filter-pill {
   flex-shrink: 0;
   background: #374151;
   border: none;
   color: #a0aec0;
-  padding: 10px 16px;
+  padding: 10px 18px;
   border-radius: 20px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
@@ -52,48 +138,46 @@
   transition: background-color 0.15s, color 0.15s;
 }
 
-.mobile-claims__filter-btn:active {
+.mobile-claims__filter-pill:active {
   background: #4a5568;
 }
 
-.mobile-claims__filter-btn--active {
-  background: var(--filter-color, #667eea);
+.mobile-claims__filter-pill--active {
+  background: #667eea;
   color: white;
 }
 
 /* ========================================
-   Sort Bar
+   Sort: Single dropdown control
+   - Secondary visual priority
+   - NOT two side-by-side buttons
    ======================================== */
 
 .mobile-claims__sort {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #4a5568;
+  padding: 8px 16px 12px;
+  background: #1e293b;
+  border-bottom: 1px solid #374151;
 }
 
-.mobile-claims__sort-label {
-  font-size: 13px;
-  color: #718096;
-  margin-right: 4px;
-}
-
-.mobile-claims__sort-btn {
-  background: transparent;
-  border: 1px solid #4a5568;
-  color: #a0aec0;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 12px;
+.mobile-claims__sort-select {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 14px;
   font-weight: 500;
+  color: #e2e8f0;
+  background: #374151;
+  border: 1px solid #4a5568;
+  border-radius: 6px;
   cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a0aec0' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
 }
 
-.mobile-claims__sort-btn--active {
-  background: #4a5568;
-  color: #e2e8f0;
+.mobile-claims__sort-select:focus {
+  outline: none;
   border-color: #667eea;
 }
 
@@ -105,6 +189,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  padding: 12px 16px;
 }
 
 /* Empty State */
@@ -127,19 +212,29 @@
 
 /* ========================================
    Claim Card
-   Dense layout for scanning:
-   Row 1: CLAIM # + STATUS
+
+   HIERARCHY (critical):
+   Row 1: CLAIM NUMBER + STATUS BADGE
    Row 2: CUSTOMER NAME
-   Row 3: APPOINTMENT + FIRM
+   Row 3: DATE · TIME
+   Row 4: FIRM BADGE
+
+   Rules:
+   - Entire card tappable
+   - Status badge always visible
+   - Firm color as LEFT BORDER only
+   - Max 3 text rows below header
+   - Truncate overflow with ellipsis
    ======================================== */
 
 .mobile-claims__card {
   display: block;
-  background: #2d3748;
+  background: #374151;
   border-radius: 8px;
   padding: 14px 16px;
   text-decoration: none;
   color: #e2e8f0;
+  /* Firm color shown as left border only */
   border-left: 4px solid #9CA3AF;
   transition: transform 0.1s;
 }
@@ -148,8 +243,8 @@
   transform: scale(0.98);
 }
 
-/* Row 1: Claim # + Status */
-.mobile-claims__card-header {
+/* Row 1: Claim Number + Status Badge */
+.mobile-claims__card-row1 {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -172,36 +267,37 @@
 }
 
 /* Row 2: Customer Name */
-.mobile-claims__card-customer {
+.mobile-claims__card-row2 {
   font-size: 15px;
-  font-weight: 500;
-  color: #cbd5e0;
+  font-weight: 600;
+  color: #f1f5f9;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
-/* Row 3: Appointment + Firm */
-.mobile-claims__card-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 12px;
-}
-
-.mobile-claims__card-appointment {
+/* Row 3: Date · Time */
+.mobile-claims__card-row3 {
+  font-size: 13px;
   color: #a0aec0;
+  margin-bottom: 4px;
 }
 
-.mobile-claims__card-firm {
+.mobile-claims__card-time-sep {
+  color: #64748b;
+}
+
+/* Row 4: Firm Badge */
+.mobile-claims__card-row4 {
+  font-size: 12px;
   font-weight: 600;
-  flex-shrink: 0;
-  margin-left: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 /* ========================================
-   Floating Action Button
+   Floating Action Button (Admin only)
    ======================================== */
 
 .mobile-claims__fab {
