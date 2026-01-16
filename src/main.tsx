@@ -87,7 +87,7 @@ const router = createBrowserRouter(
     },
   ],
   {
-    basename: "/CipherDispatch",
+    basename: "/CipherDispatch/",
   }
 );
 
