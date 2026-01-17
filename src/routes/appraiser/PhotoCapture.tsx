@@ -846,6 +846,8 @@ export default function PhotoCapture() {
                 fontSize: 18,
                 textAlign: "center",
                 maxWidth: "80%",
+                // TEMP: allow camera interaction even when showing orientation warning
+                pointerEvents: "none",
               }}
             >
               ⚠️ LANDSCAPE MODE REQUIRED

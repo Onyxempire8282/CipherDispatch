@@ -38,6 +38,7 @@ interface MobileClaimDetailProps {
   onMarkComplete: () => void;
   onPhotoClick: (index: number) => void;
   onPhotoCapture: string;
+  onPhoto?: (files: FileList) => void;
 }
 
 // Status colors matching existing app
@@ -109,6 +110,7 @@ export default function MobileClaimDetail({
   onStatusChange,
   onPhotoClick,
   onPhotoCapture,
+  onPhoto,
 }: MobileClaimDetailProps) {
   // Get status display text
   const getStatusText = (status: string | null): string => {
@@ -215,6 +217,30 @@ export default function MobileClaimDetail({
         <Link to={onPhotoCapture} className="mobile-detail__photo-capture-btn">
           📷 Guided Photo Capture
         </Link>
+
+        {/* TEMP: fallback manual upload for appraisers when guided capture is blocked */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '12px' }}>
+          <input
+            id={`mobile-photo-gallery-${claim.id}`}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={(e) => {
+              if (e.target.files) {
+                onPhoto?.(e.target.files);
+                e.target.value = '';
+              }
+            }}
+            style={{ display: 'none' }}
+          />
+          <label
+            htmlFor={`mobile-photo-gallery-${claim.id}`}
+            className="mobile-detail__photo-capture-btn"
+            style={{ marginBottom: 0 }}
+          >
+            🖼️ Choose from Gallery
+          </label>
+        </div>
 
         {/*
           SECTION DEFAULTS - Guardrail 1:
