@@ -225,9 +225,10 @@ export default function MobileClaimDetail({
             type="file"
             accept="image/*"
             multiple
-            onChange={(e) => {
-              if (e.target.files) {
-                onPhoto?.(e.target.files);
+            onChange={async (e) => {
+              const files = e.target.files;
+              if (files && files.length > 0) {
+                await onPhoto?.(files);
                 e.target.value = '';
               }
             }}
