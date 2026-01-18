@@ -4,6 +4,12 @@
  * Mobile-only styles for the "My Claims" view (<=600px).
  * Designed for field use: large tap targets, clear hierarchy, fast scanning.
  *
+ * VIEWPORT CONTAINMENT (critical):
+ * - Root container clamps to 100vw with overflow-x: hidden
+ * - All children use box-sizing: border-box
+ * - No fixed widths that exceed viewport
+ * - Filter pills scroll INSIDE container, not expand it
+ *
  * LAYOUT HIERARCHY:
  * - Header: Title + search icon
  * - Filters: Horizontal scrollable pills
@@ -18,22 +24,47 @@
  * - Text secondary: #a0aec0
  */
 
+/* ========================================
+   ROOT CONTAINER - VIEWPORT CONTAINMENT
+
+   CRITICAL: This prevents horizontal scroll.
+   - width: 100% fills parent
+   - max-width: 100vw hard clamps to viewport
+   - overflow-x: hidden kills any horizontal overflow
+   - box-sizing ensures padding doesn't add width
+   ======================================== */
+
 .mobile-claims {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  box-sizing: border-box;
   min-height: 100vh;
   background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
   padding-bottom: 80px; /* Space for FAB */
 }
 
+/* Apply box-sizing to all children for consistent width calculations */
+.mobile-claims *,
+.mobile-claims *::before,
+.mobile-claims *::after {
+  box-sizing: border-box;
+}
+
 /* ========================================
    Header: Title + Search Icon
-   - "My Claims" title on left
-   - Search icon on right (expands to full input)
+
+   CONTAINMENT:
+   - width: 100% fills container
+   - No fixed widths
+   - Padding included in width via box-sizing
    ======================================== */
 
 .mobile-claims__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
   padding: 16px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
@@ -44,9 +75,14 @@
   font-size: 20px;
   font-weight: 700;
   color: white;
+  /* Allow title to shrink if needed */
+  min-width: 0;
+  flex: 1;
 }
 
 .mobile-claims__search-btn {
+  /* Fixed size is OK here - it's small and flex-shrink: 0 keeps it stable */
+  flex-shrink: 0;
   width: 40px;
   height: 40px;
   display: flex;
@@ -63,16 +99,31 @@
   background: rgba(255, 255, 255, 0.3);
 }
 
-/* Search Bar (expanded state) */
+/* ========================================
+   Search Bar (expanded state)
+
+   CONTAINMENT:
+   - width: 100% fills header
+   - Input uses flex: 1 to fill remaining space
+   - Close button is fixed size but flex-shrink: 0
+   - No overflow possible
+   ======================================== */
+
 .mobile-claims__search-bar {
   display: flex;
   align-items: center;
   gap: 8px;
   width: 100%;
+  /* Ensure search bar doesn't exceed container */
+  max-width: 100%;
 }
 
 .mobile-claims__search-input {
+  /* flex: 1 fills available space, min-width: 0 allows shrinking */
   flex: 1;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
   padding: 10px 14px;
   font-size: 16px;
   border: none;
@@ -86,6 +137,8 @@
 }
 
 .mobile-claims__search-close {
+  /* Fixed size close button - flex-shrink: 0 keeps it stable */
+  flex-shrink: 0;
   width: 40px;
   height: 40px;
   display: flex;
@@ -105,14 +158,21 @@
 
 /* ========================================
    Filter Pills: Horizontal scrollable
-   - One active state at a time
-   - No wrapping, no dropdowns
+
+   CONTAINMENT (critical):
+   - Container has width: 100% and max-width: 100%
+   - overflow-x: auto allows pills to scroll INSIDE container
+   - Pills use flex-shrink: 0 to maintain size
+   - Container does NOT expand beyond viewport
    ======================================== */
 
 .mobile-claims__filters {
   display: flex;
   gap: 8px;
+  width: 100%;
+  max-width: 100%;
   padding: 12px 16px;
+  /* Scroll inside container, don't expand it */
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
@@ -124,6 +184,7 @@
 }
 
 .mobile-claims__filter-pill {
+  /* flex-shrink: 0 maintains pill size during scroll */
   flex-shrink: 0;
   background: #374151;
   border: none;
@@ -149,11 +210,15 @@
 
 /* ========================================
    Sort: Single dropdown control
-   - Secondary visual priority
-   - NOT two side-by-side buttons
+
+   CONTAINMENT:
+   - Container width: 100%
+   - Select width: 100% fills container
+   - Padding included via box-sizing
    ======================================== */
 
 .mobile-claims__sort {
+  width: 100%;
   padding: 8px 16px 12px;
   background: #1e293b;
   border-bottom: 1px solid #374151;
@@ -161,11 +226,13 @@
 
 .mobile-claims__sort-select {
   width: 100%;
+  max-width: 100%;
   padding: 10px 14px;
+  padding-right: 36px; /* Space for dropdown arrow */
   font-size: 14px;
   font-weight: 500;
   color: #e2e8f0;
-  background: #374151;
+  background-color: #374151;
   border: 1px solid #4a5568;
   border-radius: 6px;
   cursor: pointer;
@@ -173,7 +240,6 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a0aec0' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 12px center;
-  padding-right: 36px;
 }
 
 .mobile-claims__sort-select:focus {
@@ -183,12 +249,17 @@
 
 /* ========================================
    Claims List
+
+   CONTAINMENT:
+   - width: 100% fills container
+   - Padding included via box-sizing
    ======================================== */
 
 .mobile-claims__list {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  width: 100%;
   padding: 12px 16px;
 }
 
@@ -196,6 +267,7 @@
 .mobile-claims__empty {
   text-align: center;
   padding: 48px 24px;
+  width: 100%;
 }
 
 .mobile-claims__empty-text {
@@ -219,6 +291,11 @@
    Row 3: DATE · TIME
    Row 4: FIRM BADGE
 
+   CONTAINMENT:
+   - width: 100% fills list container
+   - border-left does NOT add to width (it's inside box)
+   - Text truncation via ellipsis, never expands
+
    Rules:
    - Entire card tappable
    - Status badge always visible
@@ -229,12 +306,13 @@
 
 .mobile-claims__card {
   display: block;
+  width: 100%;
   background: #374151;
   border-radius: 8px;
   padding: 14px 16px;
   text-decoration: none;
   color: #e2e8f0;
-  /* Firm color shown as left border only */
+  /* Firm color shown as left border only - does NOT add width */
   border-left: 4px solid #9CA3AF;
   transition: transform 0.1s;
 }
@@ -248,26 +326,37 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  width: 100%;
   margin-bottom: 8px;
+  /* Prevent row from expanding */
+  min-width: 0;
 }
 
 .mobile-claims__card-number {
   font-size: 16px;
   font-weight: 700;
   color: #e2e8f0;
+  /* Allow number to shrink if needed */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .mobile-claims__card-status {
+  /* Status badge is fixed size, flex-shrink: 0 keeps it visible */
+  flex-shrink: 0;
   font-size: 10px;
   font-weight: 700;
   color: white;
   padding: 3px 8px;
   border-radius: 3px;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
-/* Row 2: Customer Name */
+/* Row 2: Customer Name - MUST truncate, never expand */
 .mobile-claims__card-row2 {
+  width: 100%;
   font-size: 15px;
   font-weight: 600;
   color: #f1f5f9;
@@ -279,25 +368,38 @@
 
 /* Row 3: Date · Time */
 .mobile-claims__card-row3 {
+  width: 100%;
   font-size: 13px;
   color: #a0aec0;
   margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .mobile-claims__card-time-sep {
   color: #64748b;
 }
 
-/* Row 4: Firm Badge */
+/* Row 4: Firm Badge - truncate if needed */
 .mobile-claims__card-row4 {
+  width: 100%;
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ========================================
    Floating Action Button (Admin only)
+
+   CONTAINMENT:
+   - position: fixed keeps it out of document flow
+   - right: 24px keeps it inside viewport
+   - Does NOT affect layout width
    ======================================== */
 
 .mobile-claims__fab {

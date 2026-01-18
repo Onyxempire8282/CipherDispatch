@@ -92,8 +92,7 @@ export default function ClaimDetail() {
     })();
   }, [id]);
 
-  const onPhoto = async (e: any) => {
-    const files: FileList = e.target.files;
+  const handlePhotoUpload = async (files: FileList) => {
     if (!files || files.length === 0 || !id) return;
 
     // Process all selected files
@@ -124,9 +123,15 @@ export default function ClaimDetail() {
       }
     }
 
+    await load();
+  };
+
+  const handlePhotoInputChange = async (e: any) => {
+    const files: FileList = e.target.files;
+    if (!files || files.length === 0) return;
+    await handlePhotoUpload(files);
     // Reset the input so the same files can be selected again if needed
     e.target.value = "";
-    await load();
   };
 
   const update = async (patch: any) => {
@@ -532,6 +537,7 @@ export default function ClaimDetail() {
           onMarkComplete={markComplete}
           onPhotoClick={setLightboxIndex}
           onPhotoCapture={`/appraiser/claim/${id}/photos`}
+          onPhoto={handlePhotoUpload}
         />
 
         {/* Lightbox Modal - shared between mobile and desktop */}
@@ -1968,7 +1974,7 @@ export default function ClaimDetail() {
               type="file"
               accept="image/*"
               capture="environment"
-              onChange={onPhoto}
+              onChange={handlePhotoInputChange}
               style={{ display: "none" }}
               multiple
             />
@@ -2006,7 +2012,7 @@ export default function ClaimDetail() {
               id="photo-gallery"
               type="file"
               accept="image/*"
-              onChange={onPhoto}
+              onChange={handlePhotoInputChange}
               style={{ display: "none" }}
               multiple
             />
