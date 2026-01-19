@@ -8,6 +8,7 @@ import AdminNewClaim from "./routes/admin/NewClaim";
 import AdminClaims from "./routes/admin/Claims";
 import AdminVendors from "./routes/admin/Vendors";
 import PayoutDashboard from "./routes/admin/PayoutDashboard";
+import KPIDashboard from "./routes/admin/KPIDashboard";
 import MyClaims from "./routes/appraiser/MyClaims";
 import ClaimDetail from "./routes/appraiser/ClaimDetail";
 import PhotoCapture from "./routes/appraiser/PhotoCapture";
@@ -50,6 +51,14 @@ const router = createBrowserRouter(
       element: (
         <ProtectedRoute requiredRole="admin">
           <PayoutDashboard />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/admin/kpi",
+      element: (
+        <ProtectedRoute requiredRole="admin">
+          <KPIDashboard />
         </ProtectedRoute>
       ),
     },

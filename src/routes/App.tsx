@@ -226,6 +226,34 @@ export default function App() {
                 View upcoming vendor payouts and revenue projections
               </p>
             </Link>
+
+            <Link
+              to="/admin/kpi"
+              style={{
+                background: "#2d3748",
+                border: "1px solid #4a5568",
+                padding: 24,
+                borderRadius: 12,
+                textDecoration: "none",
+                color: "#e2e8f0",
+                boxShadow: "0 4px 6px rgba(0,0,0,0.5)",
+                transition: "transform 0.2s",
+              }}
+              onMouseOver={(e) =>
+                (e.currentTarget.style.transform = "translateY(-2px)")
+              }
+              onMouseOut={(e) =>
+                (e.currentTarget.style.transform = "translateY(0)")
+              }
+            >
+              <div style={{ fontSize: 48, marginBottom: 12 }}>📊</div>
+              <h3 style={{ margin: 0, marginBottom: 8, color: "#e2e8f0" }}>
+                KPI Dashboard
+              </h3>
+              <p style={{ margin: 0, color: "#a0aec0" }}>
+                Month-over-month performance metrics for meetings
+              </p>
+            </Link>
           </div>
         ) : (
           <div style={{ display: "grid", gap: 16 }}>
