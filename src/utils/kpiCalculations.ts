@@ -1,13 +1,26 @@
 /**
  * KPI Calculation Logic (V1)
  *
- * Key design decisions:
- * - All period metrics use completion_date as the anchor (when work was done)
- * - Pipeline metrics are point-in-time (current queue state)
- * - Working days differ: full month for complete months, start→asOfDate for MTD
- * - Supplements identified by: is_supplement === true OR original_claim_id != null
- * - Revenue uses: file_total ?? pay_amount ?? 0
- * - Admin scheduling uses scheduled_at with fallback to appointment_start
+ * KEY DESIGN: TWO DIFFERENT MONTH ANCHORS
+ * ─────────────────────────────────────────────────────────────
+ * 1. CalendarMonthKey (appointment_start) - matches calendar view
+ *    - Used for: calendarClaims, monthScopedStatusCounts
+ *    - Dec 2025 appointments = Dec 2025 calendar bucket
+ *
+ * 2. CompletedMonthKey (completion_date) - tracks production
+ *    - Used for: totalClaims, revenue, peakDay, supplements
+ *    - Dec 2025 completions = Dec 2025 completed bucket
+ *
+ * These are SEPARATE buckets - a claim with Dec appointment and Jan completion
+ * appears in Dec calendar but Jan completed metrics.
+ * ─────────────────────────────────────────────────────────────
+ *
+ * Other design decisions:
+ * - Pipeline metrics are point-in-time (current queue state globally)
+ * - Working days: full month for complete months, start→asOfDate for MTD
+ * - Supplements: is_supplement === true OR original_claim_id != null
+ * - Revenue: file_total ?? pay_amount ?? 0 for COMPLETED claims only
+ * - Admin scheduling: scheduled_at with fallback to appointment_start
  */
 
 import {
@@ -28,6 +41,7 @@ import type {
   KPIClaim,
   MonthlySnapshot,
   MonthComparison,
+  MonthScopedStatusCounts,
   TeamMetrics,
   EfficiencyMetrics,
   WeekdayDistribution,
@@ -59,6 +73,48 @@ const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
+
+// ═══════════════════════════════════════════════════════════════
+// MONTH KEY FUNCTIONS (TWO DIFFERENT ANCHORS)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Get the calendar month key for a claim (what month it appears on the calendar)
+ * Uses appointment_start, with fallback to scheduled_at
+ *
+ * @returns "yyyy-MM" string or null if no appointment date
+ */
+export function getCalendarMonthKey(claim: KPIClaim): string | null {
+  const dateStr = claim.appointment_start ?? claim.scheduled_at ?? null;
+  if (!dateStr) return null;
+
+  const d = parseISO(dateStr);
+  if (!isValid(d)) return null;
+
+  return format(d, 'yyyy-MM');
+}
+
+/**
+ * Get the completed month key for a claim (what month it was completed)
+ * Uses completion_date ONLY
+ *
+ * @returns "yyyy-MM" string or null if no completion date
+ */
+export function getCompletedMonthKey(claim: KPIClaim): string | null {
+  if (!claim.completion_date) return null;
+
+  const d = parseISO(claim.completion_date);
+  if (!isValid(d)) return null;
+
+  return format(d, 'yyyy-MM');
+}
+
+/**
+ * Convert year/month to monthKey format
+ */
+export function toMonthKey(year: number, month: number): string {
+  return `${year}-${month.toString().padStart(2, '0')}`;
+}
 
 // ═══════════════════════════════════════════════════════════════
 // PERIOD BOUNDARY FUNCTIONS
@@ -95,10 +151,6 @@ export function getCurrentMTD(today: Date): { year: number; month: number; asOfD
 
 /**
  * Count working days (Mon-Fri) in a date range
- *
- * @param start - Start date (inclusive)
- * @param end - End date (inclusive)
- * @returns Number of weekdays in range
  */
 export function countWorkingDays(start: Date, end: Date): number {
   if (start > end) return 0;
@@ -113,18 +165,93 @@ export function countWorkingDays(start: Date, end: Date): number {
 /**
  * Determine if a claim is a supplement
  * V1 Rule: is_supplement === true OR original_claim_id is set
- * No claim_number regex matching in V1
  */
 export function isSupplementClaim(claim: KPIClaim): boolean {
   return claim.is_supplement === true || claim.original_claim_id != null;
 }
 
 // ═══════════════════════════════════════════════════════════════
-// VOLUME CALCULATIONS
+// CALENDAR MONTH WORKLOAD (based on appointment_start)
 // ═══════════════════════════════════════════════════════════════
 
 /**
- * Filter claims completed within a period
+ * Get claims that appear on the calendar for a specific month
+ * Uses appointment_start (with scheduled_at fallback) as the anchor
+ */
+function getCalendarClaimsForMonth(claims: KPIClaim[], monthKey: string): KPIClaim[] {
+  return claims.filter(c => {
+    if (c.archived_at) return false;
+    return getCalendarMonthKey(c) === monthKey;
+  });
+}
+
+/**
+ * Calculate month-scoped status counts that match the calendar view
+ * These counts "restart" each month based on appointment_start
+ */
+export function calculateMonthScopedStatusCounts(
+  claims: KPIClaim[],
+  monthKey: string
+): MonthScopedStatusCounts {
+  // Get all claims with appointments in this month (not archived)
+  const monthSet = getCalendarClaimsForMonth(claims, monthKey);
+
+  return {
+    allActive: monthSet.filter(c => c.status !== 'CANCELED').length,
+    unassigned: monthSet.filter(c =>
+      c.status === 'UNASSIGNED' || c.status === null || !c.assigned_to
+    ).length,
+    scheduled: monthSet.filter(c => c.status === 'SCHEDULED').length,
+    inProgress: monthSet.filter(c => c.status === 'IN_PROGRESS').length,
+    completed: monthSet.filter(c => c.status === 'COMPLETED').length,
+    canceled: monthSet.filter(c => c.status === 'CANCELED').length,
+  };
+}
+
+/**
+ * Calculate calendar workload metrics
+ */
+export function calculateCalendarWorkload(
+  claims: KPIClaim[],
+  year: number,
+  month: number,
+  asOfDate: Date,
+  isMTD: boolean
+): {
+  calendarClaims: number;
+  calendarClaimsPerWorkingDay: number;
+  monthScopedCounts: MonthScopedStatusCounts;
+} {
+  const monthKey = toMonthKey(year, month);
+  const { start, end } = getMonthBoundaries(year, month);
+
+  // Get all calendar claims for month
+  const calendarClaimsSet = getCalendarClaimsForMonth(claims, monthKey);
+
+  // For MTD, we still show all appointments scheduled in the month
+  // (calendar shows full month even if we're mid-month)
+  const calendarClaims = calendarClaimsSet.length;
+
+  // Working days calculation
+  const workingDaysEnd = isMTD ? minDate([end, asOfDate]) : end;
+  const workingDays = countWorkingDays(start, workingDaysEnd);
+
+  // Month-scoped status counts (matches calendar counters)
+  const monthScopedCounts = calculateMonthScopedStatusCounts(claims, monthKey);
+
+  return {
+    calendarClaims,
+    calendarClaimsPerWorkingDay: workingDays > 0 ? round(calendarClaims / workingDays, 1) : 0,
+    monthScopedCounts,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COMPLETED VOLUME (based on completion_date)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Filter claims COMPLETED within a period
  * Uses completion_date as the anchor for "when work was done"
  */
 function getCompletedClaimsInPeriod(claims: KPIClaim[], start: Date, end: Date): KPIClaim[] {
@@ -136,15 +263,19 @@ function getCompletedClaimsInPeriod(claims: KPIClaim[], start: Date, end: Date):
 }
 
 /**
- * Calculate monthly volume metrics
- *
- * @param claims - All claims to analyze
- * @param year - Target year
- * @param month - Target month (1-12)
- * @param asOfDate - For MTD: today's date; for complete month: end of month
- * @param isMTD - If true, working days calculated start→asOfDate; if false, full month
+ * Get claims completed in a specific month (by monthKey)
  */
-export function calculateMonthlyVolume(
+function getCompletedClaimsForMonth(claims: KPIClaim[], monthKey: string): KPIClaim[] {
+  return claims.filter(c => {
+    if (c.status !== 'COMPLETED') return false;
+    return getCompletedMonthKey(c) === monthKey;
+  });
+}
+
+/**
+ * Calculate completed volume metrics (production-based)
+ */
+export function calculateCompletedVolume(
   claims: KPIClaim[],
   year: number,
   month: number,
@@ -160,17 +291,17 @@ export function calculateMonthlyVolume(
 } {
   const { start, end } = getMonthBoundaries(year, month);
 
-  // For MTD, only look at claims up to asOfDate
+  // For MTD, only count completions up to asOfDate
   const effectiveEnd = isMTD ? minDate([end, asOfDate]) : end;
-  const periodClaims = getCompletedClaimsInPeriod(claims, start, effectiveEnd);
+  const completedClaims = getCompletedClaimsInPeriod(claims, start, effectiveEnd);
 
   // Group by completion date for peak calculation
-  const byDay = groupBy(periodClaims, c => {
+  const byDay = groupBy(completedClaims, c => {
     const d = parseISO(c.completion_date!);
     return format(d, 'yyyy-MM-dd');
   });
 
-  // Find peak day (based on completion_date, not appointment)
+  // Find peak day (based on completion_date)
   let peakDayVolume = 0;
   let peakDayDate: string | null = null;
   for (const [date, dayClaims] of Object.entries(byDay)) {
@@ -180,25 +311,25 @@ export function calculateMonthlyVolume(
     }
   }
 
-  // Working days calculation differs for MTD vs complete month
+  // Working days calculation
   const workingDaysEnd = isMTD ? minDate([end, asOfDate]) : end;
   const workingDays = countWorkingDays(start, workingDaysEnd);
 
   // Count supplements
-  const supplementClaims = periodClaims.filter(isSupplementClaim).length;
+  const supplementClaims = completedClaims.filter(isSupplementClaim).length;
 
   return {
-    totalClaims: periodClaims.length,
+    totalClaims: completedClaims.length,
     supplementClaims,
     peakDayVolume,
     peakDayDate,
     workingDays,
-    claimsPerWorkingDay: workingDays > 0 ? round(periodClaims.length / workingDays, 1) : 0,
+    claimsPerWorkingDay: workingDays > 0 ? round(completedClaims.length / workingDays, 1) : 0,
   };
 }
 
 // ═══════════════════════════════════════════════════════════════
-// REVENUE CALCULATIONS
+// REVENUE CALCULATIONS (based on completion_date)
 // ═══════════════════════════════════════════════════════════════
 
 /**
@@ -217,15 +348,15 @@ export function calculateMonthlyRevenue(
 } {
   const { start, end } = getMonthBoundaries(year, month);
   const effectiveEnd = isMTD ? minDate([end, asOfDate]) : end;
-  const periodClaims = getCompletedClaimsInPeriod(claims, start, effectiveEnd);
+  const completedClaims = getCompletedClaimsInPeriod(claims, start, effectiveEnd);
 
   // Sum revenue: file_total ?? pay_amount ?? 0
-  const grossRevenue = periodClaims.reduce((sum, c) => {
+  const grossRevenue = completedClaims.reduce((sum, c) => {
     return sum + (c.file_total ?? c.pay_amount ?? 0);
   }, 0);
 
-  const avgRevenuePerClaim = periodClaims.length > 0
-    ? grossRevenue / periodClaims.length
+  const avgRevenuePerClaim = completedClaims.length > 0
+    ? grossRevenue / completedClaims.length
     : 0;
 
   return {
@@ -235,12 +366,12 @@ export function calculateMonthlyRevenue(
 }
 
 // ═══════════════════════════════════════════════════════════════
-// PIPELINE STATUS (Point-in-time, not period-specific)
+// PIPELINE STATUS (Point-in-time, GLOBAL - not month-filtered)
 // ═══════════════════════════════════════════════════════════════
 
 /**
- * Calculate current pipeline status
- * This is a snapshot of the current queue, not period-specific
+ * Calculate current pipeline status (global, point-in-time)
+ * This is a snapshot of the ENTIRE queue, not filtered by month
  */
 export function calculatePipelineStatus(claims: KPIClaim[]): {
   awaitingScheduling: number;
@@ -262,11 +393,11 @@ export function calculatePipelineStatus(claims: KPIClaim[]): {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// MONTHLY SNAPSHOT (combines all metrics)
+// MONTHLY SNAPSHOT (combines BOTH calendar and completed metrics)
 // ═══════════════════════════════════════════════════════════════
 
 /**
- * Build a complete monthly snapshot
+ * Build a complete monthly snapshot with both calendar and completed metrics
  */
 export function buildMonthlySnapshot(
   claims: KPIClaim[],
@@ -275,34 +406,48 @@ export function buildMonthlySnapshot(
   asOfDate: Date,
   isMTD: boolean
 ): MonthlySnapshot {
-  const volume = calculateMonthlyVolume(claims, year, month, asOfDate, isMTD);
+  const monthKey = toMonthKey(year, month);
+
+  // Calendar workload (appointment_start based)
+  const calendarWorkload = calculateCalendarWorkload(claims, year, month, asOfDate, isMTD);
+
+  // Completed volume (completion_date based)
+  const completedVolume = calculateCompletedVolume(claims, year, month, asOfDate, isMTD);
+
+  // Revenue (completion_date based)
   const revenue = calculateMonthlyRevenue(claims, year, month, asOfDate, isMTD);
+
+  // Pipeline (global, point-in-time)
   const pipeline = calculatePipelineStatus(claims);
 
   return {
     year,
     month,
     monthName: MONTH_NAMES[month - 1],
+    monthKey,
     isComplete: !isMTD,
     asOfDate,
 
-    // Volume
-    totalClaims: volume.totalClaims,
-    supplementClaims: volume.supplementClaims,
-    peakDayVolume: volume.peakDayVolume,
-    peakDayDate: volume.peakDayDate,
-    workingDays: volume.workingDays,
-    claimsPerWorkingDay: volume.claimsPerWorkingDay,
+    // Calendar workload (appointment_start based)
+    calendarClaims: calendarWorkload.calendarClaims,
+    calendarClaimsPerWorkingDay: calendarWorkload.calendarClaimsPerWorkingDay,
+    monthScopedCounts: calendarWorkload.monthScopedCounts,
+
+    // Completed volume (completion_date based)
+    totalClaims: completedVolume.totalClaims,
+    completedThisPeriod: completedVolume.totalClaims,
+    supplementClaims: completedVolume.supplementClaims,
+    peakDayVolume: completedVolume.peakDayVolume,
+    peakDayDate: completedVolume.peakDayDate,
+    workingDays: completedVolume.workingDays,
+    claimsPerWorkingDay: completedVolume.claimsPerWorkingDay,
 
     // Revenue
     grossRevenue: revenue.grossRevenue,
     avgRevenuePerClaim: revenue.avgRevenuePerClaim,
 
-    // Pipeline (point-in-time)
+    // Pipeline (global)
     pipeline,
-
-    // Explicit period completion count
-    completedThisPeriod: volume.totalClaims,
   };
 }
 
@@ -324,7 +469,6 @@ function calculateDelta(current: number, previous: number): {
 
 /**
  * Calculate pace projection (simple linear extrapolation)
- * projection = (mtdValue / mtdWorkingDays) * totalWorkingDaysInMonth
  */
 function calculatePaceProjection(
   mtdValue: number,
@@ -364,12 +508,15 @@ export function buildMonthComparison(
     true // MTD
   );
 
-  // Calculate deltas
+  // Calculate deltas (completed-based)
   const claimsDelta = calculateDelta(currentMTD.totalClaims, lastMonth.totalClaims);
   const revenueDelta = calculateDelta(currentMTD.grossRevenue, lastMonth.grossRevenue);
   const avgRevenueDelta = calculateDelta(currentMTD.avgRevenuePerClaim, lastMonth.avgRevenuePerClaim);
 
-  // Calculate pace projections (for secondary display)
+  // Calendar workload delta (appointment-based)
+  const calendarClaimsDelta = calculateDelta(currentMTD.calendarClaims, lastMonth.calendarClaims);
+
+  // Calculate pace projections
   const totalWorkingDaysInMonth = countWorkingDays(
     startOfMonth(today),
     endOfMonth(today)
@@ -379,7 +526,7 @@ export function buildMonthComparison(
     lastMonth,
     currentMTD,
 
-    // Deltas (primary meeting numbers)
+    // Completed deltas
     claimsDelta: claimsDelta.delta,
     claimsDeltaPercent: claimsDelta.percent,
     revenueDelta: revenueDelta.delta,
@@ -387,7 +534,11 @@ export function buildMonthComparison(
     avgRevenueDelta: avgRevenueDelta.delta,
     avgRevenueDeltaPercent: avgRevenueDelta.percent,
 
-    // Pace projections (secondary - toggle/tooltip in UI)
+    // Calendar workload delta
+    calendarClaimsDelta: calendarClaimsDelta.delta,
+    calendarClaimsDeltaPercent: calendarClaimsDelta.percent,
+
+    // Pace projections
     projectedMonthEndClaims: calculatePaceProjection(
       currentMTD.totalClaims,
       currentMTD.workingDays,
@@ -410,13 +561,11 @@ export function buildMonthComparison(
  * Uses scheduled_at if available, falls back to appointment_start
  */
 function getSchedulingDate(claim: KPIClaim): Date | null {
-  // Primary: scheduled_at (when scheduling action occurred)
   if (claim.scheduled_at) {
     const d = parseISO(claim.scheduled_at);
     if (isValid(d)) return d;
   }
 
-  // Fallback: appointment_start (temporary until scheduled_at is populated)
   if (claim.appointment_start) {
     const d = parseISO(claim.appointment_start);
     if (isValid(d)) return d;
@@ -436,24 +585,18 @@ export function calculateTeamMetrics(
 ): TeamMetrics {
   const { start, end } = getMonthBoundaries(year, month);
 
-  // ─────────────────────────────────────────────────────────────
-  // Admin metrics: scheduling + invoicing
-  // ─────────────────────────────────────────────────────────────
-
-  // Claims scheduled in period (using scheduled_at with fallback)
+  // Admin: scheduling + invoicing
   const scheduledInPeriod = claims.filter(c => {
     const schedulingDate = getSchedulingDate(c);
     return schedulingDate && schedulingDate >= start && schedulingDate <= end;
   });
 
-  // Claims invoiced (file_total set, completion_date in period)
   const invoicedInPeriod = claims.filter(c => {
     if (c.file_total == null || !c.completion_date) return false;
     const completionDate = parseISO(c.completion_date);
     return isValid(completionDate) && completionDate >= start && completionDate <= end;
   });
 
-  // Average scheduling lag: created_at → scheduled_at (or fallback)
   const withSchedulingData = scheduledInPeriod.filter(c => c.created_at);
   let avgSchedulingLag: number | null = null;
   if (withSchedulingData.length > 0) {
@@ -465,10 +608,7 @@ export function calculateTeamMetrics(
     avgSchedulingLag = round(totalDays / withSchedulingData.length, 1);
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Inspection metrics: completed claims
-  // ─────────────────────────────────────────────────────────────
-
+  // Inspection: completed claims
   const completedInPeriod = getCompletedClaimsInPeriod(claims, start, end);
   const supplementsCompleted = completedInPeriod.filter(isSupplementClaim).length;
   const avgFileTotal = completedInPeriod.length > 0
@@ -551,11 +691,11 @@ export function calculateEfficiencyMetrics(
   ];
   for (const claim of completedInPeriod) {
     const d = parseISO(claim.completion_date!);
-    const dayIndex = getDay(d); // 0 = Sunday
+    const dayIndex = getDay(d);
     weekdayDist[dayKeys[dayIndex]]++;
   }
 
-  // Appointment spacing (for days with 2+ appointments)
+  // Appointment spacing
   const avgSpacing = calculateAvgAppointmentSpacing(claims, start, end);
 
   return {
@@ -576,14 +716,12 @@ function calculateAvgAppointmentSpacing(
   start: Date,
   end: Date
 ): number | null {
-  // Filter to claims with appointments in period
   const withAppointments = claims.filter(c => {
     if (!c.appointment_start) return false;
     const d = parseISO(c.appointment_start);
     return isValid(d) && d >= start && d <= end;
   });
 
-  // Group by appointment date
   const byDay = groupBy(withAppointments, c => {
     const d = parseISO(c.appointment_start!);
     return format(d, 'yyyy-MM-dd');
@@ -595,14 +733,12 @@ function calculateAvgAppointmentSpacing(
   for (const dayClaims of Object.values(byDay)) {
     if (dayClaims.length < 2) continue;
 
-    // Sort by appointment start time
     const sorted = [...dayClaims].sort((a, b) => {
       const aTime = parseISO(a.appointment_start!).getTime();
       const bTime = parseISO(b.appointment_start!).getTime();
       return aTime - bTime;
     });
 
-    // Calculate gaps between consecutive appointments
     for (let i = 1; i < sorted.length; i++) {
       const prevEnd = sorted[i - 1].appointment_end
         ? parseISO(sorted[i - 1].appointment_end!)
@@ -611,7 +747,6 @@ function calculateAvgAppointmentSpacing(
 
       const gapMinutes = differenceInMinutes(currStart, prevEnd);
 
-      // Only count reasonable gaps (0-8 hours)
       if (gapMinutes > 0 && gapMinutes < 480) {
         totalGapMinutes += gapMinutes;
         gapCount++;

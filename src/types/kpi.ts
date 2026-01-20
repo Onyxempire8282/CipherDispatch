@@ -2,11 +2,37 @@
  * KPI Dashboard Type Definitions (V1)
  *
  * Design principles:
- * - MonthlySnapshot captures both period metrics AND point-in-time pipeline
- * - MonthComparison provides deltas and pace projections (projections are secondary in UI)
+ * - TWO DIFFERENT MONTH ANCHORS:
+ *   1. CalendarMonth (appointment_start) - what appears on the monthly calendar
+ *   2. CompletedMonth (completion_date) - when work was completed
+ * - MonthlySnapshot includes BOTH calendar workload AND completed metrics
+ * - MonthScopedStatusCounts match the calendar view (restart each month)
  * - TeamMetrics tracks Admin/Photography/Inspection contributions
  * - EfficiencyMetrics captures scheduling patterns
  */
+
+// ═══════════════════════════════════════════════════════════════
+// MONTH-SCOPED STATUS COUNTS (matches calendar view)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Status counts scoped to a specific month based on appointment_start
+ * These counts "restart" each month and match what you see on the calendar
+ */
+export interface MonthScopedStatusCounts {
+  /** All non-archived claims with appointments in this month */
+  allActive: number;
+  /** Claims with status UNASSIGNED (or no assigned_to) */
+  unassigned: number;
+  /** Claims with status SCHEDULED */
+  scheduled: number;
+  /** Claims with status IN_PROGRESS */
+  inProgress: number;
+  /** Claims with status COMPLETED (appointment was in this month) */
+  completed: number;
+  /** Claims with status CANCELED */
+  canceled: number;
+}
 
 // ═══════════════════════════════════════════════════════════════
 // CORE METRIC TYPES
@@ -16,38 +42,50 @@ export interface MonthlySnapshot {
   year: number;
   month: number;                        // 1-12
   monthName: string;                    // "January", "February", etc.
+  monthKey: string;                     // "2025-12" format for comparison
   isComplete: boolean;                  // false = current MTD, true = locked month
   asOfDate: Date;                       // snapshot timestamp (end of month if complete, today if MTD)
 
   // ─────────────────────────────────────────────────────────────
-  // Volume Metrics (based on completion_date in period)
+  // CALENDAR WORKLOAD (based on appointment_start in month)
+  // These metrics match what you see on the monthly calendar view
   // ─────────────────────────────────────────────────────────────
-  totalClaims: number;                  // claims completed in period
-  supplementClaims: number;             // claims flagged as supplements (is_supplement OR has original_claim_id)
+  calendarClaims: number;               // claims with appointments in this month
+  calendarClaimsPerWorkingDay: number;  // calendarClaims / workingDays
+
+  /**
+   * Status counts for claims with appointments in this month
+   * Matches the calendar view counters (All Active / Unassigned / Scheduled / etc.)
+   */
+  monthScopedCounts: MonthScopedStatusCounts;
+
+  // ─────────────────────────────────────────────────────────────
+  // COMPLETED PRODUCTION (based on completion_date in month)
+  // These metrics show actual work completed, regardless of appointment date
+  // ─────────────────────────────────────────────────────────────
+  totalClaims: number;                  // claims COMPLETED in this month (completion_date)
+  completedThisPeriod: number;          // alias for totalClaims
+  supplementClaims: number;             // supplements completed in month
   peakDayVolume: number;                // max claims completed in single day
   peakDayDate: string | null;           // ISO date of peak day (null if no claims)
   workingDays: number;                  // business days (Mon-Fri) in period
-  claimsPerWorkingDay: number;          // totalClaims / workingDays
+  claimsPerWorkingDay: number;          // totalClaims / workingDays (completed-based)
 
   // ─────────────────────────────────────────────────────────────
-  // Revenue Metrics (COMPLETED claims only)
+  // Revenue Metrics (COMPLETED claims only, by completion_date)
   // ─────────────────────────────────────────────────────────────
-  grossRevenue: number;                 // sum of (file_total ?? pay_amount ?? 0) for completed claims
+  grossRevenue: number;                 // sum of (file_total ?? pay_amount ?? 0)
   avgRevenuePerClaim: number;           // grossRevenue / totalClaims (0 if no claims)
 
   // ─────────────────────────────────────────────────────────────
   // Pipeline Snapshot (point-in-time, NOT period-specific)
-  // These reflect current queue state, updated live
+  // These reflect current queue state globally, not month-filtered
   // ─────────────────────────────────────────────────────────────
   pipeline: {
-    awaitingScheduling: number;         // status = UNASSIGNED or no assigned_to
-    scheduled: number;                  // status = SCHEDULED
-    inProgress: number;                 // status = IN_PROGRESS
+    awaitingScheduling: number;         // global: status = UNASSIGNED or no assigned_to
+    scheduled: number;                  // global: status = SCHEDULED
+    inProgress: number;                 // global: status = IN_PROGRESS
   };
-
-  // Period completion is tracked separately in totalClaims above
-  // This avoids ambiguity between "completed in period" vs "currently completed status"
-  completedThisPeriod: number;          // alias for totalClaims, explicit naming for clarity
 }
 
 export interface MonthComparison {
@@ -55,7 +93,7 @@ export interface MonthComparison {
   currentMTD: MonthlySnapshot;
 
   // ─────────────────────────────────────────────────────────────
-  // Computed Deltas (primary meeting numbers)
+  // Computed Deltas (primary meeting numbers) - based on COMPLETED counts
   // ─────────────────────────────────────────────────────────────
   claimsDelta: number;                  // currentMTD.totalClaims - lastMonth.totalClaims
   claimsDeltaPercent: number | null;    // percentage change (null if lastMonth = 0)
@@ -65,8 +103,13 @@ export interface MonthComparison {
   avgRevenueDeltaPercent: number | null;
 
   // ─────────────────────────────────────────────────────────────
+  // Calendar workload deltas (based on appointment counts)
+  // ─────────────────────────────────────────────────────────────
+  calendarClaimsDelta: number;
+  calendarClaimsDeltaPercent: number | null;
+
+  // ─────────────────────────────────────────────────────────────
   // Pace Projections (secondary - toggle/tooltip in UI)
-  // Simple linear projection: (MTD value / MTD working days) * total working days in month
   // ─────────────────────────────────────────────────────────────
   projectedMonthEndClaims: number;
   projectedMonthEndRevenue: number;
