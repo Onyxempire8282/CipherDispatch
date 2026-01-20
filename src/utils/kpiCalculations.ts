@@ -177,24 +177,50 @@ export function isSupplementClaim(claim: KPIClaim): boolean {
 /**
  * Get claims that appear on the calendar for a specific month
  * Uses appointment_start (with scheduled_at fallback) as the anchor
+ *
+ * @param claims All claims to filter
+ * @param monthKey The month key to match ("yyyy-MM")
+ * @param effectiveEnd Optional end date for MTD filtering - excludes future appointments
  */
-function getCalendarClaimsForMonth(claims: KPIClaim[], monthKey: string): KPIClaim[] {
+function getCalendarClaimsForMonth(
+  claims: KPIClaim[],
+  monthKey: string,
+  effectiveEnd?: Date
+): KPIClaim[] {
   return claims.filter(c => {
     if (c.archived_at) return false;
-    return getCalendarMonthKey(c) === monthKey;
+
+    // Check month key matches
+    if (getCalendarMonthKey(c) !== monthKey) return false;
+
+    // For MTD (effectiveEnd provided), exclude appointments after effectiveEnd
+    if (effectiveEnd) {
+      const dateStr = c.appointment_start ?? c.scheduled_at ?? null;
+      if (!dateStr) return false;
+
+      const appointmentDate = parseISO(dateStr);
+      if (!isValid(appointmentDate)) return false;
+
+      return appointmentDate <= effectiveEnd;
+    }
+
+    return true;
   });
 }
 
 /**
  * Calculate month-scoped status counts that match the calendar view
  * These counts "restart" each month based on appointment_start
+ *
+ * @param effectiveEnd Optional end date for MTD filtering - excludes future appointments
  */
 export function calculateMonthScopedStatusCounts(
   claims: KPIClaim[],
-  monthKey: string
+  monthKey: string,
+  effectiveEnd?: Date
 ): MonthScopedStatusCounts {
-  // Get all claims with appointments in this month (not archived)
-  const monthSet = getCalendarClaimsForMonth(claims, monthKey);
+  // Get claims with appointments in this month (filtered by effectiveEnd for MTD)
+  const monthSet = getCalendarClaimsForMonth(claims, monthKey, effectiveEnd);
 
   return {
     allActive: monthSet.filter(c => c.status !== 'CANCELED').length,
@@ -210,6 +236,9 @@ export function calculateMonthScopedStatusCounts(
 
 /**
  * Calculate calendar workload metrics
+ *
+ * For MTD periods: filters calendar claims to exclude future appointments
+ * (appointment_start must be <= asOfDate)
  */
 export function calculateCalendarWorkload(
   claims: KPIClaim[],
@@ -225,19 +254,19 @@ export function calculateCalendarWorkload(
   const monthKey = toMonthKey(year, month);
   const { start, end } = getMonthBoundaries(year, month);
 
-  // Get all calendar claims for month
-  const calendarClaimsSet = getCalendarClaimsForMonth(claims, monthKey);
+  // For MTD, cap at asOfDate to exclude future appointments
+  const effectiveEnd = isMTD ? minDate([end, asOfDate]) : undefined;
 
-  // For MTD, we still show all appointments scheduled in the month
-  // (calendar shows full month even if we're mid-month)
+  // Get calendar claims (filtered by effectiveEnd for MTD)
+  const calendarClaimsSet = getCalendarClaimsForMonth(claims, monthKey, effectiveEnd);
   const calendarClaims = calendarClaimsSet.length;
 
-  // Working days calculation
+  // Working days calculation (consistent with claim filtering)
   const workingDaysEnd = isMTD ? minDate([end, asOfDate]) : end;
   const workingDays = countWorkingDays(start, workingDaysEnd);
 
-  // Month-scoped status counts (matches calendar counters)
-  const monthScopedCounts = calculateMonthScopedStatusCounts(claims, monthKey);
+  // Month-scoped status counts (also filtered by effectiveEnd for MTD)
+  const monthScopedCounts = calculateMonthScopedStatusCounts(claims, monthKey, effectiveEnd);
 
   return {
     calendarClaims,
@@ -441,6 +470,10 @@ export function buildMonthlySnapshot(
     peakDayDate: completedVolume.peakDayDate,
     workingDays: completedVolume.workingDays,
     claimsPerWorkingDay: completedVolume.claimsPerWorkingDay,
+
+    // Explicit "completed" fields (two different anchors - use these for clarity!)
+    completedByAppointmentMonth: calendarWorkload.monthScopedCounts.completed,
+    completedByCompletionMonth: completedVolume.totalClaims,
 
     // Revenue
     grossRevenue: revenue.grossRevenue,

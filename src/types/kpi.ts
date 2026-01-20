@@ -65,6 +65,15 @@ export interface MonthlySnapshot {
   // ─────────────────────────────────────────────────────────────
   totalClaims: number;                  // claims COMPLETED in this month (completion_date)
   completedThisPeriod: number;          // alias for totalClaims
+
+  // ─────────────────────────────────────────────────────────────
+  // EXPLICIT "COMPLETED" FIELD NAMES (two different anchors!)
+  // Use these field names to avoid confusion between the two meanings
+  // ─────────────────────────────────────────────────────────────
+  /** Claims with appointments in this month that have COMPLETED status */
+  completedByAppointmentMonth: number;  // = monthScopedCounts.completed
+  /** Claims actually completed (completion_date) in this month */
+  completedByCompletionMonth: number;   // = totalClaims
   supplementClaims: number;             // supplements completed in month
   peakDayVolume: number;                // max claims completed in single day
   peakDayDate: string | null;           // ISO date of peak day (null if no claims)
