@@ -1,71 +1,92 @@
 /**
  * Route Operations
  *
- * Handles route lifecycle operations including the "Close Route" flow
- * that persists immutable mileage logs for IRS-defensible tracking.
+ * Handles the "Close Route" lifecycle that persists mileage data
+ * to mileage_logs for IRS-defensible tracking.
  *
- * IMPORTANT: This is a LOGGING system, not a TRACKING system.
- * - Mileage is NOT calculated at Close Route time
- * - Mileage already exists from route optimization
- * - Close Route simply snapshots existing data into mileage_logs
+ * ═══════════════════════════════════════════════════════════════
+ * CORE PRINCIPLE: This is a LOGGING system, not a TRACKING system.
+ * ═══════════════════════════════════════════════════════════════
  *
- * PREREQUISITES:
- * - routes table with: id, user_id, date, status, total_miles, start_address, end_address
- * - claims linked to routes via route_id
+ * - Mileage is calculated during route optimization (not here)
+ * - Close Route snapshots existing route data to mileage_logs
+ * - No GPS tracking, no Maps API calls, no distance calculations
  *
- * LOG DATE BEHAVIOR:
- * - log_date is sourced from route.date at Close Route time
- * - User may update route.date before closing
- * - Once closed, the log_date reflects the final route.date
+ * ═══════════════════════════════════════════════════════════════
+ * DATA FLOW
+ * ═══════════════════════════════════════════════════════════════
  *
- * REOPEN BEHAVIOR (before RLS hardening):
- * - If a route is reopened and resubmitted, the previous log is replaced
- * - After RLS immutability is applied, logs can only be corrected via service role
+ * Route optimization (elsewhere) → route.total_miles, route.start_address, route.end_address
+ * User sets route.date (can change before closing)
+ * closeRoute() → snapshots route data → mileage_logs.log_date = route.date
+ *
+ * ═══════════════════════════════════════════════════════════════
+ * ATOMICITY LIMITATION
+ * ═══════════════════════════════════════════════════════════════
+ *
+ * Supabase JS client does not support multi-statement transactions.
+ * closeRoute() executes: delete → insert → update (3 separate calls).
+ *
+ * Failure scenarios:
+ * - Delete fails: No change, safe to retry
+ * - Insert fails: No log created, route still open, safe to retry
+ * - Update fails: Log exists but route shows 'active'
+ *   → Recovery: retry closeRoute() (delete removes duplicate, insert recreates)
+ *
+ * This ordering ensures the mileage log is never lost once created.
+ *
+ * ═══════════════════════════════════════════════════════════════
+ * RLS IMMUTABILITY BEHAVIOR
+ * ═══════════════════════════════════════════════════════════════
+ *
+ * Before RLS hardening:
+ * - Delete succeeds, allowing reopen/resubmit
+ *
+ * After RLS hardening (DELETE policy blocks all):
+ * - Delete returns 0 rows affected (no error thrown)
+ * - Insert fails with unique constraint on route_id
+ * - This is intentional: closed routes cannot be re-logged
+ * - Corrections require service role (admin intervention)
  */
 
 import { supabase } from '../lib/supabase';
 import type { CloseRouteResult, MileageLogInsert } from '../types/mileage';
 
 // ═══════════════════════════════════════════════════════════════
-// ROUTE INTERFACE
+// TYPES
 // ═══════════════════════════════════════════════════════════════
 
 interface Route {
   id: string;
   user_id: string;
-  date: string;                    // User-controlled effective date
+  date: string;           // Effective date for mileage log
   status: string;
-  total_miles: number;             // Already calculated from route optimization
-  start_address: string;           // First stop address
-  end_address: string;             // Last stop address
+  total_miles: number;    // From route optimization
+  start_address: string;  // From route optimization
+  end_address: string;    // From route optimization
 }
 
 // ═══════════════════════════════════════════════════════════════
-// CLOSE ROUTE (persistence only - no calculation)
+// CLOSE ROUTE
 // ═══════════════════════════════════════════════════════════════
 
 /**
- * Close a route and persist its mileage data to mileage_logs
+ * Close a route and persist its mileage data to mileage_logs.
  *
- * This function DOES NOT calculate mileage. It snapshots existing
- * route data that was already computed during route optimization.
+ * This function does NOT calculate mileage. It snapshots existing
+ * route data that was computed during route optimization.
  *
- * Flow:
- * 1. Validate route ownership and status
- * 2. Read existing mileage data from route
- * 3. Get completed claims for this route
- * 4. Delete any existing mileage log for this route (reopen case)
- * 5. Insert new mileage log snapshot
- * 6. Update route status to 'closed'
- *
- * @param routeId The route to close
- * @param userId The user performing the action (for validation)
+ * @throws Error if route not found, not owned, already closed, or missing data
+ * @throws Error if mileage log insert fails
+ * @throws Error if route status update fails (log already persisted)
  */
 export async function closeRoute(
   routeId: string,
   userId: string
 ): Promise<CloseRouteResult> {
-  // 1. Fetch route with existing mileage data
+  // ─────────────────────────────────────────────────────────────
+  // 1. Fetch and validate route
+  // ─────────────────────────────────────────────────────────────
   const { data: route, error: routeError } = await supabase
     .from('routes')
     .select('id, user_id, date, status, total_miles, start_address, end_address')
@@ -86,7 +107,6 @@ export async function closeRoute(
     throw new Error('Route is already closed');
   }
 
-  // Validate required mileage data exists
   if (typedRoute.total_miles == null || typedRoute.total_miles < 0) {
     throw new Error('Route mileage data is missing. Complete route optimization first.');
   }
@@ -95,32 +115,43 @@ export async function closeRoute(
     throw new Error('Route address data is missing. Complete route optimization first.');
   }
 
-  // 2. Get completed claims for this route
-  const { data: completedClaims } = await supabase
+  // ─────────────────────────────────────────────────────────────
+  // 2. Collect completed claims
+  // ─────────────────────────────────────────────────────────────
+  const { data: completedClaims, error: claimsError } = await supabase
     .from('claims')
     .select('id')
     .eq('route_id', routeId)
     .eq('status', 'COMPLETED');
 
-  const claimIds = completedClaims?.map(c => c.id) ?? [];
-  const claimCount = claimIds.length;
+  if (claimsError) {
+    throw new Error(`Failed to fetch claims: ${claimsError.message}`);
+  }
 
-  // 3. Delete any existing mileage log for this route (handles reopen/resubmit case)
-  // NOTE: This will fail silently after RLS immutability is applied
+  const claimIds = completedClaims?.map(c => c.id) ?? [];
+
+  // ─────────────────────────────────────────────────────────────
+  // 3. Delete existing log (enables reopen/resubmit before RLS)
+  //
+  // After RLS hardening: returns 0 rows, no error thrown.
+  // Insert will then fail on unique constraint (correct behavior).
+  // ─────────────────────────────────────────────────────────────
   await supabase
     .from('mileage_logs')
     .delete()
     .eq('route_id', routeId);
 
-  // 4. Insert mileage log (snapshot of existing route data)
+  // ─────────────────────────────────────────────────────────────
+  // 4. Insert mileage log snapshot
+  // ─────────────────────────────────────────────────────────────
   const mileageLogData: MileageLogInsert = {
     route_id: routeId,
     user_id: userId,
-    log_date: typedRoute.date,              // User-controlled effective date
+    log_date: typedRoute.date,
     start_address: typedRoute.start_address,
     end_address: typedRoute.end_address,
-    total_miles: typedRoute.total_miles,    // Already calculated, just persisting
-    claim_count: claimCount,
+    total_miles: typedRoute.total_miles,
+    claim_count: claimIds.length,
     claim_ids: claimIds,
   };
 
@@ -131,23 +162,36 @@ export async function closeRoute(
     .single();
 
   if (logError) {
+    // After RLS: unique constraint violation means log already exists and is immutable
+    const isImmutable = logError.code === '23505'; // unique_violation
+    if (isImmutable) {
+      throw new Error('Route already has an immutable mileage log. Contact admin for corrections.');
+    }
     throw new Error(`Failed to create mileage log: ${logError.message}`);
   }
 
-  // 5. Update route status to closed
+  // ─────────────────────────────────────────────────────────────
+  // 5. Update route status
+  //
+  // If this fails, the mileage log exists but route shows 'active'.
+  // Retry closeRoute() to recover (delete + insert handles idempotency).
+  // ─────────────────────────────────────────────────────────────
   const { error: updateError } = await supabase
     .from('routes')
     .update({ status: 'closed' })
     .eq('id', routeId);
 
   if (updateError) {
-    throw new Error(`Failed to close route: ${updateError.message}`);
+    throw new Error(
+      `Mileage log created but route status update failed. ` +
+      `Retry closeRoute() to complete. Error: ${updateError.message}`
+    );
   }
 
   return {
     success: true,
     totalMiles: typedRoute.total_miles,
-    claimCount,
+    claimCount: claimIds.length,
     mileageLogId: mileageLog.id,
   };
 }
@@ -157,24 +201,23 @@ export async function closeRoute(
 // ═══════════════════════════════════════════════════════════════
 
 /**
- * Reopen a closed route for editing
+ * Reopen a closed route for editing.
  *
- * This allows the user to:
- * - Update the route date
- * - Modify stops
- * - Re-close with updated data
+ * Allows user to update route.date or stops, then re-close.
  *
- * NOTE: After RLS immutability is applied to mileage_logs,
- * the existing log cannot be deleted. Use service role for corrections.
+ * After RLS immutability is applied:
+ * - Delete returns 0 rows (no error)
+ * - This function checks row count and fails explicitly
+ * - Corrections require service role (admin intervention)
  *
- * @param routeId The route to reopen
- * @param userId The user performing the action (for validation)
+ * @throws Error if route not found, not owned, or not closed
+ * @throws Error if mileage log is immutable (post-RLS)
  */
 export async function reopenRoute(
   routeId: string,
   userId: string
 ): Promise<{ success: boolean }> {
-  // Fetch route and validate ownership
+  // Validate route
   const { data: route, error: routeError } = await supabase
     .from('routes')
     .select('id, user_id, status')
@@ -193,17 +236,33 @@ export async function reopenRoute(
     throw new Error('Route is not closed');
   }
 
-  // Delete existing mileage log (will fail after RLS hardening)
-  const { error: deleteError } = await supabase
+  // Attempt to delete mileage log
+  // RLS denial returns count=0, not an error
+  const { error: deleteError, count } = await supabase
     .from('mileage_logs')
-    .delete()
+    .delete({ count: 'exact' })
     .eq('route_id', routeId);
 
   if (deleteError) {
-    throw new Error(`Cannot reopen: mileage log is immutable. Contact admin for correction.`);
+    throw new Error(`Failed to delete mileage log: ${deleteError.message}`);
   }
 
-  // Update route status to active
+  if (count === 0) {
+    // Either no log existed (edge case) or RLS blocked deletion
+    // Check if log exists to distinguish
+    const { data: existingLog } = await supabase
+      .from('mileage_logs')
+      .select('id')
+      .eq('route_id', routeId)
+      .single();
+
+    if (existingLog) {
+      throw new Error('Cannot reopen: mileage log is immutable. Contact admin for corrections.');
+    }
+    // No log existed - proceed with reopen
+  }
+
+  // Update route status
   const { error: updateError } = await supabase
     .from('routes')
     .update({ status: 'active' })
@@ -217,11 +276,13 @@ export async function reopenRoute(
 }
 
 // ═══════════════════════════════════════════════════════════════
-// MILEAGE LOG QUERIES
+// QUERIES
 // ═══════════════════════════════════════════════════════════════
 
 /**
- * Fetch mileage logs for a user within a date range
+ * Fetch mileage logs for a user within a date range.
+ *
+ * @throws Error if query fails
  */
 export async function fetchMileageLogs(
   userId: string,
@@ -254,17 +315,4 @@ export async function fetchMileageLogs(
   }
 
   return data ?? [];
-}
-
-/**
- * Check if a mileage log exists for a route
- */
-export async function hasMileageLog(routeId: string): Promise<boolean> {
-  const { data } = await supabase
-    .from('mileage_logs')
-    .select('id')
-    .eq('route_id', routeId)
-    .single();
-
-  return data !== null;
 }
