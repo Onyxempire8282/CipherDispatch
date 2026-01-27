@@ -172,6 +172,52 @@ export default function MyRoutes() {
           </Link>
         </div>
 
+        {/* Summary Hint */}
+        {routes.length > 0 && (
+          <div
+            style={{
+              padding: '12px 16px',
+              marginBottom: 16,
+              background: '#1e293b',
+              border: '1px solid #334155',
+              borderRadius: 8,
+              color: '#94a3b8',
+              fontSize: 14,
+            }}
+          >
+            {(() => {
+              const active = routes.filter(r => r.status === 'active');
+              const closable = active.filter(r => r.total_miles != null);
+              const closed = routes.filter(r => r.status === 'closed');
+
+              if (closable.length > 0) {
+                return (
+                  <span>
+                    <span style={{ color: '#10b981', fontWeight: 600 }}>{closable.length}</span>
+                    {' '}route{closable.length !== 1 ? 's' : ''} ready to close
+                    {closed.length > 0 && (
+                      <span> · <span style={{ color: '#6ee7b7' }}>{closed.length}</span> already logged</span>
+                    )}
+                  </span>
+                );
+              } else if (active.length > 0) {
+                return (
+                  <span>
+                    {active.length} active route{active.length !== 1 ? 's' : ''} awaiting mileage data from route optimization
+                  </span>
+                );
+              } else if (closed.length > 0) {
+                return (
+                  <span>
+                    All routes closed · <span style={{ color: '#6ee7b7' }}>{closed.length}</span> mileage log{closed.length !== 1 ? 's' : ''} recorded
+                  </span>
+                );
+              }
+              return null;
+            })()}
+          </div>
+        )}
+
         {/* Success Message */}
         {successMessage && (
           <div
