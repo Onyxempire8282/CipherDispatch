@@ -10,6 +10,7 @@ import AdminVendors from "./routes/admin/Vendors";
 import PayoutDashboard from "./routes/admin/PayoutDashboard";
 import KPIDashboard from "./routes/admin/KPIDashboard";
 import MyClaims from "./routes/appraiser/MyClaims";
+import MyRoutes from "./routes/appraiser/MyRoutes";
 import ClaimDetail from "./routes/appraiser/ClaimDetail";
 import PhotoCapture from "./routes/appraiser/PhotoCapture";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -67,6 +68,14 @@ const router = createBrowserRouter(
       element: (
         <ProtectedRoute>
           <MyClaims />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/my-routes",
+      element: (
+        <ProtectedRoute>
+          <MyRoutes />
         </ProtectedRoute>
       ),
     },
