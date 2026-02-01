@@ -6,7 +6,7 @@ import { calculateExpectedPayout, normalizeFirmNameForConfig, isRecurringFirm } 
 
 export interface Claim {
   id: string;
-  firm_name: string;
+  firm: string;
   completion_date?: string | null;
   appointment_start?: string | null;
   file_total?: number | null;
@@ -330,10 +330,10 @@ export function forecastPayouts(claims: Claim[], todayDate: Date = new Date()): 
   const payoutMap = new Map<string, PayoutForecast>();
 
   for (const claim of claims) {
-    const firmNormalized = normalizeFirmName(claim.firm_name);
+    const firmNormalized = normalizeFirmName(claim.firm);
 
     // Skip if not a recurring firm
-    if (!isRecurringFirm(claim.firm_name)) continue;
+    if (!isRecurringFirm(claim.firm)) continue;
 
     // Determine the work date - use completion_date if completed, otherwise use appointment_start
     let workDate: Date | null = null;
@@ -347,7 +347,7 @@ export function forecastPayouts(claims: Claim[], todayDate: Date = new Date()): 
       // For scheduled claims, use appointment date and pay_amount from calendar
       workDate = new Date(claim.appointment_start);
       // Use pay_amount if set in calendar, otherwise use firm's base fee
-      expectedAmount = claim.pay_amount || calculateExpectedPayout(claim.firm_name) || 0;
+      expectedAmount = claim.pay_amount || calculateExpectedPayout(claim.firm) || 0;
     }
 
     if (!workDate || expectedAmount <= 0) continue;

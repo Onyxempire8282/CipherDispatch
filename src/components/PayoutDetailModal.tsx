@@ -64,7 +64,7 @@ export function PayoutDetailModal({
       return sum + (c.file_total || c.pay_amount || 0);
     } else {
       // For scheduled claims, use pay_amount if set, otherwise use firm's base fee
-      return sum + (c.pay_amount || calculateExpectedPayout(c.firm_name) || 0);
+      return sum + (c.pay_amount || calculateExpectedPayout(c.firm) || 0);
     }
   }, 0);
 
@@ -122,7 +122,7 @@ export function PayoutDetailModal({
             // Use same logic as forecast for calculating amount
             const amount = claim.status === 'COMPLETED'
               ? (claim.file_total || claim.pay_amount || 0)
-              : (claim.pay_amount || calculateExpectedPayout(claim.firm_name) || 0);
+              : (claim.pay_amount || calculateExpectedPayout(claim.firm) || 0);
             const isEditing = editingClaimId === claim.id;
             const statusClass = claim.status === 'COMPLETED'
               ? 'claim-card__status--completed'

@@ -26,7 +26,7 @@ type Claim = {
   assigned_to?: string | null;
   appointment_start?: string;
   appointment_end?: string;
-  firm_name?: string;
+  firm?: string;
   pay_amount?: number | null;
   status?: string;
 };
@@ -567,13 +567,13 @@ export default function NewClaim() {
 
         <h4 style={{ color: "#e2e8f0", marginTop: 16 }}>Firm</h4>
         <select
-          value={form.firm_name || ""}
+          value={form.firm || ""}
           onChange={(e) => {
             const selectedFirmName = e.target.value || undefined;
             const selectedFirm = firms.find(f => f.name === selectedFirmName);
             setForm({
               ...form,
-              firm_name: selectedFirmName,
+              firm: selectedFirmName,
               pay_amount: selectedFirm?.pay_amount || null
             });
           }}

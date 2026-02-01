@@ -48,7 +48,8 @@
       "Bash(archive_unassigned.sql:*)",
       "Bash(npx tsx:*)",
       "Bash(dir:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(git pull:*)"
     ]
   }
 }

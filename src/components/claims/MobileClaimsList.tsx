@@ -28,7 +28,7 @@ type Claim = {
   status: string;
   appointment_start?: string;
   appointment_end?: string;
-  firm_name?: string;
+  firm?: string;
   city?: string;
   state?: string;
 };
@@ -70,7 +70,7 @@ export default function MobileClaimsList({
         (c) =>
           c.claim_number?.toLowerCase().includes(query) ||
           c.customer_name?.toLowerCase().includes(query) ||
-          c.firm_name?.toLowerCase().includes(query)
+          c.firm?.toLowerCase().includes(query)
       );
     }
 
@@ -227,7 +227,7 @@ export default function MobileClaimsList({
                 key={claim.id}
                 to={`/claim/${claim.id}`}
                 className="mobile-claims__card"
-                style={{ borderLeftColor: getFirmColor(claim.firm_name) }}
+                style={{ borderLeftColor: getFirmColor(claim.firm) }}
               >
                 {/*
                   CARD HIERARCHY (critical):
@@ -266,12 +266,12 @@ export default function MobileClaimsList({
                 </div>
 
                 {/* Row 4: Firm Badge (only if present) */}
-                {claim.firm_name && (
+                {claim.firm && (
                   <div
                     className="mobile-claims__card-row4"
-                    style={{ color: getFirmColor(claim.firm_name) }}
+                    style={{ color: getFirmColor(claim.firm) }}
                   >
-                    {claim.firm_name}
+                    {claim.firm}
                   </div>
                 )}
               </Link>

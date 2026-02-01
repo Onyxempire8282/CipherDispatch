@@ -26,7 +26,7 @@ type Claim = {
   assigned_to?: string;
   appointment_start?: string;
   appointment_end?: string;
-  firm_name?: string;
+  firm?: string;
   notes?: string;
   created_at?: string;
   address_line1?: string;
@@ -100,7 +100,7 @@ export default function AdminClaims() {
       let query = supabase
         .from("claims")
         .select(
-          "id,claim_number,customer_name,status,vin,vehicle_year,vehicle_make,vehicle_model,assigned_to,appointment_start,appointment_end,firm_name,notes,created_at,address_line1,city,state,postal_code,lat,lng,pay_amount,file_total,profiles:assigned_to(full_name)"
+          "id,claim_number,customer_name,status,vin,vehicle_year,vehicle_make,vehicle_model,assigned_to,appointment_start,appointment_end,firm,notes,created_at,address_line1,city,state,postal_code,lat,lng,pay_amount,file_total,profiles:assigned_to(full_name)"
         )
         .order("created_at", { ascending: false });
 
@@ -236,7 +236,7 @@ export default function AdminClaims() {
     const payload = {
       id: claim.id,
       claimNumber: claim.claim_number,
-      firmName: claim.firm_name || '',
+      firmName: claim.firm || '',
       customerName: claim.customer_name,
       addressLine1: claim.address_line1 || '',
       city: claim.city || '',
@@ -380,7 +380,7 @@ export default function AdminClaims() {
     const groups: Record<string, Claim[]> = {};
 
     rows.forEach(claim => {
-      const firmName = claim.firm_name || "No Firm";
+      const firmName = claim.firm || "No Firm";
       if (!groups[firmName]) {
         groups[firmName] = [];
       }
@@ -762,7 +762,7 @@ export default function AdminClaims() {
             onDragEnd={handleDragEnd}
             style={{
               border: "1px solid #4a5568",
-              borderLeft: `4px solid ${getFirmColor(r.firm_name)}`,
+              borderLeft: `4px solid ${getFirmColor(r.firm)}`,
               borderRadius: 8,
               padding: 16,
               background: "#2d3748",
@@ -820,7 +820,7 @@ export default function AdminClaims() {
                 >
                   {r.status}
                 </div>
-                {r.firm_name && (
+                {r.firm && (
                   <div
                     style={{
                       display: "inline-block",
@@ -828,11 +828,11 @@ export default function AdminClaims() {
                       borderRadius: 4,
                       fontSize: 11,
                       fontWeight: "bold",
-                      background: getFirmColor(r.firm_name),
+                      background: getFirmColor(r.firm),
                       color: "white",
                     }}
                   >
-                    {r.firm_name}
+                    {r.firm}
                   </div>
                 )}
                 {r.notes && (

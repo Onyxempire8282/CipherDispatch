@@ -20,7 +20,7 @@ type Claim = {
   city?: string;
   state?: string;
   postal_code?: string;
-  firm_name?: string;
+  firm?: string;
   pay_amount?: number | null;
   file_total?: number | null;
   profiles?: { full_name?: string } | null;
@@ -191,7 +191,7 @@ export default function MobileAgendaView({ claims, onClaimUpdate }: MobileAgenda
               key={claim.id}
               to={`/claim/${claim.id}`}
               className="mobile-agenda__item"
-              style={{ borderLeftColor: getFirmColor(claim.firm_name) }}
+              style={{ borderLeftColor: getFirmColor(claim.firm) }}
             >
               {/* Row 1: TIME WINDOW (prominent) + STATUS PILL (always visible) */}
               <div className="mobile-agenda__item-header">
@@ -218,14 +218,14 @@ export default function MobileAgendaView({ claims, onClaimUpdate }: MobileAgenda
                 <span className="mobile-agenda__item-city">
                   {claim.city || 'No location'}
                 </span>
-                {claim.firm_name && (
+                {claim.firm && (
                   <>
                     <span className="mobile-agenda__item-divider">/</span>
                     <span
                       className="mobile-agenda__item-firm"
-                      style={{ color: getFirmColor(claim.firm_name) }}
+                      style={{ color: getFirmColor(claim.firm) }}
                     >
-                      {claim.firm_name}
+                      {claim.firm}
                     </span>
                   </>
                 )}
@@ -273,7 +273,7 @@ export default function MobileAgendaView({ claims, onClaimUpdate }: MobileAgenda
                     key={claim.id}
                     to={`/claim/${claim.id}`}
                     className="mobile-agenda__backlog-item"
-                    style={{ borderLeftColor: getFirmColor(claim.firm_name) }}
+                    style={{ borderLeftColor: getFirmColor(claim.firm) }}
                     onClick={() => setShowBacklog(false)}
                   >
                     <div className="mobile-agenda__backlog-item-main">
@@ -282,11 +282,11 @@ export default function MobileAgendaView({ claims, onClaimUpdate }: MobileAgenda
                       </div>
                       <div className="mobile-agenda__backlog-item-location">
                         {claim.city || 'No location'}
-                        {claim.firm_name && (
+                        {claim.firm && (
                           <>
                             <span className="mobile-agenda__backlog-divider">/</span>
-                            <span style={{ color: getFirmColor(claim.firm_name) }}>
-                              {claim.firm_name}
+                            <span style={{ color: getFirmColor(claim.firm) }}>
+                              {claim.firm}
                             </span>
                           </>
                         )}

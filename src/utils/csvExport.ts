@@ -16,7 +16,7 @@ type Claim = {
   appointment_start?: string;
   appointment_end?: string;
   notes?: string;
-  firm_name?: string;
+  firm?: string;
   created_at?: string;
   profiles?: {
     full_name?: string;
@@ -66,7 +66,7 @@ export const downloadClaimsCSV = (claims: Claim[]) => {
     claim.appointment_start || '',
     claim.appointment_end || '',
     claim.notes || '',
-    claim.firm_name || '',
+    claim.firm || '',
     claim.created_at || ''
   ].map(field => `"${String(field).replace(/"/g, '""')}"`));
 

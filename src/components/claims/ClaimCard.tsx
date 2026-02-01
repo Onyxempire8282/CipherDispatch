@@ -24,7 +24,7 @@ export interface ClaimCardData {
   vehicle_model?: string;
   assigned_to?: string | null;
   assigned_user_name?: string;
-  firm_name?: string;
+  firm?: string;
   notes?: string;
   pay_amount?: number | null;
   file_total?: number | null;
@@ -58,7 +58,7 @@ export default function ClaimCard({
     }
   };
 
-  const firmColor = showFirmBadge && claim.firm_name ? getFirmColor(claim.firm_name) : undefined;
+  const firmColor = showFirmBadge && claim.firm ? getFirmColor(claim.firm) : undefined;
 
   const authz = getSupabaseAuthz();
   const userInfo = authz?.getCurrentUser();
@@ -78,8 +78,8 @@ export default function ClaimCard({
         </h3>
         <div className="flex flex-col items-end gap-1">
           <Badge variant="status" status={claim.status} />
-          {showFirmBadge && claim.firm_name && (
-            <Badge variant="firm" label={claim.firm_name} color={firmColor} />
+          {showFirmBadge && claim.firm && (
+            <Badge variant="firm" label={claim.firm} color={firmColor} />
           )}
           {showNotes && claim.notes && (
             <Badge variant="note" />

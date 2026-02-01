@@ -186,7 +186,7 @@ export default function ClaimDetail() {
     setEditAssignedTo(claim?.assigned_to || "");
     setEditPayAmount(claim?.pay_amount?.toString() || "");
     setEditFileTotal(claim?.file_total?.toString() || "");
-    setEditFirmName(claim?.firm_name || "");
+    setEditFirmName(claim?.firm || "");
     setIsEditing(true);
   };
 
@@ -207,7 +207,7 @@ export default function ClaimDetail() {
       state: editState,
       postal_code: editPostalCode,
       assigned_to: editAssignedTo || null,
-      firm_name: editFirmName || null,
+      firm: editFirmName || null,
     };
 
     // Add vehicle year if valid
@@ -276,9 +276,9 @@ export default function ClaimDetail() {
 
       // Calculate expected payout date based on firm's pay schedule
       let expectedPayoutDate = null;
-      if (claim.firm_name) {
+      if (claim.firm) {
         try {
-          const payPeriod = getPayPeriod(claim.firm_name, now);
+          const payPeriod = getPayPeriod(claim.firm, now);
           const payYear = payPeriod.payoutDate.getFullYear();
           const payMonth = String(payPeriod.payoutDate.getMonth() + 1).padStart(2, '0');
           const payDay = String(payPeriod.payoutDate.getDate()).padStart(2, '0');
@@ -495,9 +495,9 @@ export default function ClaimDetail() {
       const completedMonth = `${year}-${month}`;
 
       let expectedPayoutDate = null;
-      if (claim.firm_name) {
+      if (claim.firm) {
         try {
-          const payPeriod = getPayPeriod(claim.firm_name, now);
+          const payPeriod = getPayPeriod(claim.firm, now);
           const payYear = payPeriod.payoutDate.getFullYear();
           const payMonth = String(payPeriod.payoutDate.getMonth() + 1).padStart(2, '0');
           const payDay = String(payPeriod.payoutDate.getDate()).padStart(2, '0');
@@ -990,9 +990,9 @@ export default function ClaimDetail() {
                     <div style={valueStyle}>
                       ${claim.pay_amount.toFixed(2)}
                     </div>
-                  ) : (claim.status === 'SCHEDULED' || claim.status === 'IN_PROGRESS') && claim.firm_name ? (
+                  ) : (claim.status === 'SCHEDULED' || claim.status === 'IN_PROGRESS') && claim.firm ? (
                     <div style={{ ...valueStyle, color: "#f59e0b" }}>
-                      ${calculateExpectedPayout(claim.firm_name, claim.pay_amount).toFixed(2)}
+                      ${calculateExpectedPayout(claim.firm, claim.pay_amount).toFixed(2)}
                       <span style={{ fontSize: "13px", color: "#a0aec0", marginLeft: "8px" }}>(estimated)</span>
                     </div>
                   ) : (
@@ -1169,11 +1169,11 @@ export default function ClaimDetail() {
                       width: "24px",
                       height: "24px",
                       borderRadius: "4px",
-                      background: getFirmColor(claim.firm_name),
+                      background: getFirmColor(claim.firm),
                       border: "2px solid rgba(255,255,255,0.3)",
                     }}
                   />
-                  <div style={valueStyle}>{claim.firm_name || "Not assigned"}</div>
+                  <div style={valueStyle}>{claim.firm || "Not assigned"}</div>
                 </div>
               )}
             </div>
@@ -1680,9 +1680,9 @@ export default function ClaimDetail() {
                     const completedMonth = `${year}-${month}`;
 
                     let expectedPayoutDate = null;
-                    if (claim.firm_name) {
+                    if (claim.firm) {
                       try {
-                        const payPeriod = getPayPeriod(claim.firm_name, now);
+                        const payPeriod = getPayPeriod(claim.firm, now);
                         const payYear = payPeriod.payoutDate.getFullYear();
                         const payMonth = String(payPeriod.payoutDate.getMonth() + 1).padStart(2, '0');
                         const payDay = String(payPeriod.payoutDate.getDate()).padStart(2, '0');

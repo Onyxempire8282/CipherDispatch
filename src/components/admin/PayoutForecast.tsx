@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 
 interface Claim {
   id: string;
-  firm_name?: string;
+  firm?: string;
   pay_amount?: number | null;
   appointment_start?: string;
   status?: string;
@@ -112,21 +112,21 @@ export default function PayoutForecast({ claims }: PayoutForecastProps) {
     );
 
     eligibleClaims.forEach((claim) => {
-      if (!claim.firm_name || !claim.pay_amount || !claim.appointment_start) return;
+      if (!claim.firm || !claim.pay_amount || !claim.appointment_start) return;
 
       const claimDate = new Date(claim.appointment_start);
-      const paymentDate = getNextPaymentDate(claim.firm_name, claimDate);
+      const paymentDate = getNextPaymentDate(claim.firm, claimDate);
 
       if (!paymentDate || !isPaymentThisWeek(paymentDate)) return;
 
-      const existing = firmPayouts.get(claim.firm_name) || {
-        firmName: claim.firm_name,
+      const existing = firmPayouts.get(claim.firm) || {
+        firmName: claim.firm,
         amount: 0,
         claimCount: 0,
       };
 
-      firmPayouts.set(claim.firm_name, {
-        firmName: claim.firm_name,
+      firmPayouts.set(claim.firm, {
+        firmName: claim.firm,
         amount: existing.amount + claim.pay_amount,
         claimCount: existing.claimCount + 1,
       });

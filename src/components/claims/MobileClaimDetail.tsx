@@ -198,12 +198,12 @@ export default function MobileClaimDetail({
       {/* Customer Name Banner - visible to all */}
       <div className="mobile-detail__banner">
         <div className="mobile-detail__customer-name">{claim.customer_name}</div>
-        {claim.firm_name && (
+        {claim.firm && (
           <div
             className="mobile-detail__firm-badge"
-            style={{ borderColor: getFirmColor(claim.firm_name), color: getFirmColor(claim.firm_name) }}
+            style={{ borderColor: getFirmColor(claim.firm), color: getFirmColor(claim.firm) }}
           >
-            {claim.firm_name}
+            {claim.firm}
           </div>
         )}
       </div>

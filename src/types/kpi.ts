@@ -218,7 +218,7 @@ export interface KPIClaim {
   scheduled_at: string | null;          // when scheduling action occurred (fallback: appointment_start)
   file_total: number | null;
   pay_amount: number | null;
-  firm_name: string | null;
+  firm: string | null;
   assigned_to: string | null;
   is_supplement: boolean | null;
   original_claim_id: string | null;

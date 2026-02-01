@@ -25,7 +25,7 @@ type Claim = {
   city?: string;
   state?: string;
   postal_code?: string;
-  firm_name?: string;
+  firm?: string;
   pay_amount?: number | null;
   file_total?: number | null;
   profiles?: { full_name?: string } | null;
@@ -87,7 +87,7 @@ export default function MyClaims() {
       let query = supabase
         .from("claims")
         .select(
-          "id,claim_number,customer_name,status,appointment_start,appointment_end,vin,vehicle_year,vehicle_make,vehicle_model,address_line1,city,state,postal_code,firm_name,pay_amount,file_total,profiles:assigned_to(full_name)"
+          "id,claim_number,customer_name,status,appointment_start,appointment_end,vin,vehicle_year,vehicle_make,vehicle_model,address_line1,city,state,postal_code,firm,pay_amount,file_total,profiles:assigned_to(full_name)"
         );
 
       // Apply role-based scoping
@@ -168,7 +168,7 @@ export default function MyClaims() {
       filteredData = filteredData.filter(claim =>
         claim.claim_number?.toLowerCase().includes(query) ||
         claim.customer_name?.toLowerCase().includes(query) ||
-        claim.firm_name?.toLowerCase().includes(query)
+        claim.firm?.toLowerCase().includes(query)
       );
     }
 

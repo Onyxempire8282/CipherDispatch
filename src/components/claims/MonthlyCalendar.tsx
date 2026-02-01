@@ -17,7 +17,7 @@ interface Claim {
   status: string;
   appointment_start?: string;
   appointment_end?: string;
-  firm_name?: string;
+  firm?: string;
   vehicle_year?: number;
   vehicle_make?: string;
   vehicle_model?: string;
@@ -218,7 +218,7 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
   };
 
   const renderCompactClaimCard = (claim: Claim) => {
-    const firmColor = getFirmColor(claim.firm_name);
+    const firmColor = getFirmColor(claim.firm);
     const timeDisplay = claim.appointment_start
       ? new Date(claim.appointment_start).toLocaleTimeString('en-US', {
           hour: 'numeric',
@@ -266,7 +266,7 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
   };
 
   const renderBacklogCard = (claim: Claim) => {
-    const firmColor = getFirmColor(claim.firm_name);
+    const firmColor = getFirmColor(claim.firm);
 
     return (
       <div
@@ -302,7 +302,7 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
         <div style={{ fontSize: '11px', color: '#718096' }}>
           {claim.city || 'No location'}
         </div>
-        {claim.firm_name && (
+        {claim.firm && (
           <div
             style={{
               marginTop: '4px',
@@ -311,7 +311,7 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
               fontWeight: 'bold'
             }}
           >
-            {claim.firm_name}
+            {claim.firm}
           </div>
         )}
       </div>
@@ -699,7 +699,7 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
                   onClick={() => navigate(`/claim/${claim.id}?from=calendar`)}
                   style={{
                     background: '#2d3748',
-                    borderLeft: `4px solid ${getFirmColor(claim.firm_name)}`,
+                    borderLeft: `4px solid ${getFirmColor(claim.firm)}`,
                     borderRadius: '6px',
                     padding: '16px',
                     cursor: 'pointer',
