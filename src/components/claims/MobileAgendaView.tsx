@@ -19,7 +19,7 @@ type Claim = {
   address_line1?: string;
   city?: string;
   state?: string;
-  postal_code?: string;
+  zip?: string | null;
   firm?: string;
   pay_amount?: number | null;
   file_total?: number | null;

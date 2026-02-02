@@ -11,7 +11,7 @@ type Claim = {
   address_line2?: string;
   city?: string;
   state?: string;
-  postal_code?: string;
+  zip?: string | null;
   status?: string;
   appointment_start?: string;
   appointment_end?: string;
@@ -60,7 +60,7 @@ export const downloadClaimsCSV = (claims: Claim[]) => {
     claim.address_line2 || '',
     claim.city || '',
     claim.state || '',
-    claim.postal_code || '',
+    claim.zip || '',
     claim.status || '',
     claim.profiles?.full_name || 'Unassigned',
     claim.appointment_start || '',

@@ -121,7 +121,7 @@ export default function MobileClaimDetail({
   // Open location in maps app
   const openInMaps = () => {
     const q = encodeURIComponent(
-      `${claim.address_line1 || ''} ${claim.city || ''} ${claim.state || ''} ${claim.postal_code || ''}`
+      `${claim.address_line1 || ''} ${claim.city || ''} ${claim.state || ''} ${claim.zip || ''}`
     );
     window.open(`https://www.google.com/maps?q=${q}`, '_blank');
   };
@@ -276,7 +276,7 @@ export default function MobileClaimDetail({
           />
           <Field
             label="City"
-            value={claim.city ? `${claim.city}, ${claim.state || ''} ${claim.postal_code || ''}` : null}
+            value={claim.city ? `${claim.city}, ${claim.state || ''} ${claim.zip || ''}` : null}
           />
           <button className="mobile-detail__maps-btn" onClick={openInMaps}>
             🗺️ Open in Maps

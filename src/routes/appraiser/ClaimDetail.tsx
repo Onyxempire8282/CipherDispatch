@@ -47,7 +47,7 @@ export default function ClaimDetail() {
   const [editAddressLine2, setEditAddressLine2] = useState("");
   const [editCity, setEditCity] = useState("");
   const [editState, setEditState] = useState("");
-  const [editPostalCode, setEditPostalCode] = useState("");
+  const [editZip, setEditZip] = useState("");
   const [editAppointmentStart, setEditAppointmentStart] = useState("");
   const [editAppointmentEnd, setEditAppointmentEnd] = useState("");
   const [editAssignedTo, setEditAssignedTo] = useState("");
@@ -156,7 +156,7 @@ export default function ClaimDetail() {
     setEditAddressLine2(claim?.address_line2 || "");
     setEditCity(claim?.city || "");
     setEditState(claim?.state || "");
-    setEditPostalCode(claim?.postal_code || "");
+    setEditZip(claim?.zip || "");
     setEditAppointmentStart(
       claim?.appointment_start
         ? (() => {
@@ -205,7 +205,7 @@ export default function ClaimDetail() {
       address_line2: editAddressLine2,
       city: editCity,
       state: editState,
-      postal_code: editPostalCode,
+      zip: editZip,
       assigned_to: editAssignedTo || null,
       firm: editFirmName || null,
     };
@@ -675,7 +675,7 @@ export default function ClaimDetail() {
   const openInMaps = () => {
     const q = encodeURIComponent(
       `${claim.address_line1} ${claim.city || ""} ${claim.state || ""} ${
-        claim.postal_code || ""
+        claim.zip || ""
       }`
     );
     window.open(`https://www.google.com/maps?q=${q}`, "_blank");
@@ -1830,8 +1830,8 @@ export default function ClaimDetail() {
                   <div style={labelStyle}>ZIP</div>
                   <input
                     type="text"
-                    value={editPostalCode}
-                    onChange={(e) => setEditPostalCode(e.target.value)}
+                    value={editZip}
+                    onChange={(e) => setEditZip(e.target.value)}
                     placeholder="ZIP"
                     style={{
                       width: "100%",
@@ -1861,7 +1861,7 @@ export default function ClaimDetail() {
               <div style={{ marginBottom: "20px" }}>
                 <div style={labelStyle}>City, State, ZIP</div>
                 <div style={valueStyle}>
-                  {claim.city}, {claim.state} {claim.postal_code}
+                  {claim.city}, {claim.state} {claim.zip}
                 </div>
               </div>
             </>

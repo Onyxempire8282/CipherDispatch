@@ -24,7 +24,7 @@ type Claim = {
   address_line1?: string;
   city?: string;
   state?: string;
-  postal_code?: string;
+  zip?: string | null;
   firm?: string;
   pay_amount?: number | null;
   file_total?: number | null;
@@ -87,7 +87,7 @@ export default function MyClaims() {
       let query = supabase
         .from("claims")
         .select(
-          "id,claim_number,customer_name,status,appointment_start,appointment_end,vin,vehicle_year,vehicle_make,vehicle_model,address_line1,city,state,postal_code,firm,pay_amount,file_total,profiles:assigned_to(full_name)"
+          "id,claim_number,customer_name,status,appointment_start,appointment_end,vin,vehicle_year,vehicle_make,vehicle_model,address_line1,city,state,zip,firm,pay_amount,file_total,profiles:assigned_to(full_name)"
         );
 
       // Apply role-based scoping
@@ -225,7 +225,7 @@ export default function MyClaims() {
       addressLine1: claim.address_line1 || '',
       city: claim.city || '',
       state: claim.state || '',
-      zip: claim.postal_code || '',
+      zip: claim.zip || '',
       lat: null,
       lng: null,
       vin: claim.vin || '',
@@ -473,7 +473,7 @@ export default function MyClaims() {
         </div>
         {r.address_line1 ? (
           <div style={{ color: "#cbd5e0", fontSize: 14 }}>
-            {r.address_line1}, {r.city}, {r.state} {r.postal_code}
+            {r.address_line1}, {r.city}, {r.state} {r.zip}
           </div>
         ) : (
           <div

@@ -574,7 +574,7 @@
           currentClaim.address_line2,
           currentClaim.city,
           currentClaim.state,
-          currentClaim.postal_code,
+          currentClaim.zip,
         ]
           .filter(Boolean)
           .join(", ");
@@ -674,10 +674,10 @@
           <div class="detail-row">
             <span class="detail-label">Postal Code:</span>
             <span class="detail-value" id="view-postal-code">${
-              currentClaim.postal_code || "N/A"
+              currentClaim.zip || "N/A"
             }</span>
             <input type="text" id="edit-postal-code" value="${
-              currentClaim.postal_code || ""
+              currentClaim.zip || ""
             }" style="display:none; flex:1; padding:8px; background:#1a202c; border:1px solid #4a5568; border-radius:4px; color:#e2e8f0;">
           </div>
           ${
@@ -1069,7 +1069,7 @@
             address_line2: document.getElementById("edit-address-line2").value,
             city: document.getElementById("edit-city").value,
             state: document.getElementById("edit-state").value,
-            postal_code: document.getElementById("edit-postal-code").value,
+            zip: document.getElementById("edit-postal-code").value,
             vin: document.getElementById("edit-vin").value,
             vehicle_year: document.getElementById("edit-vehicle-year").value,
             vehicle_make: document.getElementById("edit-vehicle-make").value,

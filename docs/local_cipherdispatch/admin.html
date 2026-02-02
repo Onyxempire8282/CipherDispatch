@@ -454,7 +454,7 @@
             let query = supabaseClient
               .from("claims")
               .select(
-                `id,claim_number,customer_name,phone,email,vin,vehicle_year,vehicle_make,vehicle_model,address_line1,address_line2,city,state,postal_code,status,assigned_to,appointment_start,appointment_end,notes,created_at,firm_name`
+                `id,claim_number,customer_name,phone,email,vin,vehicle_year,vehicle_make,vehicle_model,address_line1,address_line2,city,state,zip,status,assigned_to,appointment_start,appointment_end,notes,created_at,firm_name`
               )
               .order("appointment_start", { ascending: true });
 
@@ -657,7 +657,7 @@
                     data-address-line2="${claim.address_line2 || ""}"
                     data-city="${claim.city || ""}"
                     data-state="${claim.state || ""}"
-                    data-zip="${claim.postal_code || ""}"
+                    data-zip="${claim.zip || ""}"
                     ondragstart="handleClaimDragStart(event)"
                     ondragend="handleClaimDragEnd(event)"
                   >
@@ -899,7 +899,7 @@
             data-address-line2="${claim.address_line2 || ""}"
             data-city="${claim.city || ""}"
             data-state="${claim.state || ""}"
-            data-zip="${claim.postal_code || ""}"
+            data-zip="${claim.zip || ""}"
             ${
               isDraggable
                 ? `
@@ -1005,7 +1005,7 @@
             data-address-line2="${claim.address_line2 || ""}"
             data-city="${claim.city || ""}"
             data-state="${claim.state || ""}"
-            data-zip="${claim.postal_code || ""}"
+            data-zip="${claim.zip || ""}"
             ondragstart="handleClaimDragStart(event)"
             ondragend="handleClaimDragEnd(event)"
             onclick="event.stopPropagation(); window.open('claim-detail.html?id=${
@@ -1078,7 +1078,7 @@
             data-address-line2="${claim.address_line2 || ""}"
             data-city="${claim.city || ""}"
             data-state="${claim.state || ""}"
-            data-zip="${claim.postal_code || ""}"
+            data-zip="${claim.zip || ""}"
             ondragstart="handleClaimDragStart(event)"
             ondragend="handleClaimDragEnd(event)"
             onclick="event.stopPropagation(); window.open('claim-detail.html?id=${
@@ -1566,7 +1566,7 @@
             claim.address_line2 || "",
             claim.city || "",
             claim.state || "",
-            claim.postal_code || "",
+            claim.zip || "",
             claim.status || "",
             claim.appraiser?.full_name || "Unassigned",
             claim.appointment_start || "",

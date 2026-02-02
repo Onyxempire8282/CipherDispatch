@@ -32,7 +32,7 @@ type Claim = {
   address_line1?: string;
   city?: string;
   state?: string;
-  postal_code?: string;
+  zip?: string | null;
   lat?: number;
   lng?: number;
   pay_amount?: number | null;
@@ -100,7 +100,7 @@ export default function AdminClaims() {
       let query = supabase
         .from("claims")
         .select(
-          "id,claim_number,customer_name,status,vin,vehicle_year,vehicle_make,vehicle_model,assigned_to,appointment_start,appointment_end,firm,notes,created_at,address_line1,city,state,postal_code,lat,lng,pay_amount,file_total,profiles:assigned_to(full_name)"
+          "id,claim_number,customer_name,status,vin,vehicle_year,vehicle_make,vehicle_model,assigned_to,appointment_start,appointment_end,firm,notes,created_at,address_line1,city,state,zip,lat,lng,pay_amount,file_total,profiles:assigned_to(full_name)"
         )
         .order("created_at", { ascending: false });
 
@@ -241,7 +241,7 @@ export default function AdminClaims() {
       addressLine1: claim.address_line1 || '',
       city: claim.city || '',
       state: claim.state || '',
-      zip: claim.postal_code || '',
+      zip: claim.zip || '',
       lat: claim.lat || null,
       lng: claim.lng || null,
       vin: claim.vin || '',

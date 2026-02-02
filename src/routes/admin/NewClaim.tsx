@@ -21,7 +21,7 @@ type Claim = {
   address_line2?: string;
   city?: string;
   state?: string;
-  postal_code?: string;
+  zip?: string | null;
   notes?: string;
   assigned_to?: string | null;
   appointment_start?: string;
@@ -102,7 +102,7 @@ export default function NewClaim() {
   const previewMap = async () => {
     const full = `${form.address_line1} ${form.address_line2 || ""} ${
       form.city || ""
-    } ${form.state || ""} ${form.postal_code || ""}`.trim();
+    } ${form.state || ""} ${form.zip || ""}`.trim();
     if (!full) return alert("Please enter an address first");
     setLoadingMap(true);
     const coords = await geocode(full);
@@ -131,7 +131,7 @@ export default function NewClaim() {
 
     const full = `${form.address_line1} ${form.address_line2 || ""} ${
       form.city || ""
-    } ${form.state || ""} ${form.postal_code || ""}`.trim();
+    } ${form.state || ""} ${form.zip || ""}`.trim();
     let coords = { lat: null as any, lng: null as any };
     if (full) coords = await geocode(full);
 
@@ -367,9 +367,9 @@ export default function NewClaim() {
           style={inputStyle}
         />
         <input
-          placeholder="Postal code"
-          value={form.postal_code || ""}
-          onChange={(e) => setForm({ ...form, postal_code: e.target.value })}
+          placeholder="ZIP"
+          value={form.zip || ""}
+          onChange={(e) => setForm({ ...form, zip: e.target.value })}
           style={inputStyle}
         />
 

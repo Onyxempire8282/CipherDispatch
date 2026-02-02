@@ -17,7 +17,13 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import "./index.css";
 import "leaflet/dist/leaflet.css";
 
-registerSW();
+const updateSW = registerSW({
+  immediate: true,
+  onNeedRefresh() {
+    updateSW(true);
+    window.location.reload();
+  },
+});
 
 const router = createBrowserRouter(
   [

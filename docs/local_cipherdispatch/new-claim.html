@@ -119,7 +119,7 @@
             <input type="text" id="state" placeholder="State" />
 
             <label>Postal Code</label>
-            <input type="text" id="postal_code" placeholder="Postal code" />
+            <input type="text" id="zip" placeholder="Postal code" />
 
             <label>Appointment Start Date &amp; Time</label>
             <input type="datetime-local" id="appointment_start" />
@@ -228,7 +228,7 @@
           address_line2: document.getElementById("address_line2").value || null,
           city: document.getElementById("city").value || null,
           state: document.getElementById("state").value || null,
-          postal_code: document.getElementById("postal_code").value || null,
+          zip: document.getElementById("zip").value || null,
           appointment_start: aptStart ? aptStart + ":00" : null,
           appointment_end: aptEnd ? aptEnd + ":00" : null,
           assigned_to: document.getElementById("assigned_to").value || null,
