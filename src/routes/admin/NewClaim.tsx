@@ -9,7 +9,7 @@ import "leaflet/dist/leaflet.css";
 type Claim = {
   claim_number: string;
   customer_name: string;
-  phone?: string;
+  customer_phone?: string;
   email?: string;
   vehicle_make?: string;
   vehicle_model?: string;
@@ -258,8 +258,8 @@ export default function NewClaim() {
         />
         <input
           placeholder="Phone"
-          value={form.phone || ""}
-          onChange={(e) => setForm({ ...form, phone: e.target.value })}
+          value={form.customer_phone || ""}
+          onChange={(e) => setForm({ ...form, customer_phone: e.target.value })}
           style={inputStyle}
         />
         <input

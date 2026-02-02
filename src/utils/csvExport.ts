@@ -1,7 +1,7 @@
 type Claim = {
   claim_number?: string;
   customer_name?: string;
-  phone?: string;
+  customer_phone?: string;
   email?: string;
   vin?: string;
   vehicle_year?: number;
@@ -50,7 +50,7 @@ export const downloadClaimsCSV = (claims: Claim[]) => {
   const rows = claims.map(claim => [
     claim.claim_number || '',
     claim.customer_name || '',
-    claim.phone || '',
+    claim.customer_phone || '',
     claim.email || '',
     claim.vin || '',
     claim.vehicle_year?.toString() || '',

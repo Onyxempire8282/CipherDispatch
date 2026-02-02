@@ -143,7 +143,7 @@ export default function ClaimDetail() {
 
   const startEditing = () => {
     setEditCustomerName(claim?.customer_name || "");
-    setEditPhone(claim?.phone || "");
+    setEditPhone(claim?.customer_phone || "");
     setEditEmail(claim?.email || "");
     setEditVehicleYear(claim?.vehicle_year?.toString() || "");
     setEditVehicleMake(claim?.vehicle_make || "");
@@ -193,7 +193,7 @@ export default function ClaimDetail() {
   const saveEdits = async () => {
     const patch: any = {
       customer_name: editCustomerName,
-      phone: editPhone,
+      customer_phone: editPhone,
       email: editEmail,
       vehicle_make: editVehicleMake,
       vehicle_model: editVehicleModel,
@@ -1227,9 +1227,9 @@ export default function ClaimDetail() {
                   onFocus={(e) => e.target.style.borderColor = "#667eea"}
                   onBlur={(e) => e.target.style.borderColor = "#6b7280"}
                 />
-              ) : claim.phone ? (
+              ) : claim.customer_phone ? (
                 <a
-                  href={`tel:${claim.phone}`}
+                  href={`tel:${claim.customer_phone}`}
                   style={{
                     fontSize: "17px",
                     color: "#818cf8",
@@ -1237,7 +1237,7 @@ export default function ClaimDetail() {
                     fontWeight: "600",
                   }}
                 >
-                  📞 {claim.phone}
+                  📞 {claim.customer_phone}
                 </a>
               ) : (
                 <div style={{ ...valueStyle, color: "#9ca3af", fontStyle: "italic" }}>No phone</div>

@@ -254,8 +254,8 @@ export default function MobileClaimDetail({
           <Field label="Name" value={claim.customer_name} />
           <Field
             label="Phone"
-            value={claim.phone ? `📞 ${claim.phone}` : null}
-            href={claim.phone ? `tel:${claim.phone}` : undefined}
+            value={claim.customer_phone ? `📞 ${claim.customer_phone}` : null}
+            href={claim.customer_phone ? `tel:${claim.customer_phone}` : undefined}
           />
           <Field
             label="Email"
