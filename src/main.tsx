@@ -2,6 +2,10 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { registerSW } from "virtual:pwa-register";
+
+// CRITICAL: Import Leaflet config FIRST to disable VML before any map code loads
+import "./lib/leafletConfig";
+
 import App from "./routes/App";
 import Login from "./routes/Login";
 import AdminNewClaim from "./routes/admin/NewClaim";
