@@ -58,7 +58,7 @@ export default function ClaimDetail() {
 
   const load = async () => {
     const { data } = await supabase
-      .from("claims")
+      .from("claims_v")
       .select(`
         id,
         claim_number,
@@ -165,7 +165,7 @@ export default function ClaimDetail() {
 
   const update = async (patch: any) => {
     if (!id) return;
-    const { error } = await supabase.from("claims").update(patch).eq("id", id);
+    const { error } = await supabase.from("claims_v").update(patch).eq("id", id);
     if (error) alert(error.message);
     else await load();
   };
@@ -351,7 +351,7 @@ export default function ClaimDetail() {
     await supabase.from("claim_photos").delete().eq("claim_id", id);
 
     // Delete claim
-    const { error } = await supabase.from("claims").delete().eq("id", id);
+    const { error } = await supabase.from("claims_v").delete().eq("id", id);
 
     if (error) {
       alert(`Error deleting claim: ${error.message}`);

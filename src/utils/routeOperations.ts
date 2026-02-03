@@ -119,7 +119,7 @@ export async function closeRoute(
   // 2. Collect completed claims
   // ─────────────────────────────────────────────────────────────
   const { data: completedClaims, error: claimsError } = await supabase
-    .from('claims')
+    .from('claims_v')
     .select('id')
     .eq('route_id', routeId)
     .eq('status', 'COMPLETED');

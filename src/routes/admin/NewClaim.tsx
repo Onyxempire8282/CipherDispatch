@@ -138,7 +138,7 @@ export default function NewClaim() {
     if (override) {
       // Update existing claim
       const { error } = await supabase
-        .from("claims")
+        .from("claims_v")
         .update({ ...form, ...coords })
         .eq("claim_number", form.claim_number);
 
@@ -153,7 +153,7 @@ export default function NewClaim() {
 
     // Try to insert new claim
     const { error } = await supabase
-      .from("claims")
+      .from("claims_v")
       .insert([{ ...form, ...coords }]);
 
     if (error) {

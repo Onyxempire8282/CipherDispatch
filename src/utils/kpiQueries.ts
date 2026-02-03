@@ -40,7 +40,7 @@ export async function fetchKPIClaims(
   // 3. Current pipeline (for point-in-time status)
 
   const { data, error } = await supabase
-    .from('claims')
+    .from('claims_v')
     .select(`
       id,
       claim_number,
@@ -106,7 +106,7 @@ export async function fetchKPIClaimsTwoQuery(
 
   // Query 1: Claims with completion_date in period
   const completedQuery = supabase
-    .from('claims')
+    .from('claims_v')
     .select(selectFields)
     .is('archived_at', null)
     .gte('completion_date', startISO)
@@ -114,7 +114,7 @@ export async function fetchKPIClaimsTwoQuery(
 
   // Query 2: Claims with appointment_start in period (may overlap, will dedupe)
   const scheduledQuery = supabase
-    .from('claims')
+    .from('claims_v')
     .select(selectFields)
     .is('archived_at', null)
     .gte('appointment_start', startISO)
@@ -122,7 +122,7 @@ export async function fetchKPIClaimsTwoQuery(
 
   // Query 3: Current active pipeline claims (for point-in-time metrics)
   const pipelineQuery = supabase
-    .from('claims')
+    .from('claims_v')
     .select(selectFields)
     .is('archived_at', null)
     .in('status', ['UNASSIGNED', 'SCHEDULED', 'IN_PROGRESS']);
@@ -219,7 +219,7 @@ export async function fetchMonthlyTrendData(monthsBack: number = 12): Promise<KP
   cutoffDate.setMonth(cutoffDate.getMonth() - monthsBack);
 
   const { data, error } = await supabase
-    .from('claims')
+    .from('claims_v')
     .select(`
       id,
       claim_number,

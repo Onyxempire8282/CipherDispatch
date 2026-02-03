@@ -157,7 +157,7 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
       }
 
       const { error } = await supabase
-        .from('claims')
+        .from('claims_v')
         .update(updateData)
         .eq('id', pendingDrop);
 
@@ -202,7 +202,7 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
 
     try {
       const { error } = await supabase
-        .from('claims')
+        .from('claims_v')
         .update({
           appointment_start: null,
           appointment_end: null,

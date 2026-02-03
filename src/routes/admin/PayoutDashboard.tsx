@@ -48,7 +48,7 @@ export default function PayoutDashboard() {
   const loadData = async () => {
     try {
       const { data: claimsData, error } = await supabase
-        .from('claims')
+        .from('claims_v')
         .select('id, firm, completion_date, appointment_start, file_total, pay_amount, status')
         .is('archived_at', null)
         .or('status.eq.COMPLETED,status.eq.SCHEDULED,status.eq.IN_PROGRESS')
@@ -77,7 +77,7 @@ export default function PayoutDashboard() {
 
     try {
       const { data: claimDetails, error } = await supabase
-        .from('claims')
+        .from('claims_v')
         .select('id, claim_number, customer_name, firm, pay_amount, file_total, status, appointment_start, completion_date')
         .is('archived_at', null)
         .in('id', payout.claimIds);
@@ -110,7 +110,7 @@ export default function PayoutDashboard() {
       }
 
       const { error } = await supabase
-        .from('claims')
+        .from('claims_v')
         .update(updateData)
         .eq('id', claimId);
 
@@ -127,7 +127,7 @@ export default function PayoutDashboard() {
       // Re-fetch claims for this payout to ensure consistency
       if (selectedPayout) {
         const { data: claimDetails } = await supabase
-          .from('claims')
+          .from('claims_v')
           .select('id, claim_number, customer_name, firm, pay_amount, file_total, status, appointment_start, completion_date')
           .is('archived_at', null)
           .in('id', selectedPayout.claimIds);

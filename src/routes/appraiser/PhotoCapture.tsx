@@ -329,7 +329,7 @@ export default function PhotoCapture() {
 
     // Mark claim as having photos completed (optional - add field if needed)
     await supabase
-      .from("claims")
+      .from("claims_v")
       .update({ photos_completed: true })
       .eq("id", claimId);
 
