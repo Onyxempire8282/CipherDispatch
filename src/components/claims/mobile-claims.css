@@ -352,6 +352,23 @@
   border-radius: 3px;
   text-transform: uppercase;
   white-space: nowrap;
+  background: var(--status-unassigned);
+}
+
+.mobile-claims__card-status--scheduled {
+  background: var(--status-scheduled);
+}
+
+.mobile-claims__card-status--progress {
+  background: var(--status-progress);
+}
+
+.mobile-claims__card-status--completed {
+  background: var(--status-completed);
+}
+
+.mobile-claims__card-status--canceled {
+  background: var(--status-canceled);
 }
 
 /* Row 2: Customer Name - MUST truncate, never expand */

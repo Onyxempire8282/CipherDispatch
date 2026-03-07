@@ -1,0 +1,294 @@
+/**
+ * Vendors page
+ * BEM block: .vendors
+ */
+
+/* ── Layout ── */
+
+.vendors {
+  min-height: 100vh;
+  background: var(--plate);
+  padding: 0;
+}
+
+.vendors__body {
+  padding: 0 16px 16px;
+}
+
+/* ── Loading / Error states ── */
+
+.vendors--loading,
+.vendors--error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vendors__loading-text {
+  color: var(--text-hi);
+  font-size: 18px;
+}
+
+.vendors__error-box {
+  color: var(--status-canceled);
+  font-size: 18px;
+  text-align: center;
+  background: var(--steel);
+  padding: 24px;
+  border-radius: 8px;
+  border: 2px solid var(--status-canceled);
+}
+
+.vendors__error-box h3 {
+  margin: 0 0 8px;
+}
+
+.vendors__retry-btn {
+  background: var(--status-canceled);
+  color: var(--white);
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 12px;
+  font-weight: bold;
+}
+
+/* ── Toolbar (Add button row) ── */
+
+.vendors__toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 24px;
+}
+
+.vendors__add-btn {
+  padding: 10px 20px;
+  background: var(--status-completed);
+  color: var(--white);
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.vendors__add-btn:hover {
+  filter: brightness(1.1);
+}
+
+/* ── Modal overlay + panel ── */
+
+.vendors__modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.vendors__modal {
+  background: var(--steel);
+  border: 1px solid var(--rivet);
+  border-radius: 12px;
+  padding: 32px;
+  max-width: 500px;
+  width: 90%;
+}
+
+.vendors__modal-title {
+  margin: 0 0 24px;
+  color: var(--text-hi);
+  font-family: var(--font-heading);
+}
+
+/* ── Color picker row ── */
+
+.vendors__color-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.vendors__color-swatch {
+  width: 60px;
+  height: 40px;
+  border: 1px solid var(--rivet);
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.vendors__color-text {
+  flex: 1;
+}
+
+/* ── Checkbox row ── */
+
+.vendors__checkbox-field {
+  margin-bottom: 24px;
+}
+
+.vendors__checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-hi);
+  font-weight: bold;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.vendors__checkbox {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+/* ── Modal actions ── */
+
+.vendors__modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.vendors__cancel-btn {
+  padding: 10px 20px;
+  background: var(--rivet);
+  color: var(--white);
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.vendors__save-btn {
+  padding: 10px 20px;
+  background: var(--status-completed);
+  color: var(--white);
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.vendors__save-btn:hover {
+  filter: brightness(1.1);
+}
+
+/* ── Vendors list panel ── */
+
+.vendors__list-panel {
+  background: var(--steel);
+  border: 1px solid var(--rivet);
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.vendors__empty {
+  text-align: center;
+  padding: 48px;
+  color: var(--muted);
+}
+
+.vendors__grid {
+  display: grid;
+  gap: 12px;
+}
+
+/* ── Vendor card ── */
+
+.vendors__card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--plate);
+  border: 1px solid var(--rivet);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.vendors__card-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.vendors__card-swatch {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  border: 1px solid var(--rivet);
+  flex-shrink: 0;
+}
+
+.vendors__card-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vendors__card-name {
+  color: var(--text-hi);
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.vendors__card-inactive {
+  color: var(--status-canceled);
+  font-size: 12px;
+  background: rgba(239, 68, 68, 0.15);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.vendors__card-cycle {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* ── Card actions ── */
+
+.vendors__card-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.vendors__edit-btn {
+  padding: 8px 16px;
+  background: var(--amber);
+  color: var(--white);
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.vendors__edit-btn:hover {
+  filter: brightness(1.1);
+}
+
+.vendors__delete-btn {
+  padding: 8px 16px;
+  background: var(--status-canceled);
+  color: var(--white);
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.vendors__delete-btn:hover {
+  filter: brightness(1.1);
+}

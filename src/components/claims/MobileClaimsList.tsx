@@ -41,12 +41,12 @@ interface MobileClaimsListProps {
   createButtonPath?: string;
 }
 
-// Status colors matching existing app
-const STATUS_COLORS: Record<string, string> = {
-  SCHEDULED: '#2196F3',
-  IN_PROGRESS: '#FF9800',
-  COMPLETED: '#4CAF50',
-  CANCELED: '#ef4444',
+// Map claim status to BEM modifier suffix
+const STATUS_MOD: Record<string, string> = {
+  SCHEDULED: 'scheduled',
+  IN_PROGRESS: 'progress',
+  COMPLETED: 'completed',
+  CANCELED: 'canceled',
 };
 
 export default function MobileClaimsList({
@@ -248,8 +248,7 @@ export default function MobileClaimsList({
                 <div className="mobile-claims__card-row1">
                   <span className="mobile-claims__card-number">#{claim.claim_number}</span>
                   <span
-                    className="mobile-claims__card-status"
-                    style={{ backgroundColor: STATUS_COLORS[claim.status] || '#9E9E9E' }}
+                    className={`mobile-claims__card-status${STATUS_MOD[claim.status] ? ` mobile-claims__card-status--${STATUS_MOD[claim.status]}` : ''}`}
                   >
                     {getStatusText(claim.status)}
                   </span>

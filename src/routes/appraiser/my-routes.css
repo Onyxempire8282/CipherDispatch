@@ -1,0 +1,182 @@
+/* MyRoutes – BEM block: .routes */
+
+.routes {
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--plate) 0%, var(--steel) 100%);
+  padding: 32px;
+}
+
+.routes__container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Loading state */
+.routes__loading {
+  max-width: 800px;
+  margin: 0 auto;
+  color: var(--text-hi);
+}
+
+/* Summary hint */
+.routes__summary {
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  background: var(--steel-mid);
+  border: 1px solid var(--rivet);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.routes__summary-count {
+  color: var(--status-completed);
+  font-weight: 600;
+}
+
+.routes__summary-closed {
+  color: var(--amber-line);
+}
+
+/* Success / Error messages */
+.routes__success {
+  padding: 16px;
+  margin-bottom: 16px;
+  background: #065f46;
+  border: 1px solid var(--status-completed);
+  border-radius: 8px;
+  color: #d1fae5;
+}
+
+.routes__error {
+  padding: 16px;
+  margin-bottom: 16px;
+  background: #7f1d1d;
+  border: 1px solid var(--status-canceled);
+  border-radius: 8px;
+  color: #fecaca;
+}
+
+/* Empty state */
+.routes__empty {
+  background: var(--steel);
+  border: 1px solid var(--rivet);
+  border-radius: 12px;
+  padding: 32px;
+  text-align: center;
+  color: var(--muted);
+}
+
+/* Route list */
+.routes__list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Individual route card */
+.routes__card {
+  background: var(--steel);
+  border: 1px solid var(--rivet);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: var(--shadow-lift);
+}
+
+.routes__card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.routes__card-date {
+  color: var(--text-hi);
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.routes__card-miles {
+  text-align: right;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.routes__card-miles-value {
+  color: var(--status-completed);
+  font-weight: 600;
+  font-size: 20px;
+}
+
+/* Status badge */
+.routes__badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  display: inline-block;
+}
+
+.routes__badge--draft {
+  background: var(--rivet);
+  color: var(--text-hi);
+}
+
+.routes__badge--active {
+  background: var(--status-scheduled);
+  color: var(--white);
+}
+
+.routes__badge--closed {
+  background: var(--status-completed);
+  color: var(--white);
+}
+
+/* Addresses */
+.routes__addresses {
+  color: var(--muted);
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+/* Close route button */
+.routes__close-btn {
+  width: 100%;
+  padding: 12px 24px;
+  background: var(--status-completed);
+  color: var(--white);
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.routes__close-btn:hover:not(:disabled) {
+  background: #047857;
+}
+
+.routes__close-btn:disabled {
+  cursor: not-allowed;
+}
+
+.routes__close-btn--closing {
+  background: var(--rivet);
+}
+
+.routes__close-btn--no-miles {
+  opacity: 0.5;
+}
+
+/* Closed banner */
+.routes__closed-banner {
+  padding: 12px 24px;
+  background: #1a3d2e;
+  border: 1px solid var(--status-completed);
+  border-radius: 8px;
+  color: var(--amber-line);
+  text-align: center;
+  font-size: 14px;
+}

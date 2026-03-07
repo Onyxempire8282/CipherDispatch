@@ -1,0 +1,93 @@
+/* PayoutForecast – BEM block: .forecast */
+
+.forecast {
+  background: var(--steel);
+  border: 2px solid var(--rivet);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+/* ---- Header section ---- */
+
+.forecast__header {
+  margin-bottom: 20px;
+}
+
+.forecast__title {
+  margin: 0 0 8px 0;
+  color: var(--white);
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.forecast__title--empty {
+  margin: 0 0 12px 0;
+}
+
+.forecast__total {
+  font-size: 28px;
+  font-weight: bold;
+  color: var(--amber);
+  margin-top: 12px;
+}
+
+/* ---- Empty state ---- */
+
+.forecast__empty {
+  color: var(--text);
+  font-size: 14px;
+  text-align: center;
+  padding: 20px;
+}
+
+/* ---- Breakdown section ---- */
+
+.forecast__breakdown {
+  border-top: 1px solid var(--rivet);
+  padding-top: 16px;
+}
+
+.forecast__subtitle {
+  margin: 0 0 12px 0;
+  color: var(--text-hi);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.forecast__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ---- Individual firm row ---- */
+
+.forecast__firm {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: var(--steel-mid);
+  border-radius: 8px;
+  border-left: 4px solid var(--amber-line);
+}
+
+.forecast__firm-name {
+  color: var(--white);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.forecast__firm-count {
+  color: var(--text);
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.forecast__firm-amount {
+  color: var(--amber);
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: bold;
+}

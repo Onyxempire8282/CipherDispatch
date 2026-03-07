@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import "./payout-forecast.css";
 
 interface Claim {
   id: string;
@@ -139,18 +140,11 @@ export default function PayoutForecast({ claims }: PayoutForecastProps) {
 
   if (forecast.length === 0) {
     return (
-      <div
-        style={{
-          background: '#1a202c',
-          border: '2px solid #4a5568',
-          borderRadius: '12px',
-          padding: '20px',
-        }}
-      >
-        <h3 style={{ margin: '0 0 12px 0', color: '#e2e8f0', fontSize: '20px', fontWeight: 'bold' }}>
-          📊 Expected Payout This Week
+      <div className="forecast">
+        <h3 className="forecast__title forecast__title--empty">
+          Expected Payout This Week
         </h3>
-        <p style={{ color: '#a0aec0', fontSize: '14px', textAlign: 'center', padding: '20px' }}>
+        <p className="forecast__empty">
           No payouts scheduled for this week
         </p>
       </div>
@@ -158,57 +152,35 @@ export default function PayoutForecast({ claims }: PayoutForecastProps) {
   }
 
   return (
-    <div
-      style={{
-        background: '#1a202c',
-        border: '2px solid #4a5568',
-        borderRadius: '12px',
-        padding: '20px',
-      }}
-    >
-      <div style={{ marginBottom: '20px' }}>
-        <h3 style={{ margin: '0 0 8px 0', color: '#e2e8f0', fontSize: '20px', fontWeight: 'bold' }}>
-          📊 Expected Payout This Week
+    <div className="forecast">
+      <div className="forecast__header">
+        <h3 className="forecast__title">
+          Expected Payout This Week
         </h3>
-        <div
-          style={{
-            fontSize: '28px',
-            fontWeight: 'bold',
-            color: '#10b981',
-            marginTop: '12px',
-          }}
-        >
+        <div className="forecast__total">
           ${totalPayout.toFixed(2)}
         </div>
       </div>
 
-      <div style={{ borderTop: '1px solid #4a5568', paddingTop: '16px' }}>
-        <h4 style={{ margin: '0 0 12px 0', color: '#cbd5e1', fontSize: '14px', fontWeight: '600' }}>
+      <div className="forecast__breakdown">
+        <h4 className="forecast__subtitle">
           Breakdown by Firm
         </h4>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div className="forecast__list">
           {forecast.map((firm) => (
             <div
               key={firm.firmName}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '12px',
-                background: '#2d3748',
-                borderRadius: '8px',
-                borderLeft: '4px solid #667eea',
-              }}
+              className="forecast__firm"
             >
               <div>
-                <div style={{ color: '#e2e8f0', fontSize: '15px', fontWeight: '600' }}>
+                <div className="forecast__firm-name">
                   {firm.firmName}
                 </div>
-                <div style={{ color: '#a0aec0', fontSize: '12px', marginTop: '2px' }}>
+                <div className="forecast__firm-count">
                   {firm.claimCount} claim{firm.claimCount > 1 ? 's' : ''}
                 </div>
               </div>
-              <div style={{ color: '#10b981', fontSize: '18px', fontWeight: 'bold' }}>
+              <div className="forecast__firm-amount">
                 ${firm.amount.toFixed(2)}
               </div>
             </div>

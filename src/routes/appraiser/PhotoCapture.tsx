@@ -14,6 +14,7 @@ import {
 } from "../../utils/photoCapture";
 import { uploadManager } from "../../utils/uploadManager";
 import { PHOTO_SLOTS } from "../../config/photoSlots";
+import "./photo-capture.css";
 
 export default function PhotoCapture() {
   const { id: claimId } = useParams<{ id: string }>();
@@ -345,65 +346,29 @@ export default function PhotoCapture() {
   // Inspection type selection
   if (!state.inspection_type) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          background: "linear-gradient(135deg, #1a202c 0%, #2d3748 100%)",
-          padding: 20,
-        }}
-      >
-        <div style={{ maxWidth: 600, margin: "0 auto" }}>
-          <h2 style={{ color: "#e2e8f0", marginBottom: 20 }}>
+      <div className="capture">
+        <div className="capture__inner capture__inner--narrow">
+          <h2 className="capture__title capture__title--mb">
             Select Inspection Type
           </h2>
 
           <button
             onClick={() => selectInspectionType("regular")}
-            style={{
-              width: "100%",
-              padding: 20,
-              marginBottom: 15,
-              background: "#4a5568",
-              color: "white",
-              border: "none",
-              borderRadius: 8,
-              fontSize: 18,
-              fontWeight: "bold",
-              cursor: "pointer",
-            }}
+            className="capture__type-btn"
           >
             🚗 Regular Vehicle
           </button>
 
           <button
             onClick={() => selectInspectionType("heavy_duty")}
-            style={{
-              width: "100%",
-              padding: 20,
-              background: "#4a5568",
-              color: "white",
-              border: "none",
-              borderRadius: 8,
-              fontSize: 18,
-              fontWeight: "bold",
-              cursor: "pointer",
-            }}
+            className="capture__type-btn"
           >
             🚛 Heavy Duty / Commercial Vehicle
           </button>
 
           <button
             onClick={() => navigate(`/appraiser/claim/${claimId}`)}
-            style={{
-              width: "100%",
-              padding: 12,
-              marginTop: 20,
-              background: "#2d3748",
-              color: "#e2e8f0",
-              border: "1px solid #4a5568",
-              borderRadius: 8,
-              cursor: "pointer",
-            }}
+            className="capture__back-btn"
           >
             ← Back to Claim
           </button>
@@ -415,50 +380,25 @@ export default function PhotoCapture() {
   // Manufacturer label prompt for regular vehicles
   if (showLabelPrompt) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          background: "linear-gradient(135deg, #1a202c 0%, #2d3748 100%)",
-          padding: 20,
-        }}
-      >
-        <div style={{ maxWidth: 600, margin: "0 auto" }}>
-          <h2 style={{ color: "#e2e8f0", marginBottom: 20 }}>
+      <div className="capture">
+        <div className="capture__inner capture__inner--narrow">
+          <h2 className="capture__title capture__title--mb">
             Manufacturer/Specialty Label
           </h2>
-          <p style={{ color: "#cbd5e0", marginBottom: 20 }}>
+          <p className="capture__text">
             Is a manufacturer or specialty label present on this vehicle?
           </p>
 
           <button
             onClick={() => handleLabelResponse(true)}
-            style={{
-              width: "100%",
-              padding: 20,
-              marginBottom: 15,
-              background: "#4a5568",
-              color: "white",
-              border: "none",
-              borderRadius: 8,
-              fontSize: 18,
-              cursor: "pointer",
-            }}
+            className="capture__type-btn"
           >
             Yes - Label Present
           </button>
 
           <button
             onClick={() => handleLabelResponse(false)}
-            style={{
-              width: "100%",
-              padding: 20,
-              background: "#4a5568",
-              color: "white",
-              border: "none",
-              borderRadius: 8,
-              fontSize: 18,
-              cursor: "pointer",
-            }}
+            className="capture__type-btn"
           >
             No - No Label
           </button>
@@ -469,48 +409,24 @@ export default function PhotoCapture() {
 
   // Main capture interface
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, #1a202c 0%, #2d3748 100%)",
-        padding: 20,
-      }}
-    >
-      <div style={{ maxWidth: 800, margin: "0 auto" }}>
+    <div className="capture">
+      <div className="capture__inner">
         {/* Header */}
-        <div
-          style={{
-            background: "#2d3748",
-            border: "1px solid #4a5568",
-            borderRadius: 8,
-            padding: 16,
-            marginBottom: 20,
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
+        <div className="capture__card">
+          <div className="capture__card-header">
             <div>
-              <h2 style={{ margin: 0, color: "#e2e8f0" }}>Photo Capture</h2>
-              <p
-                style={{ margin: "5px 0 0 0", color: "#cbd5e0", fontSize: 14 }}
-              >
+              <h2 className="capture__title">Photo Capture</h2>
+              <p className="capture__subtitle">
                 {state.inspection_type === "regular"
                   ? "🚗 Regular Vehicle"
                   : "🚛 Heavy Duty"}
               </p>
             </div>
-            <div style={{ textAlign: "right" }}>
-              <div
-                style={{ color: "#e2e8f0", fontSize: 20, fontWeight: "bold" }}
-              >
+            <div className="capture__progress">
+              <div className="capture__progress-count">
                 {progress.completed} / {progress.total}
               </div>
-              <div style={{ color: "#cbd5e0", fontSize: 12 }}>
+              <div className="capture__progress-label">
                 photos complete
               </div>
             </div>
@@ -518,32 +434,14 @@ export default function PhotoCapture() {
 
           {/* Upload status */}
           {!uploadStatus.allComplete && (
-            <div
-              style={{
-                marginTop: 12,
-                padding: 10,
-                background: "#f59e0b",
-                borderRadius: 6,
-                color: "#1a202c",
-                fontSize: 14,
-              }}
-            >
+            <div className="capture__upload-status capture__upload-status--uploading">
               ↑ Uploading {uploadStatus.uploading + uploadStatus.pending}{" "}
               photo(s) safely in background...
             </div>
           )}
 
           {uploadStatus.failed > 0 && (
-            <div
-              style={{
-                marginTop: 12,
-                padding: 10,
-                background: "#ef4444",
-                borderRadius: 6,
-                color: "white",
-                fontSize: 14,
-              }}
-            >
+            <div className="capture__upload-status capture__upload-status--failed">
               ⚠️ {uploadStatus.failed} photo(s) failed to upload. Check
               connection.
             </div>
@@ -551,37 +449,24 @@ export default function PhotoCapture() {
         </div>
 
         {/* Conditional toggles */}
-        <div
-          style={{
-            background: "#2d3748",
-            border: "1px solid #4a5568",
-            borderRadius: 8,
-            padding: 16,
-            marginBottom: 20,
-          }}
-        >
-          <h3 style={{ color: "#e2e8f0", fontSize: 16, marginTop: 0 }}>
+        <div className="capture__card">
+          <h3 className="capture__card-title">
             Additional Sections (If Applicable)
           </h3>
 
           {["structural", "airbags", "tow_bill"].map((group) => (
             <label
               key={group}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                marginBottom: 10,
-                cursor: "pointer",
-              }}
+              className="capture__toggle-label"
             >
               <input
                 type="checkbox"
                 checked={state.enabled_conditionals.has(group)}
                 onChange={() => toggleConditional(group)}
                 disabled={state.completed}
-                style={{ marginRight: 10, width: 20, height: 20 }}
+                className="capture__toggle-checkbox"
               />
-              <span style={{ color: "#e2e8f0" }}>
+              <span className="capture__toggle-text">
                 {group === "structural" && "Structural Damage"}
                 {group === "airbags" && "Airbags Deployed"}
                 {group === "tow_bill" && "Tow Bill"}
@@ -592,22 +477,14 @@ export default function PhotoCapture() {
 
         {/* Current slot */}
         {currentSlot && (
-          <div
-            style={{
-              background: "#2d3748",
-              border: "2px solid #667eea",
-              borderRadius: 8,
-              padding: 20,
-              marginBottom: 20,
-            }}
-          >
-            <h3 style={{ color: "#e2e8f0", marginTop: 0 }}>
+          <div className="capture__card capture__card--active-slot">
+            <h3 className="capture__slot-title">
               {currentSlot.label}
               {currentSlot.required && (
-                <span style={{ color: "#ef4444" }}> *</span>
+                <span className="capture__required-mark"> *</span>
               )}
             </h3>
-            <p style={{ color: "#cbd5e0", marginBottom: 20 }}>
+            <p className="capture__slot-instruction">
               {currentSlot.instruction}
             </p>
 
@@ -615,28 +492,17 @@ export default function PhotoCapture() {
             {state.captured_photos.get(currentSlot.id)?.map((photo) => (
               <div
                 key={photo.id}
-                style={{ marginBottom: 15, position: "relative" }}
+                className="capture__photo-wrap"
               >
                 <img
                   src={photo.url}
                   alt="Captured"
-                  style={{ width: "100%", borderRadius: 8 }}
+                  className="capture__photo-img"
                 />
                 {!state.completed && (
                   <button
                     onClick={() => retakePhoto(currentSlot.id, photo.id)}
-                    style={{
-                      position: "absolute",
-                      top: 10,
-                      right: 10,
-                      padding: "8px 16px",
-                      background: "#ef4444",
-                      color: "white",
-                      border: "none",
-                      borderRadius: 6,
-                      cursor: "pointer",
-                      fontWeight: "bold",
-                    }}
+                    className="capture__retake-btn"
                   >
                     🔄 Retake
                   </button>
@@ -645,23 +511,13 @@ export default function PhotoCapture() {
             ))}
 
             {/* Action buttons */}
-            <div style={{ display: "flex", gap: 10 }}>
+            <div className="capture__actions">
               {!cameraActive && (
                 <>
                   <button
                     onClick={startCamera}
                     disabled={state.completed}
-                    style={{
-                      flex: 1,
-                      padding: 15,
-                      background: state.completed ? "#4a5568" : "#667eea",
-                      color: "white",
-                      border: "none",
-                      borderRadius: 8,
-                      fontSize: 18,
-                      fontWeight: "bold",
-                      cursor: state.completed ? "not-allowed" : "pointer",
-                    }}
+                    className={`capture__capture-btn${state.completed ? " capture__capture-btn--disabled" : ""}`}
                   >
                     📷 Capture Photo
                   </button>
@@ -674,15 +530,7 @@ export default function PhotoCapture() {
                             setCurrentSlotIndex(nextIndex);
                           }
                         }}
-                        style={{
-                          padding: 15,
-                          background: "#10b981",
-                          color: "white",
-                          border: "none",
-                          borderRadius: 8,
-                          fontWeight: "bold",
-                          cursor: "pointer",
-                        }}
+                        className="capture__next-btn"
                       >
                         Next →
                       </button>
@@ -694,23 +542,9 @@ export default function PhotoCapture() {
         )}
 
         {/* Slot navigation */}
-        <div
-          style={{
-            background: "#2d3748",
-            border: "1px solid #4a5568",
-            borderRadius: 8,
-            padding: 16,
-            marginBottom: 20,
-          }}
-        >
-          <h4 style={{ color: "#e2e8f0", marginTop: 0 }}>Photo Slots</h4>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))",
-              gap: 10,
-            }}
-          >
+        <div className="capture__card">
+          <h4 className="capture__slots-title">Photo Slots</h4>
+          <div className="capture__slot-grid">
             {activeSlots.map((slot, idx) => {
               const captured = state.captured_photos.get(slot.id)?.length || 0;
               const isComplete = captured > 0;
@@ -720,20 +554,7 @@ export default function PhotoCapture() {
                 <button
                   key={slot.id}
                   onClick={() => setCurrentSlotIndex(idx)}
-                  style={{
-                    padding: 10,
-                    background: isCurrent
-                      ? "#667eea"
-                      : isComplete
-                      ? "#10b981"
-                      : "#4a5568",
-                    color: "white",
-                    border: "none",
-                    borderRadius: 6,
-                    fontSize: 12,
-                    cursor: "pointer",
-                    textAlign: "center",
-                  }}
+                  className={`capture__slot-btn${isCurrent ? " capture__slot-btn--current" : isComplete ? " capture__slot-btn--complete" : ""}`}
                 >
                   {idx + 1}
                   {isComplete && " ✓"}
@@ -748,33 +569,14 @@ export default function PhotoCapture() {
         <button
           onClick={completeInspection}
           disabled={!canComplete || state.completed}
-          style={{
-            width: "100%",
-            padding: 20,
-            background: canComplete && !state.completed ? "#10b981" : "#4a5568",
-            color: "white",
-            border: "none",
-            borderRadius: 8,
-            fontSize: 20,
-            fontWeight: "bold",
-            cursor: canComplete && !state.completed ? "pointer" : "not-allowed",
-            marginBottom: 20,
-          }}
+          className={`capture__complete-btn${!canComplete || state.completed ? " capture__complete-btn--disabled" : ""}`}
         >
           {state.completed ? "✓ Inspection Completed" : "✓ Complete Inspection"}
         </button>
 
         <button
           onClick={() => navigate(`/appraiser/claim/${claimId}`)}
-          style={{
-            width: "100%",
-            padding: 15,
-            background: "#2d3748",
-            color: "#e2e8f0",
-            border: "1px solid #4a5568",
-            borderRadius: 8,
-            cursor: "pointer",
-          }}
+          className="capture__back-btn capture__back-btn--lg"
         >
           ← Back to Claim
         </button>
@@ -782,15 +584,8 @@ export default function PhotoCapture() {
 
       {/* Full-Screen Camera Capture Mode */}
       {cameraActive && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 9999,
-            background: "#000",
-          }}
-        >
-          {/* Video fills entire viewport */}
+        <div className="capture__camera-overlay">
+          {/* Video fills entire viewport — dynamic sizing kept inline */}
           <video
             ref={videoRef}
             autoPlay
@@ -810,21 +605,7 @@ export default function PhotoCapture() {
             const nextSlot = activeSlots[nextIndex];
 
             return nextSlot ? (
-              <div
-                style={{
-                  position: "absolute",
-                  top: "max(20px, env(safe-area-inset-top))",
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  padding: "8px 16px",
-                  background: "rgba(45, 55, 72, 0.9)",
-                  borderRadius: 8,
-                  color: "#e2e8f0",
-                  fontSize: 13,
-                  maxWidth: "80%",
-                  textAlign: "center",
-                }}
-              >
+              <div className="capture__next-banner">
                 Next: {nextSlot.label}
               </div>
             ) : null;
@@ -832,24 +613,7 @@ export default function PhotoCapture() {
 
           {/* Orientation Warning Overlay */}
           {videoReady && !isLandscape && (
-            <div
-              style={{
-                position: "absolute",
-                top: "50%",
-                left: "50%",
-                transform: "translate(-50%, -50%)",
-                padding: 24,
-                background: "rgba(245, 158, 11, 0.95)",
-                borderRadius: 12,
-                color: "#1a202c",
-                fontWeight: "bold",
-                fontSize: 18,
-                textAlign: "center",
-                maxWidth: "80%",
-                // TEMP: allow camera interaction even when showing orientation warning
-                pointerEvents: "none",
-              }}
-            >
+            <div className="capture__orientation-warn">
               ⚠️ LANDSCAPE MODE REQUIRED
               <br />
               Rotate your device to landscape
@@ -859,23 +623,7 @@ export default function PhotoCapture() {
           {/* Cancel Button - Top Right */}
           <button
             onClick={stopCamera}
-            style={{
-              position: "absolute",
-              top: "max(20px, env(safe-area-inset-top))",
-              right: 20,
-              width: 44,
-              height: 44,
-              background: "rgba(0, 0, 0, 0.6)",
-              color: "white",
-              border: "none",
-              borderRadius: "50%",
-              fontSize: 24,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.4)",
-            }}
+            className="capture__cancel-btn"
           >
             ✕
           </button>
@@ -884,30 +632,7 @@ export default function PhotoCapture() {
           <button
             onClick={capturePhoto}
             disabled={!videoReady || !isLandscape}
-            style={{
-              position: "absolute",
-              bottom: "max(30px, env(safe-area-inset-bottom))",
-              right: 30,
-              width: 80,
-              height: 80,
-              background:
-                videoReady && isLandscape
-                  ? "linear-gradient(135deg, #10b981 0%, #059669 100%)"
-                  : "rgba(107, 114, 128, 0.8)",
-              color: "white",
-              border: "4px solid white",
-              borderRadius: "50%",
-              fontSize: 32,
-              cursor: videoReady && isLandscape ? "pointer" : "not-allowed",
-              opacity: videoReady && isLandscape ? 1 : 0.6,
-              boxShadow:
-                videoReady && isLandscape
-                  ? "0 6px 20px rgba(16, 185, 129, 0.6)"
-                  : "0 4px 12px rgba(0, 0, 0, 0.4)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
+            className={`capture__shutter-btn${!videoReady || !isLandscape ? " capture__shutter-btn--disabled" : ""}`}
           >
             📷
           </button>

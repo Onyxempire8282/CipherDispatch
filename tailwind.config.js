@@ -6,46 +6,72 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        heading: ['Bebas Neue', 'sans-serif'],
+        mono: ['DM Mono', 'monospace'],
+        body: ['Barlow', 'sans-serif'],
+      },
       colors: {
-        // Dark theme base colors (from current design)
+        // Surface palette
+        plate:      '#0e0f11',
+        steel: {
+          DEFAULT: '#161a1d',
+          mid:     '#1e2328',
+          lift:    '#252b31',
+        },
+        'input-bg': '#0a0c0e',
+        rivet: {
+          DEFAULT: '#2e353d',
+          hi:      '#3d464f',
+        },
+        // Accent
+        amber: {
+          DEFAULT: '#e8952a',
+          dim:     'rgba(232, 149, 42, 0.12)',
+          line:    'rgba(232, 149, 42, 0.35)',
+        },
+        // Text hierarchy
+        white:   '#edeae4',
+        'text-hi': '#b8bdc2',
+        text:    '#7a8088',
+        muted:   '#4a5058',
+        // Status colors
+        'status-scheduled':  '#3a8fd4',
+        'status-progress':   '#e8952a',
+        'status-completed':  '#4a9e6b',
+        'status-canceled':   '#e05050',
+        'status-unassigned': '#4a5058',
+        // Firm colors
+        'firm-sedgwick':   '#e8952a',
+        'firm-acd':        '#f0a030',
+        'firm-claimsol':   '#e05050',
+        'firm-complete':   '#c0392b',
+        'firm-doan':       '#4a9e6b',
+        'firm-legacy':     '#3a8fd4',
+        'firm-ama':        '#9b59b6',
+        'firm-ianet':      '#1abc9c',
+        'firm-ateam':      '#e67e22',
+        'firm-hea':        '#95a5a6',
+        'firm-frontline':  '#bdc3c7',
+        'firm-sca':        '#f39c12',
+        // Legacy aliases (keep until old Tailwind classes are migrated)
         'brand-dark': {
-          900: '#1a202c',
-          800: '#2d3748',
-          700: '#4a5568',
-          600: '#718096',
+          900: '#0e0f11',
+          800: '#161a1d',
+          700: '#2e353d',
+          600: '#3d464f',
         },
         'brand-light': {
-          100: '#e2e8f0',
-          200: '#cbd5e0',
-          300: '#a0aec0',
-          400: '#718096',
+          100: '#edeae4',
+          200: '#b8bdc2',
+          300: '#7a8088',
+          400: '#4a5058',
         },
-        // Status colors
-        'status-scheduled': '#2196F3',
-        'status-progress': '#FF9800',
-        'status-completed': '#4CAF50',
-        'status-canceled': '#ef4444',
-        'status-unassigned': '#9E9E9E',
-        // Firm colors (from firmColors.ts)
-        'firm-sedgwick': '#9CA3AF',
-        'firm-acd': '#F59E0B',
-        'firm-claim-solution': '#8B5CF6',
-        'firm-ccs': '#EF4444',
-        'firm-doan': '#10B981',
-        'firm-legacy': '#3B82F6',
-        'firm-ama': '#FACC15',
-        'firm-ianet': '#92400E',
-        'firm-ateam': '#06B6D4',
-        'firm-hea': '#6366F1',
-        'firm-frontline': '#1F2937',
-      },
-      backgroundImage: {
-        'gradient-dark': 'linear-gradient(135deg, #1a202c 0%, #2d3748 100%)',
-        'gradient-purple': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       },
       boxShadow: {
-        'card': '0 2px 4px rgba(0,0,0,0.5)',
-        'card-hover': '0 6px 12px rgba(0,0,0,0.7)',
+        'card':       '0 2px 8px rgba(0, 0, 0, 0.4)',
+        'card-hover': '0 8px 24px rgba(0, 0, 0, 0.6)',
+        'glow':       '0 0 20px rgba(232, 149, 42, 0.25)',
       },
     },
   },

@@ -1,0 +1,355 @@
+/**
+ * Admin Claims Page Styles
+ *
+ * BEM block: .claims
+ *
+ * Structure:
+ * .claims
+ *   .claims__status-bar (filter pills)
+ *   .claims__toolbar (header + action buttons)
+ *   .claims__firm-group
+ *     .claims__firm-header
+ *     .claims__grid
+ *       .claims__card
+ *   .claims__empty
+ *   .claims__loading
+ *   .claims__error
+ */
+
+/* ── Page wrapper ── */
+
+.claims {
+  min-height: 100vh;
+  padding: 16px;
+}
+
+/* ── Loading / Error states ── */
+
+.claims__loading {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-hi);
+  font-size: 18px;
+}
+
+.claims__error {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.claims__error-box {
+  color: var(--status-canceled);
+  font-size: 18px;
+  text-align: center;
+  background: var(--steel);
+  padding: 24px;
+  border: 2px solid var(--status-canceled);
+}
+
+.claims__error-box h3 {
+  margin: 0 0 8px;
+}
+
+.claims__error-box p {
+  margin: 0 0 12px;
+}
+
+/* ── Status filter bar ── */
+
+.claims__status-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.claims__status-pill {
+  padding: 10px 16px;
+  background: var(--steel);
+  color: var(--text-hi);
+  border: 1px solid var(--rivet);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s;
+  min-width: 100px;
+}
+
+.claims__status-pill:hover {
+  border-color: var(--rivet-hi);
+}
+
+.claims__status-pill--active {
+  color: var(--amber);
+  background: var(--amber-dim);
+  border-color: var(--amber-line);
+}
+
+.claims__status-num {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.claims__status-label {
+  font-size: 9px;
+  opacity: 0.8;
+}
+
+/* ── Toolbar ── */
+
+.claims__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  gap: 16px;
+}
+
+.claims__toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.claims__toolbar-title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 24px;
+  letter-spacing: 0.04em;
+  color: var(--white);
+}
+
+.claims__toolbar-right {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ── Payout forecast wrapper ── */
+
+.claims__forecast {
+  margin-bottom: 24px;
+}
+
+/* ── Empty state ── */
+
+.claims__empty {
+  text-align: center;
+  padding: 48px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+}
+
+/* ── Firm group ── */
+
+.claims__firm-group {
+  margin-bottom: 32px;
+}
+
+.claims__firm-header {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--white);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--rivet);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.claims__firm-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.claims__firm-pending {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  background: var(--steel-mid);
+  padding: 3px 10px;
+  border: 1px solid var(--rivet);
+}
+
+.claims__firm-total {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+/* ── Claims grid ── */
+
+.claims__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 3px;
+}
+
+/* ── Claim card ── */
+
+.claims__card {
+  background: var(--steel);
+  border: 1px solid var(--rivet);
+  border-left: 3px solid var(--rivet);
+  padding: 16px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s;
+  cursor: pointer;
+  display: block;
+}
+
+.claims__card:hover {
+  background: var(--steel-mid);
+  border-left-color: var(--amber);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lift);
+}
+
+.claims__card--dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+.claims__card-header {
+  margin-bottom: 10px;
+}
+
+.claims__card-number {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  letter-spacing: 0.04em;
+  color: var(--white);
+  margin-bottom: 6px;
+}
+
+.claims__card-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.claims__badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+  text-transform: uppercase;
+  color: var(--white);
+}
+
+.claims__badge--status {
+  background: var(--status-unassigned);
+}
+
+.claims__badge--scheduled {
+  background: var(--status-scheduled);
+}
+
+.claims__badge--progress {
+  background: var(--status-progress);
+}
+
+.claims__badge--completed {
+  background: var(--status-completed);
+}
+
+.claims__badge--canceled {
+  background: var(--status-canceled);
+}
+
+.claims__badge--note {
+  background: transparent;
+  border: 1px solid var(--amber-line);
+  color: var(--amber);
+}
+
+.claims__card-section {
+  padding: 8px 0;
+  border-top: 1px solid var(--rivet);
+}
+
+.claims__card-section-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.claims__card-section-value {
+  font-size: 13px;
+  color: var(--text-hi);
+}
+
+.claims__card-section-empty {
+  font-size: 11px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* ── Download photos button ── */
+
+.claims__download-btn {
+  width: 100%;
+  padding: 8px 12px;
+  margin-top: 8px;
+  background: var(--steel-mid);
+  border: 1px solid var(--rivet);
+  color: var(--text-hi);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.claims__download-btn:hover {
+  border-color: var(--amber-line);
+  color: var(--amber);
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 768px) {
+  .claims {
+    padding: 8px;
+  }
+
+  .claims__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .claims__status-pill {
+    min-width: 70px;
+    padding: 8px 10px;
+  }
+}

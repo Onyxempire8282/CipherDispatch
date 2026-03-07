@@ -1,321 +1,221 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useNavigate, Link } from "react-router-dom";
+import { NavBar } from "../components/NavBar";
+import PageHeader from "../components/ui/PageHeader";
+import "./app.css";
 
-type Profile = { user_id: string; role: "admin" | "appraiser" };
+type Profile = { user_id: string; role: "admin" | "appraiser"; full_name?: string };
 
 export default function App() {
-  console.log("GITHUB PAGES BASENAME ACTIVE");
   const nav = useNavigate();
   const [p, setP] = useState<Profile | null>(null);
+  const [clock, setClock] = useState("");
 
   useEffect(() => {
     (async () => {
-      console.log("App: Checking authentication...");
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      console.log("App: User from auth:", user);
-      if (!user) {
-        console.log("App: No user found, redirecting to login");
-        return nav("/login");
-      }
-      console.log("App: Fetching profile for user_id:", user.id);
-      const { data, error } = await supabase
+      if (!user) return nav("/login");
+      const { data } = await supabase
         .from("profiles")
-        .select("user_id, role")
+        .select("user_id, role, full_name")
         .eq("user_id", user.id)
         .single();
-      console.log("App: Profile data:", data, "Error:", error);
-      if (!data) {
-        console.log("App: No profile found, redirecting to login");
-        return nav("/login");
-      }
-      console.log("App: Profile loaded successfully:", data);
+      if (!data) return nav("/login");
       setP(data as Profile);
     })();
   }, []);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    nav("/login");
-  };
+  useEffect(() => {
+    const tick = () => {
+      const now = new Date();
+      setClock(
+        `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`
+      );
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
 
   if (!p) return null;
+
+  const dateStr = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, #1a202c 0%, #2d3748 100%)",
-        padding: 32,
-      }}
-    >
-      <div style={{ maxWidth: 800, margin: "0 auto" }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 32,
-            background: "#2d3748",
-            border: "1px solid #4a5568",
-            padding: 20,
-            borderRadius: 12,
-            boxShadow: "0 4px 6px rgba(0,0,0,0.5)",
-          }}
-        >
-          <h2 style={{ margin: 0, color: "#e2e8f0" }}>
-            Welcome, {p.role === "admin" ? "Admin" : "Appraiser"}
-          </h2>
-          <button
-            onClick={handleLogout}
-            style={{
-              padding: "10px 20px",
-              background: "#ef4444",
-              color: "white",
-              border: "none",
-              borderRadius: 6,
-              fontWeight: "bold",
-              cursor: "pointer",
-            }}
-            onMouseOver={(e) => (e.currentTarget.style.background = "#dc2626")}
-            onMouseOut={(e) => (e.currentTarget.style.background = "#ef4444")}
-          >
-            Logout
-          </button>
-        </div>
+    <div>
+      <NavBar role={p.role} userName={p.full_name} />
 
-        {p.role === "admin" ? (
-          <div style={{ display: "grid", gap: 16 }}>
-            <Link
-              to="/admin/claims"
-              style={{
-                background: "#2d3748",
-                border: "1px solid #4a5568",
-                padding: 24,
-                borderRadius: 12,
-                textDecoration: "none",
-                color: "#e2e8f0",
-                boxShadow: "0 4px 6px rgba(0,0,0,0.5)",
-                transition: "transform 0.2s",
-              }}
-              onMouseOver={(e) =>
-                (e.currentTarget.style.transform = "translateY(-2px)")
-              }
-              onMouseOut={(e) =>
-                (e.currentTarget.style.transform = "translateY(0)")
-              }
-            >
-              <div style={{ fontSize: 48, marginBottom: 12 }}>📋</div>
-              <h3 style={{ margin: 0, marginBottom: 8, color: "#e2e8f0" }}>
-                View All Claims
-              </h3>
-              <p style={{ margin: 0, color: "#a0aec0" }}>
-                View and manage all active claims in the system
-              </p>
-            </Link>
+      {p.role === "admin" ? (
+        <>
+          <PageHeader
+            label="Cipher Dispatch"
+            title="Command Center"
+            sub="Claims operations and dispatch management"
+            aside={
+              <>
+                <div className="page-header__clock">{clock}</div>
+                <div className="page-header__date">{dateStr}</div>
+              </>
+            }
+          />
 
-            <Link
-              to="/admin/claims/new"
-              style={{
-                background: "#2d3748",
-                border: "1px solid #4a5568",
-                padding: 24,
-                borderRadius: 12,
-                textDecoration: "none",
-                color: "#e2e8f0",
-                boxShadow: "0 4px 6px rgba(0,0,0,0.5)",
-                transition: "transform 0.2s",
-              }}
-              onMouseOver={(e) =>
-                (e.currentTarget.style.transform = "translateY(-2px)")
-              }
-              onMouseOut={(e) =>
-                (e.currentTarget.style.transform = "translateY(0)")
-              }
-            >
-              <div style={{ fontSize: 48, marginBottom: 12 }}>➕</div>
-              <h3 style={{ margin: 0, marginBottom: 8, color: "#e2e8f0" }}>
-                Create New Claim
-              </h3>
-              <p style={{ margin: 0, color: "#a0aec0" }}>
-                Start a new insurance claim with customer and vehicle details
-              </p>
-            </Link>
+          <div className="dashboard__main">
+            <div className="dashboard__stat-strip">
+              <div className="dashboard__stat-cell">
+                <div className="dashboard__stat-num">--</div>
+                <div className="dashboard__stat-label">Active Claims</div>
+              </div>
+              <div className="dashboard__stat-cell">
+                <div className="dashboard__stat-num">--</div>
+                <div className="dashboard__stat-label">Pending Payouts</div>
+              </div>
+              <div className="dashboard__stat-cell">
+                <div className="dashboard__stat-num">--</div>
+                <div className="dashboard__stat-label">Active Vendors</div>
+              </div>
+              <div className="dashboard__stat-cell">
+                <div className="dashboard__stat-num">--</div>
+                <div className="dashboard__stat-label">Needs Scheduling</div>
+              </div>
+            </div>
 
-            <Link
-              to="/admin/claims?archived=true"
-              style={{
-                background: "#2d3748",
-                border: "1px solid #4a5568",
-                padding: 24,
-                borderRadius: 12,
-                textDecoration: "none",
-                color: "#e2e8f0",
-                boxShadow: "0 4px 6px rgba(0,0,0,0.5)",
-                transition: "transform 0.2s",
-              }}
-              onMouseOver={(e) =>
-                (e.currentTarget.style.transform = "translateY(-2px)")
-              }
-              onMouseOut={(e) =>
-                (e.currentTarget.style.transform = "translateY(0)")
-              }
-            >
-              <div style={{ fontSize: 48, marginBottom: 12 }}>📦</div>
-              <h3 style={{ margin: 0, marginBottom: 8, color: "#e2e8f0" }}>
-                Archived Claims
-              </h3>
-              <p style={{ margin: 0, color: "#a0aec0" }}>
-                View completed and archived claims for record keeping
-              </p>
-            </Link>
+            <div className="dashboard__ops-label">Operations</div>
 
-            <Link
-              to="/admin/vendors"
-              style={{
-                background: "#2d3748",
-                border: "1px solid #4a5568",
-                padding: 24,
-                borderRadius: 12,
-                textDecoration: "none",
-                color: "#e2e8f0",
-                boxShadow: "0 4px 6px rgba(0,0,0,0.5)",
-                transition: "transform 0.2s",
-              }}
-              onMouseOver={(e) =>
-                (e.currentTarget.style.transform = "translateY(-2px)")
-              }
-              onMouseOut={(e) =>
-                (e.currentTarget.style.transform = "translateY(0)")
-              }
-            >
-              <div style={{ fontSize: 48, marginBottom: 12 }}>🏢</div>
-              <h3 style={{ margin: 0, marginBottom: 8, color: "#e2e8f0" }}>
-                Manage Vendors
-              </h3>
-              <p style={{ margin: 0, color: "#a0aec0" }}>
-                Add and edit vendors that provide payouts
-              </p>
-            </Link>
+            <div className="dashboard__ops-grid">
+              <Link to="/admin/claims" className="dashboard__op-card">
+                <div className="dashboard__op-num">01</div>
+                <div className="dashboard__op-icon">📋</div>
+                <div className="dashboard__op-name">View All Claims</div>
+                <div className="dashboard__op-desc">
+                  View and manage all active claims in the system. Filter by firm, status, or adjuster.
+                </div>
+                <div className="dashboard__op-footer">
+                  <div className="dashboard__op-stat">Claims</div>
+                  <div className="dashboard__op-open">Open →</div>
+                </div>
+              </Link>
 
-            <Link
-              to="/admin/payouts"
-              style={{
-                background: "#2d3748",
-                border: "1px solid #4a5568",
-                padding: 24,
-                borderRadius: 12,
-                textDecoration: "none",
-                color: "#e2e8f0",
-                boxShadow: "0 4px 6px rgba(0,0,0,0.5)",
-                transition: "transform 0.2s",
-              }}
-              onMouseOver={(e) =>
-                (e.currentTarget.style.transform = "translateY(-2px)")
-              }
-              onMouseOut={(e) =>
-                (e.currentTarget.style.transform = "translateY(0)")
-              }
-            >
-              <div style={{ fontSize: 48, marginBottom: 12 }}>💰</div>
-              <h3 style={{ margin: 0, marginBottom: 8, color: "#e2e8f0" }}>
-                Payout Dashboard
-              </h3>
-              <p style={{ margin: 0, color: "#a0aec0" }}>
-                View upcoming vendor payouts and revenue projections
-              </p>
-            </Link>
+              <Link to="/admin/claims/new" className="dashboard__op-card">
+                <div className="dashboard__op-num">02</div>
+                <div className="dashboard__op-icon">＋</div>
+                <div className="dashboard__op-name">Create New Claim</div>
+                <div className="dashboard__op-desc">
+                  Start a new insurance claim with customer and vehicle details. Assign firm and adjuster.
+                </div>
+                <div className="dashboard__op-footer">
+                  <div className="dashboard__op-stat">New</div>
+                  <div className="dashboard__op-open">Open →</div>
+                </div>
+              </Link>
 
+              <Link to="/admin/claims?archived=true" className="dashboard__op-card">
+                <div className="dashboard__op-num">03</div>
+                <div className="dashboard__op-icon">🗄</div>
+                <div className="dashboard__op-name">Archived Claims</div>
+                <div className="dashboard__op-desc">
+                  View completed and archived claims for record keeping and billing reconciliation.
+                </div>
+                <div className="dashboard__op-footer">
+                  <div className="dashboard__op-stat">Archive</div>
+                  <div className="dashboard__op-open">Open →</div>
+                </div>
+              </Link>
+            </div>
+
+            <div className="dashboard__ops-grid dashboard__ops-grid--last">
+              <Link to="/admin/vendors" className="dashboard__op-card">
+                <div className="dashboard__op-num">04</div>
+                <div className="dashboard__op-icon">🏢</div>
+                <div className="dashboard__op-name">Manage Vendors</div>
+                <div className="dashboard__op-desc">
+                  Add and edit vendors that provide payouts. Configure rates and firm assignments.
+                </div>
+                <div className="dashboard__op-footer">
+                  <div className="dashboard__op-stat">Vendors</div>
+                  <div className="dashboard__op-open">Open →</div>
+                </div>
+              </Link>
+
+              <Link to="/admin/payouts" className="dashboard__op-card">
+                <div className="dashboard__op-num">05</div>
+                <div className="dashboard__op-icon">💰</div>
+                <div className="dashboard__op-name">Payout Dashboard</div>
+                <div className="dashboard__op-desc">
+                  View upcoming vendor payouts and revenue projections. Export billing reports.
+                </div>
+                <div className="dashboard__op-footer">
+                  <div className="dashboard__op-stat">Payouts</div>
+                  <div className="dashboard__op-open">Open →</div>
+                </div>
+              </Link>
+
+              <Link to="/admin/claims?view=calendar" className="dashboard__op-card">
+                <div className="dashboard__op-num">06</div>
+                <div className="dashboard__op-icon">📅</div>
+                <div className="dashboard__op-name">Scheduling Calendar</div>
+                <div className="dashboard__op-desc">
+                  Monthly calendar view with firm color coding. Manage appointments and inspection schedules.
+                </div>
+                <div className="dashboard__op-footer">
+                  <div className="dashboard__op-stat">Calendar</div>
+                  <div className="dashboard__op-open">Open →</div>
+                </div>
+              </Link>
+            </div>
           </div>
-        ) : (
-          <div style={{ display: "grid", gap: 16 }}>
-            <Link
-              to="/my-claims"
-              style={{
-                background: "#2d3748",
-                border: "1px solid #4a5568",
-                padding: 24,
-                borderRadius: 12,
-                textDecoration: "none",
-                color: "#e2e8f0",
-                boxShadow: "0 4px 6px rgba(0,0,0,0.5)",
-                transition: "transform 0.2s",
-              }}
-              onMouseOver={(e) =>
-                (e.currentTarget.style.transform = "translateY(-2px)")
-              }
-              onMouseOut={(e) =>
-                (e.currentTarget.style.transform = "translateY(0)")
-              }
-            >
-              <div style={{ fontSize: 48, marginBottom: 12 }}>📋</div>
-              <h3 style={{ margin: 0, marginBottom: 8, color: "#e2e8f0" }}>
-                My Claims
-              </h3>
-              <p style={{ margin: 0, color: "#a0aec0" }}>
-                View claims assigned to you and manage appraisals
-              </p>
-            </Link>
+        </>
+      ) : (
+        <>
+          <PageHeader
+            label="Cipher Dispatch"
+            title="My Dashboard"
+            sub="Claims assigned to you"
+          />
 
-            <Link
-              to="/my-claims?view=calendar"
-              style={{
-                background: "#2d3748",
-                border: "1px solid #4a5568",
-                padding: 24,
-                borderRadius: 12,
-                textDecoration: "none",
-                color: "#e2e8f0",
-                boxShadow: "0 4px 6px rgba(0,0,0,0.5)",
-                transition: "transform 0.2s",
-              }}
-              onMouseOver={(e) =>
-                (e.currentTarget.style.transform = "translateY(-2px)")
-              }
-              onMouseOut={(e) =>
-                (e.currentTarget.style.transform = "translateY(0)")
-              }
-            >
-              <div style={{ fontSize: 48, marginBottom: 12 }}>📅</div>
-              <h3 style={{ margin: 0, marginBottom: 8, color: "#e2e8f0" }}>
-                Calendar View
-              </h3>
-              <p style={{ margin: 0, color: "#a0aec0" }}>
-                View and schedule your claims on a monthly calendar
-              </p>
-            </Link>
+          <div className="dashboard__main">
+            <div className="dashboard__ops-label">Quick Access</div>
+            <div className="dashboard__link-grid">
+              <Link to="/my-claims" className="dashboard__link-card">
+                <div className="dashboard__link-icon">📋</div>
+                <div>
+                  <div className="dashboard__link-name">My Claims</div>
+                  <div className="dashboard__link-desc">
+                    View claims assigned to you and manage appraisals
+                  </div>
+                </div>
+              </Link>
 
-            <Link
-              to="/my-routes"
-              style={{
-                background: "#2d3748",
-                border: "1px solid #4a5568",
-                padding: 24,
-                borderRadius: 12,
-                textDecoration: "none",
-                color: "#e2e8f0",
-                boxShadow: "0 4px 6px rgba(0,0,0,0.5)",
-                transition: "transform 0.2s",
-              }}
-              onMouseOver={(e) =>
-                (e.currentTarget.style.transform = "translateY(-2px)")
-              }
-              onMouseOut={(e) =>
-                (e.currentTarget.style.transform = "translateY(0)")
-              }
-            >
-              <div style={{ fontSize: 48, marginBottom: 12 }}>🚗</div>
-              <h3 style={{ margin: 0, marginBottom: 8, color: "#e2e8f0" }}>
-                My Routes
-              </h3>
-              <p style={{ margin: 0, color: "#a0aec0" }}>
-                View routes and log mileage for tax records
-              </p>
-            </Link>
+              <Link to="/my-claims?view=calendar" className="dashboard__link-card">
+                <div className="dashboard__link-icon">📅</div>
+                <div>
+                  <div className="dashboard__link-name">Calendar View</div>
+                  <div className="dashboard__link-desc">
+                    View and schedule your claims on a monthly calendar
+                  </div>
+                </div>
+              </Link>
+
+              <Link to="/my-routes" className="dashboard__link-card">
+                <div className="dashboard__link-icon">🚗</div>
+                <div>
+                  <div className="dashboard__link-name">My Routes</div>
+                  <div className="dashboard__link-desc">
+                    View routes and log mileage for tax records
+                  </div>
+                </div>
+              </Link>
+            </div>
           </div>
-        )}
-      </div>
+        </>
+      )}
     </div>
   );
 }

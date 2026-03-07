@@ -9,6 +9,9 @@ import MonthlyCalendar from "../../components/claims/MonthlyCalendar";
 import MobileAgendaView from "../../components/claims/MobileAgendaView";
 import MobileClaimsList from "../../components/claims/MobileClaimsList";
 import { useIsMobile } from "../../hooks/useIsMobile";
+import { NavBar } from "../../components/NavBar";
+import PageHeader from "../../components/ui/PageHeader";
+import "./my-claims.css";
 
 type Claim = {
   id: string;
@@ -318,22 +321,20 @@ export default function MyClaims() {
   const statusCounts = getStatusCounts();
   const groupedClaims = groupClaimsByDate();
 
+  const getBadgeClass = (status: string | null) => {
+    switch (status) {
+      case "COMPLETED": return "my-claims__card-badge my-claims__card-badge--completed";
+      case "IN_PROGRESS": return "my-claims__card-badge my-claims__card-badge--progress";
+      case "SCHEDULED": return "my-claims__card-badge my-claims__card-badge--scheduled";
+      default: return "my-claims__card-badge my-claims__card-badge--unassigned";
+    }
+  };
+
   // Show loading state
   if (loading) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          background: "linear-gradient(135deg, #1a202c 0%, #2d3748 100%)",
-          padding: 16,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <div style={{ color: "#e2e8f0", fontSize: "18px" }}>
-          Loading your claims...
-        </div>
+      <div className="my-claims__loading">
+        Loading your claims...
       </div>
     );
   }
@@ -341,40 +342,13 @@ export default function MyClaims() {
   // Show error state
   if (error) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          background: "linear-gradient(135deg, #1a202c 0%, #2d3748 100%)",
-          padding: 16,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <div
-          style={{
-            color: "#ef4444",
-            fontSize: "18px",
-            textAlign: "center",
-            background: "#2d3748",
-            padding: "24px",
-            borderRadius: "8px",
-            border: "2px solid #ef4444",
-          }}
-        >
+      <div className="my-claims__error">
+        <div className="my-claims__error-box">
           <h3>Unable to load your claims</h3>
           <p>{error}</p>
           <button
             onClick={() => window.location.reload()}
-            style={{
-              background: "#ef4444",
-              color: "white",
-              border: "none",
-              padding: "12px 24px",
-              borderRadius: "6px",
-              cursor: "pointer",
-              marginTop: "12px",
-            }}
+            className="my-claims__retry-btn"
           >
             Retry
           </button>
@@ -390,116 +364,44 @@ export default function MyClaims() {
       draggable={true}
       onDragStart={(e) => handleDragStart(e, r)}
       onDragEnd={handleDragEnd}
-      style={{
-        border: "1px solid #4a5568",
-        borderRadius: 8,
-        padding: 16,
-        background: "#2d3748",
-        boxShadow: "0 2px 4px rgba(0,0,0,0.5)",
-        textDecoration: "none",
-        color: "#e2e8f0",
-        transition: "transform 0.2s, box-shadow 0.2s, opacity 0.2s",
-        cursor: draggingClaimId === r.id ? "grabbing" : "pointer",
-        opacity: draggingClaimId === r.id ? 0.5 : 1,
-      }}
-      onMouseOver={(e) => {
-        if (draggingClaimId !== r.id) {
-          e.currentTarget.style.transform = "translateY(-4px)";
-          e.currentTarget.style.boxShadow = "0 6px 12px rgba(0,0,0,0.7)";
-        }
-      }}
-      onMouseOut={(e) => {
-        if (draggingClaimId !== r.id) {
-          e.currentTarget.style.transform = "translateY(0)";
-          e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.5)";
-        }
-      }}
+      className={`my-claims__card${draggingClaimId === r.id ? " my-claims__card--dragging" : ""}`}
     >
-      <div style={{ marginBottom: 12 }}>
-        <div
-          style={{
-            fontSize: 20,
-            fontWeight: "bold",
-            marginBottom: 8,
-            color: "#e2e8f0",
-          }}
-        >
+      <div className="my-claims__card-header">
+        <div className="my-claims__card-number">
           #{r.claim_number}
         </div>
-        <div
-          style={{
-            display: "inline-block",
-            padding: "4px 12px",
-            borderRadius: 4,
-            fontSize: 11,
-            fontWeight: "bold",
-            background:
-              r.status === "COMPLETED"
-                ? "#4CAF50"
-                : r.status === "IN_PROGRESS"
-                ? "#FF9800"
-                : r.status === "SCHEDULED"
-                ? "#2196F3"
-                : "#9E9E9E",
-            color: "white",
-          }}
-        >
+        <div className={getBadgeClass(r.status)}>
           {r.status || "ASSIGNED"}
         </div>
       </div>
 
-      <div
-        style={{
-          fontSize: 16,
-          marginBottom: 12,
-          paddingBottom: 12,
-          borderBottom: "1px solid #4a5568",
-        }}
-      >
-        <div style={{ color: "#e2e8f0", marginBottom: 4 }}>
+      <div className="my-claims__card-customer">
+        <div className="my-claims__card-customer-text">
           <strong>Customer:</strong> {r.customer_name}
         </div>
       </div>
 
-      <div style={{ fontSize: 15, marginBottom: 12 }}>
-        <div
-          style={{
-            color: "#e2e8f0",
-            fontWeight: "bold",
-            marginBottom: 6,
-          }}
-        >
-          📍 Address
+      <div className="my-claims__card-section">
+        <div className="my-claims__card-section-title">
+          Address
         </div>
         {r.address_line1 ? (
-          <div style={{ color: "#cbd5e0", fontSize: 14 }}>
+          <div className="my-claims__card-detail">
             {r.address_line1}, {r.city}, {r.state} {r.zip}
           </div>
         ) : (
-          <div
-            style={{
-              color: "#718096",
-              fontSize: 12,
-              fontStyle: "italic",
-            }}
-          >
+          <div className="my-claims__card-empty">
             No address on file
           </div>
         )}
       </div>
 
-      <div style={{ fontSize: 15, marginBottom: 12 }}>
-        <div
-          style={{
-            color: "#e2e8f0",
-            fontWeight: "bold",
-            marginBottom: 6,
-          }}
-        >
-          📅 Appointment
+      <div className="my-claims__card-section">
+        <div className="my-claims__card-section-title">
+          Appointment
         </div>
         {r.appointment_start ? (
-          <div style={{ color: "#cbd5e0", fontSize: 14 }}>
+          <div className="my-claims__card-detail">
             {new Date(r.appointment_start).toLocaleDateString("en-US", {
               weekday: "short",
               month: "short",
@@ -510,42 +412,24 @@ export default function MyClaims() {
             })}
           </div>
         ) : (
-          <div
-            style={{
-              color: "#718096",
-              fontSize: 12,
-              fontStyle: "italic",
-            }}
-          >
+          <div className="my-claims__card-empty">
             No appointment scheduled
           </div>
         )}
       </div>
 
-      <div style={{ fontSize: 15 }}>
-        <div
-          style={{
-            color: "#e2e8f0",
-            fontWeight: "bold",
-            marginBottom: 6,
-          }}
-        >
-          🚗 Vehicle
+      <div className="my-claims__card-section">
+        <div className="my-claims__card-section-title">
+          Vehicle
         </div>
         {r.vehicle_year || r.vehicle_make || r.vehicle_model ? (
-          <div style={{ color: "#cbd5e0", fontSize: 14 }}>
+          <div className="my-claims__card-detail">
             {r.vehicle_year && `${r.vehicle_year} `}
             {r.vehicle_make && `${r.vehicle_make} `}
             {r.vehicle_model && r.vehicle_model}
           </div>
         ) : (
-          <div
-            style={{
-              color: "#718096",
-              fontSize: 12,
-              fontStyle: "italic",
-            }}
-          >
+          <div className="my-claims__card-empty">
             No vehicle info
           </div>
         )}
@@ -554,105 +438,36 @@ export default function MyClaims() {
   );
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, #1a202c 0%, #2d3748 100%)",
-        padding: 16,
-      }}
-    >
-      {/* Header with Home button and title */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 20,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <Link
-            to="/"
-            style={{
-              padding: "8px 16px",
-              background: "#4a5568",
-              color: "white",
-              textDecoration: "none",
-              borderRadius: 4,
-              fontWeight: "bold",
-              fontSize: "15px",
-            }}
-          >
-            ← Home
-          </Link>
-          <h3 style={{ margin: 0, color: "#e2e8f0", fontSize: "22px", fontWeight: "bold" }}>
-            My Claims
-          </h3>
+    <div className="my-claims">
+      <NavBar role="appraiser" />
+      <PageHeader label="Appraiser" title="My Claims" />
+
+      {/* Header with view toggles */}
+      <div className="my-claims__toolbar">
+        <div className="my-claims__toolbar-left">
           {!showCalendar && (
             <input
               type="text"
-              placeholder="🔍 Search by claim #, customer, or firm..."
+              placeholder="Search by claim #, customer, or firm..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                padding: "8px 16px",
-                background: "#1a202c",
-                border: "2px solid #4a5568",
-                borderRadius: "6px",
-                color: "#e2e8f0",
-                fontSize: "14px",
-                width: "300px",
-                marginLeft: "16px",
-                transition: "border-color 0.2s",
-              }}
-              onFocus={(e) => e.currentTarget.style.borderColor = "#667eea"}
-              onBlur={(e) => e.currentTarget.style.borderColor = "#4a5568"}
+              className="my-claims__search"
             />
           )}
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div className="my-claims__toolbar-right">
           <button
             onClick={() => setShowCalendar(!showCalendar)}
-            style={{
-              padding: "8px 16px",
-              background: showCalendar ? "#667eea" : "#4a5568",
-              color: "white",
-              border: "none",
-              borderRadius: 4,
-              fontWeight: "bold",
-              cursor: "pointer",
-              fontSize: "15px",
-            }}
+            className={`my-claims__toggle-btn${showCalendar ? " my-claims__toggle-btn--active" : ""}`}
           >
-            {showCalendar ? "📋 List View" : "📅 Calendar View"}
+            {showCalendar ? "List View" : "Calendar View"}
           </button>
           {!showCompleted && !showCalendar && (
             <button
               onClick={() => setShowTodayOnly(!showTodayOnly)}
-              style={{
-                padding: "8px 16px",
-                background: showTodayOnly ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" : "#4a5568",
-                color: "white",
-                border: showTodayOnly ? "2px solid #818cf8" : "2px solid transparent",
-                borderRadius: "6px",
-                fontWeight: "bold",
-                cursor: "pointer",
-                fontSize: "15px",
-                transition: "all 0.2s",
-                boxShadow: showTodayOnly ? "0 2px 8px rgba(102, 126, 234, 0.4)" : "none",
-              }}
-              onMouseEnter={(e) => {
-                if (!showTodayOnly) {
-                  e.currentTarget.style.background = "#5a6c7d";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!showTodayOnly) {
-                  e.currentTarget.style.background = "#4a5568";
-                }
-              }}
+              className={`my-claims__toggle-btn${showTodayOnly ? " my-claims__toggle-btn--active" : ""}`}
             >
-              {showTodayOnly ? "✓ Today's Claims Only" : "📅 Filter to Today"}
+              {showTodayOnly ? "Today's Claims Only" : "Filter to Today"}
             </button>
           )}
           {!showCalendar && (
@@ -664,18 +479,9 @@ export default function MyClaims() {
                   setSelectedStatus("ALL");
                 }
               }}
-              style={{
-                padding: "8px 16px",
-                background: showCompleted ? "#4a5568" : "#10b981",
-                color: "white",
-                border: "none",
-                borderRadius: 4,
-                fontWeight: "bold",
-                cursor: "pointer",
-                fontSize: "15px",
-              }}
+              className={`my-claims__toggle-btn${!showCompleted ? " my-claims__toggle-btn--completed" : ""}`}
             >
-              {showCompleted ? "← View Active Claims" : "✅ View Completed"}
+              {showCompleted ? "View Active Claims" : "View Completed"}
             </button>
           )}
         </div>
@@ -695,193 +501,103 @@ export default function MyClaims() {
       ) : (
         <>
           {/* Desktop List View - Status Summary Pills */}
-          <div
-            style={{
-              display: "flex",
-              gap: 12,
-              marginBottom: 24,
-              flexWrap: "wrap",
-            }}
-          >
-        <button
-          onClick={() => {
-            setSelectedStatus("ALL");
-            setShowCompleted(false);
-          }}
-          style={{
-            padding: "12px 20px",
-            background: selectedStatus === "ALL" && !showCompleted ? "#667eea" : "#374151",
-            color: "white",
-            border: selectedStatus === "ALL" && !showCompleted ? "2px solid #818cf8" : "2px solid transparent",
-            borderRadius: 8,
-            fontWeight: "bold",
-            cursor: "pointer",
-            fontSize: "14px",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            transition: "all 0.2s",
-          }}
-        >
-          <div style={{ fontSize: "18px", marginBottom: 4 }}>
-            {statusCounts.unassigned + statusCounts.assigned + statusCounts.inProgress}
-          </div>
-          <div style={{ fontSize: "12px", opacity: 0.9 }}>All Active</div>
-        </button>
-        <button
-          onClick={() => {
-            setSelectedStatus("SCHEDULED");
-            setShowCompleted(false);
-          }}
-          style={{
-            padding: "12px 20px",
-            background: selectedStatus === "SCHEDULED" ? "#2196F3" : "#374151",
-            color: "white",
-            border: selectedStatus === "SCHEDULED" ? "2px solid #64b5f6" : "2px solid transparent",
-            borderRadius: 8,
-            fontWeight: "bold",
-            cursor: "pointer",
-            fontSize: "14px",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            transition: "all 0.2s",
-          }}
-        >
-          <div style={{ fontSize: "18px", marginBottom: 4 }}>
-            {statusCounts.assigned}
-          </div>
-          <div style={{ fontSize: "12px", opacity: 0.9 }}>Assigned</div>
-        </button>
-        <button
-          onClick={() => {
-            setSelectedStatus("IN_PROGRESS");
-            setShowCompleted(false);
-          }}
-          style={{
-            padding: "12px 20px",
-            background: selectedStatus === "IN_PROGRESS" ? "#FF9800" : "#374151",
-            color: "white",
-            border: selectedStatus === "IN_PROGRESS" ? "2px solid #ffb74d" : "2px solid transparent",
-            borderRadius: 8,
-            fontWeight: "bold",
-            cursor: "pointer",
-            fontSize: "14px",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            transition: "all 0.2s",
-          }}
-        >
-          <div style={{ fontSize: "18px", marginBottom: 4 }}>
-            {statusCounts.inProgress}
-          </div>
-          <div style={{ fontSize: "12px", opacity: 0.9 }}>In Progress</div>
-        </button>
-        <button
-          onClick={() => {
-            setSelectedStatus("COMPLETED");
-            setShowCompleted(true);
-          }}
-          style={{
-            padding: "12px 20px",
-            background: selectedStatus === "COMPLETED" && showCompleted ? "#4CAF50" : "#374151",
-            color: "white",
-            border: selectedStatus === "COMPLETED" && showCompleted ? "2px solid #81c784" : "2px solid transparent",
-            borderRadius: 8,
-            fontWeight: "bold",
-            cursor: "pointer",
-            fontSize: "14px",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            transition: "all 0.2s",
-          }}
-        >
-          <div style={{ fontSize: "18px", marginBottom: 4 }}>
-            {statusCounts.completed}
-          </div>
-          <div style={{ fontSize: "12px", opacity: 0.9 }}>Completed</div>
-        </button>
-        <button
-          onClick={() => {
-            setSelectedStatus("CANCELED");
-            setShowCompleted(true);
-          }}
-          style={{
-            padding: "12px 20px",
-            background: selectedStatus === "CANCELED" && showCompleted ? "#EF4444" : "#374151",
-            color: "white",
-            border: selectedStatus === "CANCELED" && showCompleted ? "2px solid #f87171" : "2px solid transparent",
-            borderRadius: 8,
-            fontWeight: "bold",
-            cursor: "pointer",
-            fontSize: "14px",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            transition: "all 0.2s",
-          }}
-        >
-          <div style={{ fontSize: "18px", marginBottom: 4 }}>
-            {statusCounts.canceled}
-          </div>
-          <div style={{ fontSize: "12px", opacity: 0.9 }}>Canceled</div>
-        </button>
-      </div>
-
-      {/* Grouped Claims Display */}
-      {rows.length === 0 ? (
-        <div style={{ textAlign: "center", padding: 48, color: "#a0aec0" }}>
-          No claims found matching your filters.
-        </div>
-      ) : (
-        <>
-          {Object.entries(groupedClaims).map(([category, claims]) => {
-            if (claims.length === 0) return null;
-
-            return (
-              <div key={category} style={{ marginBottom: 32 }}>
-                <div
-                  style={{
-                    fontSize: "18px",
-                    fontWeight: "bold",
-                    color: "#e2e8f0",
-                    marginBottom: 16,
-                    paddingBottom: 8,
-                    borderBottom: "2px solid #4a5568",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                  }}
-                >
-                  <span>
-                    {category === "Overdue" && "🔴"}
-                    {category === "Today" && "📅"}
-                    {category === "Tomorrow" && "🌅"}
-                    {category === "This Week" && "📆"}
-                    {category === "Later" && "🗓️"}
-                    {category === "No Appointment" && "⏳"}
-                  </span>
-                  <span>{category}</span>
-                  <span style={{ fontSize: "14px", opacity: 0.7, fontWeight: "normal" }}>
-                    ({claims.length})
-                  </span>
-                </div>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-                    gap: 16,
-                  }}
-                >
-                  {claims.map(renderClaimCard)}
-                </div>
+          <div className="my-claims__status-bar">
+            <button
+              onClick={() => {
+                setSelectedStatus("ALL");
+                setShowCompleted(false);
+              }}
+              className={`my-claims__status-pill${selectedStatus === "ALL" && !showCompleted ? " my-claims__status-pill--active" : ""}`}
+            >
+              <div className="my-claims__status-num">
+                {statusCounts.unassigned + statusCounts.assigned + statusCounts.inProgress}
               </div>
-            );
-          })}
-        </>
-      )}
+              <div className="my-claims__status-label">All Active</div>
+            </button>
+            <button
+              onClick={() => {
+                setSelectedStatus("SCHEDULED");
+                setShowCompleted(false);
+              }}
+              className={`my-claims__status-pill${selectedStatus === "SCHEDULED" ? " my-claims__status-pill--scheduled" : ""}`}
+            >
+              <div className="my-claims__status-num">
+                {statusCounts.assigned}
+              </div>
+              <div className="my-claims__status-label">Assigned</div>
+            </button>
+            <button
+              onClick={() => {
+                setSelectedStatus("IN_PROGRESS");
+                setShowCompleted(false);
+              }}
+              className={`my-claims__status-pill${selectedStatus === "IN_PROGRESS" ? " my-claims__status-pill--progress" : ""}`}
+            >
+              <div className="my-claims__status-num">
+                {statusCounts.inProgress}
+              </div>
+              <div className="my-claims__status-label">In Progress</div>
+            </button>
+            <button
+              onClick={() => {
+                setSelectedStatus("COMPLETED");
+                setShowCompleted(true);
+              }}
+              className={`my-claims__status-pill${selectedStatus === "COMPLETED" && showCompleted ? " my-claims__status-pill--completed" : ""}`}
+            >
+              <div className="my-claims__status-num">
+                {statusCounts.completed}
+              </div>
+              <div className="my-claims__status-label">Completed</div>
+            </button>
+            <button
+              onClick={() => {
+                setSelectedStatus("CANCELED");
+                setShowCompleted(true);
+              }}
+              className={`my-claims__status-pill${selectedStatus === "CANCELED" && showCompleted ? " my-claims__status-pill--canceled" : ""}`}
+            >
+              <div className="my-claims__status-num">
+                {statusCounts.canceled}
+              </div>
+              <div className="my-claims__status-label">Canceled</div>
+            </button>
+          </div>
+
+          {/* Grouped Claims Display */}
+          {rows.length === 0 ? (
+            <div className="my-claims__empty">
+              No claims found matching your filters.
+            </div>
+          ) : (
+            <>
+              {Object.entries(groupedClaims).map(([category, claims]) => {
+                if (claims.length === 0) return null;
+
+                return (
+                  <div key={category} className="my-claims__group">
+                    <div className="my-claims__group-header">
+                      <span>
+                        {category === "Overdue" && "\uD83D\uDD34"}
+                        {category === "Today" && "\uD83D\uDCC5"}
+                        {category === "Tomorrow" && "\uD83C\uDF05"}
+                        {category === "This Week" && "\uD83D\uDCC6"}
+                        {category === "Later" && "\uD83D\uDDD3\uFE0F"}
+                        {category === "No Appointment" && "\u23F3"}
+                      </span>
+                      <span>{category}</span>
+                      <span className="my-claims__group-count">
+                        ({claims.length})
+                      </span>
+                    </div>
+                    <div className="my-claims__grid">
+                      {claims.map(renderClaimCard)}
+                    </div>
+                  </div>
+                );
+              })}
+            </>
+          )}
         </>
       )}
     </div>

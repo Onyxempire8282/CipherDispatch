@@ -1,0 +1,100 @@
+/**
+ * PageHeader Styles
+ *
+ * Full-width header section below the nav bar.
+ * BEM block: .page-header
+ *
+ * Structure:
+ * .page-header
+ *   .page-header__inner
+ *     .page-header__content
+ *       .page-header__label
+ *       .page-header__title
+ *       .page-header__sub
+ *     .page-header__aside
+ */
+
+.page-header {
+  background:
+    radial-gradient(ellipse 60% 200% at 0% 50%, rgba(232, 149, 42, 0.07) 0%, transparent 60%),
+    var(--steel);
+  border-bottom: 1px solid var(--rivet);
+  padding: 20px 40px;
+  position: relative;
+  z-index: 1;
+}
+
+.page-header--compact {
+  padding: 16px 40px;
+}
+
+.page-header__inner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.page-header__label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 4px;
+}
+
+.page-header__title {
+  font-family: var(--font-heading);
+  font-size: 30px;
+  letter-spacing: 0.06em;
+  color: var(--white);
+  line-height: 1;
+}
+
+.page-header__sub {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+.page-header__aside {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.page-header__clock {
+  font-family: var(--font-heading);
+  font-size: 36px;
+  color: var(--white);
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.page-header__date {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 3px;
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 768px) {
+  .page-header {
+    padding: 16px;
+  }
+
+  .page-header__title {
+    font-size: 24px;
+  }
+
+  .page-header__clock {
+    font-size: 24px;
+  }
+
+  .page-header__aside {
+    display: none;
+  }
+}

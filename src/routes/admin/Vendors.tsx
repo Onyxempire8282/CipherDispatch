@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
-import { Link } from "react-router-dom";
 import {
   initializeSupabaseAuthz,
   getSupabaseAuthz,
 } from "../../lib/supabaseAuthz";
 import { PayCycleType } from "../../utils/payoutCalculations";
+import { NavBar } from "../../components/NavBar";
+import PageHeader from "../../components/ui/PageHeader";
+import Field from "../../components/ui/Field";
+import "./vendors.css";
 
 type Vendor = {
   id: string;
@@ -185,17 +188,8 @@ export default function Vendors() {
 
   if (loading) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          background: "linear-gradient(135deg, #1a202c 0%, #2d3748 100%)",
-          padding: 16,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <div style={{ color: "#e2e8f0", fontSize: "18px" }}>
+      <div className="vendors vendors--loading">
+        <div className="vendors__loading-text">
           Loading vendors...
         </div>
       </div>
@@ -204,40 +198,13 @@ export default function Vendors() {
 
   if (error) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          background: "linear-gradient(135deg, #1a202c 0%, #2d3748 100%)",
-          padding: 16,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <div
-          style={{
-            color: "#ef4444",
-            fontSize: "18px",
-            textAlign: "center",
-            background: "#2d3748",
-            padding: "24px",
-            borderRadius: "8px",
-            border: "2px solid #ef4444",
-          }}
-        >
+      <div className="vendors vendors--error">
+        <div className="vendors__error-box">
           <h3>Unable to load vendors</h3>
           <p>{error}</p>
           <button
             onClick={() => window.location.reload()}
-            style={{
-              background: "#ef4444",
-              color: "white",
-              border: "none",
-              padding: "12px 24px",
-              borderRadius: "6px",
-              cursor: "pointer",
-              marginTop: "12px",
-            }}
+            className="vendors__retry-btn"
           >
             Retry
           </button>
@@ -247,395 +214,162 @@ export default function Vendors() {
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, #1a202c 0%, #2d3748 100%)",
-        padding: 16,
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 24,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <Link
-            to="/"
-            style={{
-              padding: "8px 16px",
-              background: "#4a5568",
-              color: "white",
-              textDecoration: "none",
-              borderRadius: 4,
-              fontWeight: "bold",
-              fontSize: "15px",
-            }}
-          >
-            ← Home
-          </Link>
-          <h3
-            style={{
-              margin: 0,
-              color: "#e2e8f0",
-              fontSize: "22px",
-              fontWeight: "bold",
-            }}
-          >
-            Manage Vendors
-          </h3>
+    <div className="vendors">
+      <NavBar role="admin" />
+      <PageHeader label="Admin" title="Manage Vendors" />
+
+      <div className="vendors__body">
+        {/* Toolbar */}
+        <div className="vendors__toolbar">
+          <button onClick={handleAdd} className="vendors__add-btn">
+            + Add Vendor
+          </button>
         </div>
-        <button
-          onClick={handleAdd}
-          style={{
-            padding: "10px 20px",
-            background: "#10b981",
-            color: "white",
-            border: "none",
-            borderRadius: 6,
-            fontWeight: "bold",
-            cursor: "pointer",
-            fontSize: "15px",
-          }}
-        >
-          + Add Vendor
-        </button>
-      </div>
 
-      {/* Add/Edit Form Modal */}
-      {isEditing && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0,0,0,0.7)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-          }}
-          onClick={handleCancel}
-        >
-          <div
-            style={{
-              background: "#2d3748",
-              border: "1px solid #4a5568",
-              borderRadius: 12,
-              padding: 32,
-              maxWidth: 500,
-              width: "90%",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 style={{ margin: "0 0 24px 0", color: "#e2e8f0" }}>
-              {editingVendor ? "Edit Vendor" : "Add New Vendor"}
-            </h3>
+        {/* Add/Edit Form Modal */}
+        {isEditing && (
+          <div className="vendors__modal-overlay" onClick={handleCancel}>
+            <div
+              className="vendors__modal"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="vendors__modal-title">
+                {editingVendor ? "Edit Vendor" : "Add New Vendor"}
+              </h3>
 
-            <div style={{ marginBottom: 20 }}>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: 8,
-                  color: "#e2e8f0",
-                  fontWeight: "bold",
-                }}
-              >
-                Vendor Name
-              </label>
-              <input
-                type="text"
-                value={formName}
-                onChange={(e) => setFormName(e.target.value)}
-                placeholder="Enter vendor name"
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  background: "#1a202c",
-                  border: "1px solid #4a5568",
-                  borderRadius: 6,
-                  color: "#e2e8f0",
-                  fontSize: "15px",
-                }}
-              />
-            </div>
-
-            <div style={{ marginBottom: 20 }}>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: 8,
-                  color: "#e2e8f0",
-                  fontWeight: "bold",
-                }}
-              >
-                Color
-              </label>
-              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                <input
-                  type="color"
-                  value={formColor}
-                  onChange={(e) => setFormColor(e.target.value)}
-                  style={{
-                    width: 60,
-                    height: 40,
-                    border: "1px solid #4a5568",
-                    borderRadius: 6,
-                    cursor: "pointer",
-                  }}
-                />
+              <Field label="Vendor Name">
                 <input
                   type="text"
-                  value={formColor}
-                  onChange={(e) => setFormColor(e.target.value)}
-                  placeholder="#9CA3AF"
-                  style={{
-                    flex: 1,
-                    padding: "10px",
-                    background: "#1a202c",
-                    border: "1px solid #4a5568",
-                    borderRadius: 6,
-                    color: "#e2e8f0",
-                    fontSize: "15px",
-                  }}
+                  className="field__input"
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                  placeholder="Enter vendor name"
                 />
-              </div>
-            </div>
+              </Field>
 
-            <div style={{ marginBottom: 20 }}>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: 8,
-                  color: "#e2e8f0",
-                  fontWeight: "bold",
-                }}
-              >
-                Pay Cycle Type
-              </label>
-              <select
-                value={formPayCycleType}
-                onChange={(e) => setFormPayCycleType(e.target.value as PayCycleType)}
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  background: "#1a202c",
-                  border: "1px solid #4a5568",
-                  borderRadius: 6,
-                  color: "#e2e8f0",
-                  fontSize: "15px",
-                }}
-              >
-                <option value="weekly_thu_fri_thu">Weekly Thu (Fri→Thu work, paid Thu)</option>
-                <option value="biweekly_thu_fri_thu">Bi-weekly Wed (2-week period, paid Wed)</option>
-                <option value="biweekly_fri_sat_fri">Bi-weekly Thu (2-week period, paid Thu)</option>
-                <option value="monthly_15th_prev_month">Monthly 15th (previous month work)</option>
-                <option value="semimonthly_15th_end">Semi-monthly: 15th & End-of-Month</option>
-                <option value="monthly_last_same_month">Monthly EOM (same month work)</option>
-              </select>
-            </div>
-
-            {formPayCycleType.startsWith('biweekly') && (
-              <div style={{ marginBottom: 20 }}>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: 8,
-                    color: "#e2e8f0",
-                    fontWeight: "bold",
-                  }}
-                >
-                  Reference Pay Date (for bi-weekly calculation)
-                </label>
-                <input
-                  type="date"
-                  value={formReferencePayDate}
-                  onChange={(e) => setFormReferencePayDate(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "10px",
-                    background: "#1a202c",
-                    border: "1px solid #4a5568",
-                    borderRadius: 6,
-                    color: "#e2e8f0",
-                    fontSize: "15px",
-                  }}
-                />
-                <div style={{ color: "#a0aec0", fontSize: "13px", marginTop: 4 }}>
-                  Enter a known pay date to calculate bi-weekly schedule
-                </div>
-              </div>
-            )}
-
-            <div style={{ marginBottom: 24 }}>
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  color: "#e2e8f0",
-                  fontWeight: "bold",
-                  cursor: "pointer",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={formActive}
-                  onChange={(e) => setFormActive(e.target.checked)}
-                  style={{
-                    width: 20,
-                    height: 20,
-                    cursor: "pointer",
-                  }}
-                />
-                Active Vendor
-              </label>
-            </div>
-
-            <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
-              <button
-                onClick={handleCancel}
-                style={{
-                  padding: "10px 20px",
-                  background: "#4a5568",
-                  color: "white",
-                  border: "none",
-                  borderRadius: 6,
-                  fontWeight: "bold",
-                  cursor: "pointer",
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                style={{
-                  padding: "10px 20px",
-                  background: "#10b981",
-                  color: "white",
-                  border: "none",
-                  borderRadius: 6,
-                  fontWeight: "bold",
-                  cursor: "pointer",
-                }}
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Vendors List */}
-      <div
-        style={{
-          background: "#2d3748",
-          border: "1px solid #4a5568",
-          borderRadius: 12,
-          padding: 24,
-        }}
-      >
-        {vendors.length === 0 ? (
-          <div style={{ textAlign: "center", padding: 48, color: "#a0aec0" }}>
-            No vendors found. Click "Add Vendor" to create one.
-          </div>
-        ) : (
-          <div style={{ display: "grid", gap: 12 }}>
-            {vendors.map((vendor) => (
-              <div
-                key={vendor.id}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  background: "#1a202c",
-                  border: "1px solid #4a5568",
-                  borderRadius: 8,
-                  padding: 16,
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                  <div
-                    style={{
-                      width: 40,
-                      height: 40,
-                      background: vendor.color,
-                      borderRadius: 6,
-                      border: "1px solid #4a5568",
-                    }}
+              <Field label="Color">
+                <div className="vendors__color-row">
+                  <input
+                    type="color"
+                    value={formColor}
+                    onChange={(e) => setFormColor(e.target.value)}
+                    className="vendors__color-swatch"
                   />
-                  <div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <div
-                        style={{
-                          color: "#e2e8f0",
-                          fontSize: "16px",
-                          fontWeight: "bold",
-                        }}
-                      >
-                        {vendor.name}
-                      </div>
-                      {vendor.active === false && (
-                        <span style={{
-                          color: "#ef4444",
-                          fontSize: "12px",
-                          background: "#7f1d1d",
-                          padding: "2px 8px",
-                          borderRadius: 4
-                        }}>
-                          Inactive
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ color: "#a0aec0", fontSize: "14px" }}>
-                      {vendor.pay_cycle_type ?
-                        vendor.pay_cycle_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-                        : 'No pay cycle set'}
-                    </div>
-                  </div>
+                  <input
+                    type="text"
+                    className="field__input vendors__color-text"
+                    value={formColor}
+                    onChange={(e) => setFormColor(e.target.value)}
+                    placeholder="#9CA3AF"
+                  />
                 </div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button
-                    onClick={() => handleEdit(vendor)}
-                    style={{
-                      padding: "8px 16px",
-                      background: "#667eea",
-                      color: "white",
-                      border: "none",
-                      borderRadius: 6,
-                      fontWeight: "bold",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                    }}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(vendor.id)}
-                    style={{
-                      padding: "8px 16px",
-                      background: "#ef4444",
-                      color: "white",
-                      border: "none",
-                      borderRadius: 6,
-                      fontWeight: "bold",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                    }}
-                  >
-                    Delete
-                  </button>
-                </div>
+              </Field>
+
+              <Field label="Pay Cycle Type">
+                <select
+                  className="field__select"
+                  value={formPayCycleType}
+                  onChange={(e) => setFormPayCycleType(e.target.value as PayCycleType)}
+                >
+                  <option value="weekly_thu_fri_thu">Weekly Thu (Fri→Thu work, paid Thu)</option>
+                  <option value="biweekly_thu_fri_thu">Bi-weekly Wed (2-week period, paid Wed)</option>
+                  <option value="biweekly_fri_sat_fri">Bi-weekly Thu (2-week period, paid Thu)</option>
+                  <option value="monthly_15th_prev_month">Monthly 15th (previous month work)</option>
+                  <option value="semimonthly_15th_end">Semi-monthly: 15th & End-of-Month</option>
+                  <option value="monthly_last_same_month">Monthly EOM (same month work)</option>
+                </select>
+              </Field>
+
+              {formPayCycleType.startsWith('biweekly') && (
+                <Field
+                  label="Reference Pay Date (for bi-weekly calculation)"
+                  hint="Enter a known pay date to calculate bi-weekly schedule"
+                >
+                  <input
+                    type="date"
+                    className="field__input"
+                    value={formReferencePayDate}
+                    onChange={(e) => setFormReferencePayDate(e.target.value)}
+                  />
+                </Field>
+              )}
+
+              <div className="vendors__checkbox-field">
+                <label className="vendors__checkbox-label">
+                  <input
+                    type="checkbox"
+                    className="vendors__checkbox"
+                    checked={formActive}
+                    onChange={(e) => setFormActive(e.target.checked)}
+                  />
+                  Active Vendor
+                </label>
               </div>
-            ))}
+
+              <div className="vendors__modal-actions">
+                <button onClick={handleCancel} className="vendors__cancel-btn">
+                  Cancel
+                </button>
+                <button onClick={handleSave} className="vendors__save-btn">
+                  Save
+                </button>
+              </div>
+            </div>
           </div>
         )}
+
+        {/* Vendors List */}
+        <div className="vendors__list-panel">
+          {vendors.length === 0 ? (
+            <div className="vendors__empty">
+              No vendors found. Click "Add Vendor" to create one.
+            </div>
+          ) : (
+            <div className="vendors__grid">
+              {vendors.map((vendor) => (
+                <div key={vendor.id} className="vendors__card">
+                  <div className="vendors__card-info">
+                    <div
+                      className="vendors__card-swatch"
+                      style={{ background: vendor.color }}
+                    />
+                    <div>
+                      <div className="vendors__card-name-row">
+                        <div className="vendors__card-name">
+                          {vendor.name}
+                        </div>
+                        {vendor.active === false && (
+                          <span className="vendors__card-inactive">
+                            Inactive
+                          </span>
+                        )}
+                      </div>
+                      <div className="vendors__card-cycle">
+                        {vendor.pay_cycle_type ?
+                          vendor.pay_cycle_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                          : 'No pay cycle set'}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="vendors__card-actions">
+                    <button
+                      onClick={() => handleEdit(vendor)}
+                      className="vendors__edit-btn"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(vendor.id)}
+                      className="vendors__delete-btn"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

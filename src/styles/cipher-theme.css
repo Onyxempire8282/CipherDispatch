@@ -1,0 +1,289 @@
+/**
+ * Cipher Dispatch Design System
+ *
+ * CSS custom properties and base styles for the Cipher Dispatch theme.
+ * Dark industrial aesthetic with amber accent color.
+ *
+ * Fonts: Bebas Neue (headings), DM Mono (labels/monospace), Barlow (body)
+ * Loaded via Google Fonts in index.html
+ *
+ * Usage: All components reference these variables via var(--variable-name).
+ * BEM class naming convention per TripleTen methodology.
+ */
+
+/* ========================================
+   DESIGN TOKENS
+   ======================================== */
+
+:root {
+  /* Surface colors - darkest to lightest */
+  --plate:      #0e0f11;
+  --steel:      #161a1d;
+  --steel-mid:  #1e2328;
+  --steel-lift: #252b31;
+  --input-bg:   #0a0c0e;
+
+  /* Border / rivet colors */
+  --rivet:      #2e353d;
+  --rivet-hi:   #3d464f;
+
+  /* Accent - amber */
+  --amber:      #e8952a;
+  --amber-dim:  rgba(232, 149, 42, 0.12);
+  --amber-line: rgba(232, 149, 42, 0.35);
+  --amber-glow: rgba(232, 149, 42, 0.15);
+
+  /* Text hierarchy */
+  --white:      #edeae4;
+  --text-hi:    #b8bdc2;
+  --text:       #7a8088;
+  --muted:      #4a5058;
+
+  /* Firm colors */
+  --firm-sedgwick:   #e8952a;
+  --firm-acd:        #f0a030;
+  --firm-claimsol:   #e05050;
+  --firm-complete:   #c0392b;
+  --firm-doan:       #4a9e6b;
+  --firm-legacy:     #3a8fd4;
+  --firm-ama:        #9b59b6;
+  --firm-ianet:      #1abc9c;
+  --firm-ateam:      #e67e22;
+  --firm-hea:        #95a5a6;
+  --firm-frontline:  #bdc3c7;
+  --firm-sca:        #f39c12;
+
+  /* Status colors */
+  --status-scheduled:  #3a8fd4;
+  --status-progress:   #e8952a;
+  --status-completed:  #4a9e6b;
+  --status-canceled:   #e05050;
+  --status-unassigned: #4a5058;
+
+  /* Typography */
+  --font-heading: 'Bebas Neue', sans-serif;
+  --font-mono:    'DM Mono', monospace;
+  --font-body:    'Barlow', sans-serif;
+
+  /* Shadows */
+  --shadow-card:  0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-lift:  0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-glow:  0 0 20px rgba(232, 149, 42, 0.25);
+}
+
+/* ========================================
+   BASE RESETS
+   ======================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--plate);
+  color: var(--text-hi);
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: 13px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Subtle grid background overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.014) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.014) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+}
+
+/* Ensure all page content sits above the grid */
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+/* ========================================
+   TYPOGRAPHY UTILITIES
+   ======================================== */
+
+.heading {
+  font-family: var(--font-heading);
+  letter-spacing: 0.06em;
+  color: var(--white);
+  line-height: 1;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--amber);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--amber-line), transparent);
+}
+
+/* ========================================
+   BUTTONS
+   ======================================== */
+
+.btn {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 12px 24px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.btn--primary {
+  background: var(--amber);
+  color: #000;
+  font-weight: 600;
+  border: 1px solid var(--amber);
+  box-shadow: var(--shadow-glow);
+}
+
+.btn--primary:hover {
+  background: #f0a030;
+  box-shadow: 0 0 32px rgba(232, 149, 42, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn--ghost {
+  background: transparent;
+  border: 1px solid var(--rivet);
+  color: var(--muted);
+}
+
+.btn--ghost:hover {
+  border-color: var(--rivet-hi);
+  color: var(--text-hi);
+}
+
+.btn--steel {
+  background: var(--steel-lift);
+  border: 1px solid var(--rivet-hi);
+  color: var(--text-hi);
+}
+
+.btn--steel:hover {
+  border-color: var(--amber-line);
+  color: var(--white);
+}
+
+.btn--danger {
+  background: var(--status-canceled);
+  color: var(--white);
+  font-weight: 600;
+  border: 1px solid var(--status-canceled);
+}
+
+.btn--danger:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.btn--sm {
+  padding: 8px 16px;
+  font-size: 10px;
+}
+
+.btn--full {
+  width: 100%;
+  justify-content: center;
+}
+
+/* ========================================
+   CARD
+   ======================================== */
+
+.card {
+  background: var(--steel);
+  border: 1px solid var(--rivet);
+  border-left: 3px solid var(--rivet);
+  position: relative;
+}
+
+.card--accent {
+  border-left-color: var(--amber);
+}
+
+.card__header {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--rivet);
+  background: var(--steel-mid);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card__title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.card__title-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--amber-line), transparent);
+}
+
+.card__body {
+  padding: 24px;
+}
+
+/* ========================================
+   LINK RESET
+   ======================================== */
+
+a {
+  color: inherit;
+  text-decoration: none;
+}

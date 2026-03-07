@@ -9,7 +9,9 @@ import { calculateExpectedPayout } from "../../utils/firmFeeConfig";
 import { getPayPeriod } from "../../utils/payoutForecasting";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import MobileClaimDetail from "../../components/claims/MobileClaimDetail";
+import { NavBar } from "../../components/NavBar";
 import JSZip from "jszip";
+import "./claim-detail.css";
 
 export default function ClaimDetail() {
   const { id } = useParams();
@@ -572,123 +574,64 @@ export default function ClaimDetail() {
         {/* Lightbox Modal - shared between mobile and desktop */}
         {lightboxIndex !== null && (
           <div
+            className="detail__lightbox detail__lightbox--mobile"
             onClick={() => {
               setLightboxIndex(null);
               resetViewerState();
             }}
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: "rgba(0,0,0,0.95)",
-              zIndex: 9999,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexDirection: "column",
-            }}
           >
             <button
+              className="detail__lightbox-close"
               onClick={() => {
                 setLightboxIndex(null);
                 resetViewerState();
-              }}
-              style={{
-                position: "absolute",
-                top: 20,
-                right: 20,
-                background: "white",
-                border: "none",
-                borderRadius: 50,
-                width: 40,
-                height: 40,
-                fontSize: 24,
-                cursor: "pointer",
-                fontWeight: "bold",
-                zIndex: 10000,
               }}
             >
               ×
             </button>
 
             <div
-              style={{
-                position: "relative",
-                maxWidth: "90%",
-                maxHeight: "80%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
+              className="detail__lightbox-image-wrap"
               onClick={(e) => e.stopPropagation()}
             >
               <img
+                className="detail__lightbox-image"
                 src={
                   supabase.storage
                     .from("claim-photos")
                     .getPublicUrl(photos[lightboxIndex].storage_path).data
                     .publicUrl
                 }
-                style={{
-                  maxWidth: "100%",
-                  maxHeight: "80vh",
-                  objectFit: "contain",
-                }}
               />
             </div>
 
             <div
-              style={{
-                display: "flex",
-                gap: 16,
-                marginTop: 20,
-                alignItems: "center",
-              }}
+              className="detail__lightbox-nav"
               onClick={(e) => e.stopPropagation()}
             >
               <button
+                className="detail__lightbox-btn"
                 onClick={(e) => {
                   e.stopPropagation();
                   setLightboxIndex(
                     lightboxIndex > 0 ? lightboxIndex - 1 : photos.length - 1
                   );
                 }}
-                style={{
-                  padding: "12px 24px",
-                  background: "#667eea",
-                  color: "white",
-                  border: "none",
-                  borderRadius: 6,
-                  fontSize: 16,
-                  fontWeight: "bold",
-                  cursor: "pointer",
-                }}
               >
                 ← Prev
               </button>
 
-              <span style={{ color: "white", fontSize: 16 }}>
+              <span className="detail__lightbox-counter">
                 {lightboxIndex + 1} / {photos.length}
               </span>
 
               <button
+                className="detail__lightbox-btn"
                 onClick={(e) => {
                   e.stopPropagation();
                   setLightboxIndex(
                     lightboxIndex < photos.length - 1 ? lightboxIndex + 1 : 0
                   );
-                }}
-                style={{
-                  padding: "12px 24px",
-                  background: "#667eea",
-                  color: "white",
-                  border: "none",
-                  borderRadius: 6,
-                  fontSize: 16,
-                  fontWeight: "bold",
-                  cursor: "pointer",
                 }}
               >
                 Next →
@@ -710,97 +653,44 @@ export default function ClaimDetail() {
     window.open(`https://www.google.com/maps?q=${q}`, "_blank");
   };
 
-  const sectionStyle = {
-    background: "#374151",
-    border: "1px solid #4b5563",
-    borderRadius: "12px",
-    padding: "24px",
-    boxShadow: "0 4px 6px rgba(0,0,0,0.3)",
-  };
+  const statusClass =
+    claim.status === "COMPLETED"
+      ? "detail__status-badge--completed"
+      : claim.status === "IN_PROGRESS"
+      ? "detail__status-badge--progress"
+      : claim.status === "SCHEDULED"
+      ? "detail__status-badge--scheduled"
+      : claim.status === "CANCELED"
+      ? "detail__status-badge--canceled"
+      : "detail__status-badge--default";
 
-  const headerStyle = {
-    fontSize: "22px",
-    fontWeight: "bold",
-    color: "#f8fafc",
-    marginBottom: "16px",
-    paddingBottom: "12px",
-    borderBottom: "2px solid #4b5563",
-  };
-
-  const labelStyle = {
-    fontSize: "15px",
-    fontWeight: "600",
-    color: "#cbd5e1",
-    marginBottom: "6px",
-    textTransform: "uppercase" as const,
-    letterSpacing: "0.5px",
-  };
-
-  const valueStyle = {
-    fontSize: "17px",
-    color: "#ffffff",
-    marginBottom: "12px",
-  };
+  const payoutBadgeClass =
+    claim.payout_status === 'paid'
+      ? "detail__payout-badge--paid"
+      : claim.payout_status === 'overdue'
+      ? "detail__payout-badge--overdue"
+      : claim.payout_status === 'unpaid'
+      ? "detail__payout-badge--unpaid"
+      : "detail__payout-badge--default";
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)",
-        padding: "24px 16px",
-      }}
-    >
-      <div
-        style={{
-          maxWidth: "1400px",
-          margin: "0 auto",
-        }}
-      >
+    <div className="detail">
+      <div className="detail__inner">
         {/* Header Bar */}
-        <div
-          style={{
-            ...sectionStyle,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "24px",
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            borderColor: "#667eea",
-          }}
-        >
+        <div className="detail__header">
           <div>
-            <h2 style={{ margin: 0, color: "white", fontSize: "28px", fontWeight: "bold" }}>
+            <h2 className="detail__header-title">
               Claim #{claim.claim_number}
             </h2>
-            <p style={{ margin: "4px 0 0 0", color: "rgba(255,255,255,0.9)", fontSize: "16px" }}>
+            <p className="detail__header-subtitle">
               {claim.customer_name}
             </p>
           </div>
-          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+          <div className="detail__header-actions">
             {/* Guided Photo Capture Button */}
             <Link
               to={`/appraiser/claim/${id}/photos`}
-              style={{
-                padding: "10px 20px",
-                background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
-                color: "white",
-                textDecoration: "none",
-                borderRadius: "8px",
-                fontWeight: "600",
-                fontSize: "15px",
-                cursor: "pointer",
-                transition: "all 0.2s",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                display: "inline-block",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-1px)";
-                e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.3)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
-              }}
+              className="detail__btn detail__btn--photo-capture"
             >
               📷 Guided Photo Capture
             </Link>
@@ -815,17 +705,7 @@ export default function ClaimDetail() {
                 !isEditing ? (
                   isArchived ? (
                     <div
-                      style={{
-                        padding: "10px 20px",
-                        background: "rgba(255,255,255,0.1)",
-                        color: "rgba(255,255,255,0.4)",
-                        border: "1px solid rgba(255,255,255,0.2)",
-                        borderRadius: "8px",
-                        fontWeight: "600",
-                        fontSize: "15px",
-                        backdropFilter: "blur(10px)",
-                        cursor: "not-allowed",
-                      }}
+                      className="detail__btn--disabled"
                       title="Editing is disabled for archived claims"
                     >
                       🔒 Archived - Edit Disabled
@@ -833,20 +713,7 @@ export default function ClaimDetail() {
                   ) : (
                     <button
                       onClick={startEditing}
-                      style={{
-                        padding: "10px 20px",
-                        background: "rgba(255,255,255,0.2)",
-                        color: "white",
-                        border: "1px solid rgba(255,255,255,0.3)",
-                        borderRadius: "8px",
-                        fontWeight: "600",
-                        fontSize: "15px",
-                        backdropFilter: "blur(10px)",
-                        cursor: "pointer",
-                        transition: "all 0.2s",
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.3)"}
-                      onMouseLeave={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.2)"}
+                      className="detail__btn detail__btn--edit"
                     >
                       ✏️ Edit Claim
                     </button>
@@ -855,51 +722,13 @@ export default function ClaimDetail() {
                   <>
                     <button
                       onClick={saveEdits}
-                      style={{
-                        padding: "10px 20px",
-                        background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "8px",
-                        fontWeight: "600",
-                        fontSize: "15px",
-                        cursor: "pointer",
-                        transition: "all 0.2s",
-                        boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = "translateY(-1px)";
-                        e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.3)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = "translateY(0)";
-                        e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
-                      }}
+                      className="detail__btn detail__btn--save"
                     >
                       ✅ Save Changes
                     </button>
                     <button
                       onClick={cancelEdits}
-                      style={{
-                        padding: "10px 20px",
-                        background: "rgba(239, 68, 68, 0.9)",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "8px",
-                        fontWeight: "600",
-                        fontSize: "15px",
-                        cursor: "pointer",
-                        transition: "all 0.2s",
-                        boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = "rgba(220, 38, 38, 0.9)";
-                        e.currentTarget.style.transform = "translateY(-1px)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = "rgba(239, 68, 68, 0.9)";
-                        e.currentTarget.style.transform = "translateY(0)";
-                      }}
+                      className="detail__btn detail__btn--cancel"
                     >
                       ❌ Cancel
                     </button>
@@ -921,30 +750,7 @@ export default function ClaimDetail() {
               return (
                 <Link
                   to={backLink}
-                  style={{
-                    padding: "10px 20px",
-                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                    color: "white",
-                    textDecoration: "none",
-                    borderRadius: "8px",
-                    fontWeight: "600",
-                    fontSize: "15px",
-                    backdropFilter: "blur(10px)",
-                    border: "1px solid rgba(255,255,255,0.2)",
-                    transition: "all 0.2s",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                    display: "inline-block",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "linear-gradient(135deg, #818cf8 0%, #8b5fbf 100%)";
-                    e.currentTarget.style.transform = "translateY(-1px)";
-                    e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.3)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
-                    e.currentTarget.style.transform = "translateY(0)";
-                    e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
-                  }}
+                  className="detail__btn detail__btn--back"
                 >
                   ← Back to {fromCalendar ? "Calendar" : "Claims"}
                 </Link>
@@ -952,30 +758,7 @@ export default function ClaimDetail() {
             })()}
             <Link
               to="/"
-              style={{
-                padding: "10px 20px",
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                color: "white",
-                textDecoration: "none",
-                borderRadius: "8px",
-                fontWeight: "600",
-                fontSize: "15px",
-                backdropFilter: "blur(10px)",
-                border: "1px solid rgba(255,255,255,0.2)",
-                transition: "all 0.2s",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                display: "inline-block",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "linear-gradient(135deg, #818cf8 0%, #8b5fbf 100%)";
-                e.currentTarget.style.transform = "translateY(-1px)";
-                e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.3)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
-              }}
+              className="detail__btn detail__btn--back"
             >
               ← Home
             </Link>
@@ -983,7 +766,7 @@ export default function ClaimDetail() {
         </div>
 
         {/* Main Content Grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", marginBottom: "24px" }}>
+        <div className="detail__grid">
           {/* Payment Information - Admin Only */}
           {(() => {
             const authz = getSupabaseAuthz();
@@ -991,86 +774,64 @@ export default function ClaimDetail() {
             const isAdmin = userInfo?.role === "admin";
 
             return isAdmin ? (
-              <div style={sectionStyle}>
-                <h4 style={headerStyle}>💰 Payment Information</h4>
-                <div style={{ marginBottom: "16px" }}>
-                  <div style={labelStyle}>Pay Amount</div>
+              <div className="detail__section">
+                <h4 className="detail__section-title">💰 Payment Information</h4>
+                <div className="detail__field">
+                  <div className="detail__label">Pay Amount</div>
                   {isEditing ? (
                     <input
+                      className="detail__input"
                       type="number"
                       step="0.01"
                       value={editPayAmount}
                       onChange={(e) => setEditPayAmount(e.target.value)}
                       placeholder="Enter amount"
-                      style={{
-                        width: "100%",
-                        padding: "12px 16px",
-                        fontSize: "17px",
-                        border: "2px solid #6b7280",
-                        borderRadius: "8px",
-                        background: "#475569",
-                        color: "#ffffff",
-                        transition: "border-color 0.2s",
-                      }}
-                      onFocus={(e) => e.target.style.borderColor = "#667eea"}
-                      onBlur={(e) => e.target.style.borderColor = "#6b7280"}
                     />
                   ) : claim.pay_amount ? (
-                    <div style={valueStyle}>
+                    <div className="detail__value">
                       ${claim.pay_amount.toFixed(2)}
                     </div>
                   ) : (claim.status === 'SCHEDULED' || claim.status === 'IN_PROGRESS') && claim.firm ? (
-                    <div style={{ ...valueStyle, color: "#f59e0b" }}>
+                    <div className="detail__value detail__value--amber">
                       ${calculateExpectedPayout(claim.firm, claim.pay_amount).toFixed(2)}
-                      <span style={{ fontSize: "13px", color: "#a0aec0", marginLeft: "8px" }}>(estimated)</span>
+                      <span className="detail__estimated">(estimated)</span>
                     </div>
                   ) : (
-                    <div style={{ ...valueStyle, color: "#9ca3af", fontStyle: "italic" }}>Not set</div>
+                    <div className="detail__value detail__value--muted">Not set</div>
                   )}
                 </div>
-                <div style={{ marginBottom: "16px" }}>
-                  <div style={labelStyle}>File Total</div>
+                <div className="detail__field">
+                  <div className="detail__label">File Total</div>
                   {isEditing ? (
                     <input
+                      className="detail__input"
                       type="number"
                       step="0.01"
                       value={editFileTotal}
                       onChange={(e) => setEditFileTotal(e.target.value)}
                       placeholder="Enter file total"
-                      style={{
-                        width: "100%",
-                        padding: "12px 16px",
-                        fontSize: "17px",
-                        border: "2px solid #6b7280",
-                        borderRadius: "8px",
-                        background: "#475569",
-                        color: "#ffffff",
-                        transition: "border-color 0.2s",
-                      }}
-                      onFocus={(e) => e.target.style.borderColor = "#667eea"}
-                      onBlur={(e) => e.target.style.borderColor = "#6b7280"}
                     />
                   ) : claim.file_total ? (
-                    <div style={valueStyle}>
+                    <div className="detail__value">
                       ${claim.file_total.toFixed(2)}
                     </div>
                   ) : (
-                    <div style={{ ...valueStyle, color: "#9ca3af", fontStyle: "italic" }}>Not set</div>
+                    <div className="detail__value detail__value--muted">Not set</div>
                   )}
                 </div>
 
                 {/* Payout Tracking - Show only for completed claims */}
                 {claim.status === 'COMPLETED' && (
                   <>
-                    <div style={{ marginTop: "24px", paddingTop: "16px", borderTop: "2px solid #4b5563" }}>
-                      <h5 style={{ ...labelStyle, fontSize: "16px", fontWeight: "bold", color: "#a78bfa", marginBottom: "16px" }}>
+                    <div className="detail__payout-divider">
+                      <h5 className="detail__payout-heading">
                         💳 Payout Tracking
                       </h5>
 
                       {/* Expected Payout Date */}
-                      <div style={{ marginBottom: "16px" }}>
-                        <div style={labelStyle}>Expected Payout Date</div>
-                        <div style={valueStyle}>
+                      <div className="detail__field">
+                        <div className="detail__label">Expected Payout Date</div>
+                        <div className="detail__value">
                           {claim.expected_payout_date
                             ? new Date(claim.expected_payout_date).toLocaleDateString('en-US', {
                                 weekday: 'long',
@@ -1078,14 +839,14 @@ export default function ClaimDetail() {
                                 month: 'long',
                                 day: 'numeric'
                               })
-                            : <span style={{ color: "#9ca3af", fontStyle: "italic" }}>Not calculated</span>}
+                            : <span className="detail__value--muted">Not calculated</span>}
                         </div>
                       </div>
 
                       {/* Actual Payout Date */}
-                      <div style={{ marginBottom: "16px" }}>
-                        <div style={labelStyle}>Actual Payout Date</div>
-                        <div style={valueStyle}>
+                      <div className="detail__field">
+                        <div className="detail__label">Actual Payout Date</div>
+                        <div className="detail__value">
                           {claim.actual_payout_date
                             ? new Date(claim.actual_payout_date).toLocaleDateString('en-US', {
                                 weekday: 'long',
@@ -1093,27 +854,14 @@ export default function ClaimDetail() {
                                 month: 'long',
                                 day: 'numeric'
                               })
-                            : <span style={{ color: "#9ca3af", fontStyle: "italic" }}>Payment not received</span>}
+                            : <span className="detail__value--muted">Payment not received</span>}
                         </div>
                       </div>
 
                       {/* Payout Status */}
-                      <div style={{ marginBottom: "16px" }}>
-                        <div style={labelStyle}>Payout Status</div>
-                        <div style={{
-                          ...valueStyle,
-                          display: "inline-block",
-                          padding: "6px 16px",
-                          borderRadius: "20px",
-                          background: claim.payout_status === 'paid' ? "#10b981" :
-                                      claim.payout_status === 'overdue' ? "#ef4444" :
-                                      claim.payout_status === 'unpaid' ? "#f59e0b" :
-                                      "#6b7280",
-                          color: "white",
-                          fontWeight: "bold",
-                          textTransform: "uppercase",
-                          fontSize: "14px"
-                        }}>
+                      <div className="detail__field">
+                        <div className="detail__label">Payout Status</div>
+                        <div className={`detail__payout-badge ${payoutBadgeClass}`}>
                           {claim.payout_status || 'not_applicable'}
                         </div>
                       </div>
@@ -1121,6 +869,7 @@ export default function ClaimDetail() {
                       {/* Mark as Paid Button */}
                       {claim.payout_status !== 'paid' && !claim.actual_payout_date && (
                         <button
+                          className="detail__btn detail__btn--mark-paid"
                           onClick={async () => {
                             if (confirm("Mark this claim as PAID and record today as the payment date?")) {
                               const now = new Date();
@@ -1135,21 +884,6 @@ export default function ClaimDetail() {
                               });
                             }
                           }}
-                          style={{
-                            width: "100%",
-                            padding: "14px",
-                            fontSize: "16px",
-                            fontWeight: "bold",
-                            color: "white",
-                            background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-                            border: "none",
-                            borderRadius: "8px",
-                            cursor: "pointer",
-                            boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                            transition: "transform 0.1s",
-                          }}
-                          onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-2px)"}
-                          onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
                         >
                           ✓ Mark as Paid Today
                         </button>
@@ -1162,27 +896,15 @@ export default function ClaimDetail() {
           })()}
 
           {/* Firm Information */}
-          <div style={sectionStyle}>
-            <h4 style={headerStyle}>🏢 Firm</h4>
-            <div style={{ marginBottom: "16px" }}>
-              <div style={labelStyle}>Vendor</div>
+          <div className="detail__section">
+            <h4 className="detail__section-title">🏢 Firm</h4>
+            <div className="detail__field">
+              <div className="detail__label">Vendor</div>
               {isEditing ? (
                 <select
+                  className="detail__select"
                   value={editFirmName}
                   onChange={(e) => setEditFirmName(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    fontSize: "17px",
-                    border: "2px solid #6b7280",
-                    borderRadius: "8px",
-                    background: "#475569",
-                    color: "#ffffff",
-                    transition: "border-color 0.2s",
-                    cursor: "pointer",
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = "#667eea"}
-                  onBlur={(e) => e.target.style.borderColor = "#6b7280"}
                 >
                   <option value="">Select a firm...</option>
                   {firms.map((firm) => (
@@ -1192,293 +914,178 @@ export default function ClaimDetail() {
                   ))}
                 </select>
               ) : (
-                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div className="detail__firm-row">
                   <div
-                    style={{
-                      width: "24px",
-                      height: "24px",
-                      borderRadius: "4px",
-                      background: getFirmColor(claim.firm),
-                      border: "2px solid rgba(255,255,255,0.3)",
-                    }}
+                    className="detail__firm-swatch"
+                    style={{ background: getFirmColor(claim.firm) }}
                   />
-                  <div style={valueStyle}>{claim.firm || "Not assigned"}</div>
+                  <div className="detail__value">{claim.firm || "Not assigned"}</div>
                 </div>
               )}
             </div>
           </div>
 
           {/* Customer Information */}
-          <div style={sectionStyle}>
-            <h4 style={headerStyle}>👤 Customer Information</h4>
-            <div style={{ marginBottom: "16px" }}>
-              <div style={labelStyle}>Name</div>
+          <div className="detail__section">
+            <h4 className="detail__section-title">👤 Customer Information</h4>
+            <div className="detail__field">
+              <div className="detail__label">Name</div>
               {isEditing ? (
                 <input
+                  className="detail__input"
                   type="text"
                   value={editCustomerName}
                   onChange={(e) => setEditCustomerName(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    fontSize: "17px",
-                    border: "2px solid #6b7280",
-                    borderRadius: "8px",
-                    background: "#475569",
-                    color: "#ffffff",
-                    transition: "border-color 0.2s",
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = "#667eea"}
-                  onBlur={(e) => e.target.style.borderColor = "#6b7280"}
                 />
               ) : (
-                <div style={valueStyle}>{claim.customer_name}</div>
+                <div className="detail__value">{claim.customer_name}</div>
               )}
             </div>
-            <div style={{ marginBottom: "16px" }}>
-              <div style={labelStyle}>Phone</div>
+            <div className="detail__field">
+              <div className="detail__label">Phone</div>
               {isEditing ? (
                 <input
+                  className="detail__input"
                   type="tel"
                   value={editPhone}
                   onChange={(e) => setEditPhone(e.target.value)}
                   placeholder="Phone number"
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    fontSize: "17px",
-                    border: "2px solid #6b7280",
-                    borderRadius: "8px",
-                    background: "#475569",
-                    color: "#ffffff",
-                    transition: "border-color 0.2s",
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = "#667eea"}
-                  onBlur={(e) => e.target.style.borderColor = "#6b7280"}
                 />
               ) : claim.customer_phone ? (
                 <a
                   href={`tel:${claim.customer_phone}`}
-                  style={{
-                    fontSize: "17px",
-                    color: "#818cf8",
-                    textDecoration: "none",
-                    fontWeight: "600",
-                  }}
+                  className="detail__link"
                 >
                   📞 {claim.customer_phone}
                 </a>
               ) : (
-                <div style={{ ...valueStyle, color: "#9ca3af", fontStyle: "italic" }}>No phone</div>
+                <div className="detail__value detail__value--muted">No phone</div>
               )}
             </div>
-            <div style={{ marginBottom: "16px" }}>
-              <div style={labelStyle}>Email</div>
+            <div className="detail__field">
+              <div className="detail__label">Email</div>
               {isEditing ? (
                 <input
+                  className="detail__input"
                   type="email"
                   value={editEmail}
                   onChange={(e) => setEditEmail(e.target.value)}
                   placeholder="Email address"
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    fontSize: "17px",
-                    border: "2px solid #6b7280",
-                    borderRadius: "8px",
-                    background: "#475569",
-                    color: "#ffffff",
-                    transition: "border-color 0.2s",
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = "#667eea"}
-                  onBlur={(e) => e.target.style.borderColor = "#6b7280"}
                 />
               ) : claim.email ? (
                 <a
                   href={`mailto:${claim.email}`}
-                  style={{
-                    fontSize: "17px",
-                    color: "#818cf8",
-                    textDecoration: "none",
-                    fontWeight: "600",
-                  }}
+                  className="detail__link"
                 >
                   ✉️ {claim.email}
                 </a>
               ) : (
-                <div style={{ ...valueStyle, color: "#9ca3af", fontStyle: "italic" }}>No email</div>
+                <div className="detail__value detail__value--muted">No email</div>
               )}
             </div>
           </div>
 
           {/* Vehicle Information */}
-          <div style={sectionStyle}>
-            <h4 style={headerStyle}>🚗 Vehicle Information</h4>
-            <div style={{ marginBottom: "16px" }}>
-              <div style={labelStyle}>VIN</div>
+          <div className="detail__section">
+            <h4 className="detail__section-title">🚗 Vehicle Information</h4>
+            <div className="detail__field">
+              <div className="detail__label">VIN</div>
               {isEditing ? (
                 <input
+                  className="detail__input detail__input--mono"
                   type="text"
                   value={editVin}
                   onChange={(e) => setEditVin(e.target.value)}
                   placeholder="Vehicle Identification Number"
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    fontSize: "16px",
-                    fontFamily: "monospace",
-                    border: "2px solid #6b7280",
-                    borderRadius: "8px",
-                    background: "#475569",
-                    color: "#ffffff",
-                    transition: "border-color 0.2s",
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = "#667eea"}
-                  onBlur={(e) => e.target.style.borderColor = "#6b7280"}
                 />
               ) : claim.vin ? (
-                <div style={{ ...valueStyle, fontFamily: "monospace", fontSize: "16px" }}>{claim.vin}</div>
+                <div className="detail__value detail__value--mono">{claim.vin}</div>
               ) : (
-                <div style={{ ...valueStyle, color: "#9ca3af", fontStyle: "italic" }}>No VIN</div>
+                <div className="detail__value detail__value--muted">No VIN</div>
               )}
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: "12px" }}>
+            <div className="detail__grid--auto">
               <div>
-                <div style={labelStyle}>Year</div>
+                <div className="detail__label">Year</div>
                 {isEditing ? (
                   <input
+                    className="detail__input"
                     type="number"
                     value={editVehicleYear}
                     onChange={(e) => setEditVehicleYear(e.target.value)}
                     placeholder="Year"
                     min="1900"
                     max="2100"
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      fontSize: "17px",
-                      border: "2px solid #6b7280",
-                      borderRadius: "8px",
-                      background: "#475569",
-                      color: "#ffffff",
-                      transition: "border-color 0.2s",
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = "#667eea"}
-                    onBlur={(e) => e.target.style.borderColor = "#6b7280"}
                   />
                 ) : claim.vehicle_year ? (
-                  <div style={valueStyle}>{claim.vehicle_year}</div>
+                  <div className="detail__value">{claim.vehicle_year}</div>
                 ) : (
-                  <div style={{ ...valueStyle, color: "#9ca3af", fontStyle: "italic" }}>-</div>
+                  <div className="detail__value detail__value--muted">-</div>
                 )}
               </div>
               <div>
-                <div style={labelStyle}>Make</div>
+                <div className="detail__label">Make</div>
                 {isEditing ? (
                   <input
+                    className="detail__input"
                     type="text"
                     value={editVehicleMake}
                     onChange={(e) => setEditVehicleMake(e.target.value)}
                     placeholder="Make"
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      fontSize: "17px",
-                      border: "2px solid #6b7280",
-                      borderRadius: "8px",
-                      background: "#475569",
-                      color: "#ffffff",
-                      transition: "border-color 0.2s",
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = "#667eea"}
-                    onBlur={(e) => e.target.style.borderColor = "#6b7280"}
                   />
                 ) : claim.vehicle_make ? (
-                  <div style={valueStyle}>{claim.vehicle_make}</div>
+                  <div className="detail__value">{claim.vehicle_make}</div>
                 ) : (
-                  <div style={{ ...valueStyle, color: "#9ca3af", fontStyle: "italic" }}>-</div>
+                  <div className="detail__value detail__value--muted">-</div>
                 )}
               </div>
               <div>
-                <div style={labelStyle}>Model</div>
+                <div className="detail__label">Model</div>
                 {isEditing ? (
                   <input
+                    className="detail__input"
                     type="text"
                     value={editVehicleModel}
                     onChange={(e) => setEditVehicleModel(e.target.value)}
                     placeholder="Model"
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      fontSize: "17px",
-                      border: "2px solid #6b7280",
-                      borderRadius: "8px",
-                      background: "#475569",
-                      color: "#ffffff",
-                      transition: "border-color 0.2s",
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = "#667eea"}
-                    onBlur={(e) => e.target.style.borderColor = "#6b7280"}
                   />
                 ) : claim.vehicle_model ? (
-                  <div style={valueStyle}>{claim.vehicle_model}</div>
+                  <div className="detail__value">{claim.vehicle_model}</div>
                 ) : (
-                  <div style={{ ...valueStyle, color: "#9ca3af", fontStyle: "italic" }}>-</div>
+                  <div className="detail__value detail__value--muted">-</div>
                 )}
               </div>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px", marginTop: "16px" }}>
+            <div className="detail__grid--auto-lg">
               <div>
-                <div style={labelStyle}>Date of Loss</div>
+                <div className="detail__label">Date of Loss</div>
                 {isEditing ? (
                   <input
+                    className="detail__input"
                     type="date"
                     value={editDateOfLoss}
                     onChange={(e) => setEditDateOfLoss(e.target.value)}
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      fontSize: "17px",
-                      border: "2px solid #6b7280",
-                      borderRadius: "8px",
-                      background: "#475569",
-                      color: "#ffffff",
-                      transition: "border-color 0.2s",
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = "#667eea"}
-                    onBlur={(e) => e.target.style.borderColor = "#6b7280"}
                   />
                 ) : claim.date_of_loss ? (
-                  <div style={valueStyle}>{new Date(claim.date_of_loss).toLocaleDateString()}</div>
+                  <div className="detail__value">{new Date(claim.date_of_loss).toLocaleDateString()}</div>
                 ) : (
-                  <div style={{ ...valueStyle, color: "#9ca3af", fontStyle: "italic" }}>-</div>
+                  <div className="detail__value detail__value--muted">-</div>
                 )}
               </div>
               <div>
-                <div style={labelStyle}>Insurance Company</div>
+                <div className="detail__label">Insurance Company</div>
                 {isEditing ? (
                   <input
+                    className="detail__input"
                     type="text"
                     value={editInsuranceCompany}
                     onChange={(e) => setEditInsuranceCompany(e.target.value)}
                     placeholder="Insurance Company"
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      fontSize: "17px",
-                      border: "2px solid #6b7280",
-                      borderRadius: "8px",
-                      background: "#475569",
-                      color: "#ffffff",
-                      transition: "border-color 0.2s",
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = "#667eea"}
-                    onBlur={(e) => e.target.style.borderColor = "#6b7280"}
                   />
                 ) : claim.insurance_company ? (
-                  <div style={valueStyle}>{claim.insurance_company}</div>
+                  <div className="detail__value">{claim.insurance_company}</div>
                 ) : (
-                  <div style={{ ...valueStyle, color: "#9ca3af", fontStyle: "italic" }}>-</div>
+                  <div className="detail__value detail__value--muted">-</div>
                 )}
               </div>
             </div>
@@ -1487,75 +1094,39 @@ export default function ClaimDetail() {
 
         {/* Accident Description */}
         {(claim.notes || isEditing) && (
-          <div style={{ ...sectionStyle, marginBottom: "24px" }}>
-            <h4 style={headerStyle}>📋 Accident Description</h4>
+          <div className="detail__section detail__section--mb">
+            <h4 className="detail__section-title">📋 Accident Description</h4>
             {isEditing ? (
               <textarea
+                className="detail__textarea"
                 value={editNotes}
                 onChange={(e) => setEditNotes(e.target.value)}
                 placeholder="Enter accident description..."
-                style={{
-                  width: "100%",
-                  minHeight: "120px",
-                  padding: "12px",
-                  background: "#475569",
-                  border: "2px solid #6b7280",
-                  borderRadius: "8px",
-                  color: "#ffffff",
-                  fontSize: "16px",
-                  lineHeight: "1.6",
-                  fontFamily: "inherit",
-                  resize: "vertical",
-                }}
-                onFocus={(e) => e.target.style.borderColor = "#667eea"}
-                onBlur={(e) => e.target.style.borderColor = "#6b7280"}
               />
             ) : (
-              <div
-                style={{
-                  whiteSpace: "pre-wrap",
-                  background: "#2d3748",
-                  border: "1px solid #4b5563",
-                  padding: "16px",
-                  borderRadius: "8px",
-                  color: "#ffffff",
-                  fontSize: "16px",
-                  lineHeight: "1.6",
-                }}
-              >
-                {claim.notes || <span style={{ color: "#9ca3af", fontStyle: "italic" }}>No description provided</span>}
+              <div className="detail__notes-box">
+                {claim.notes || <span className="detail__value--muted">No description provided</span>}
               </div>
             )}
           </div>
         )}
 
         {/* Appointment and Assignment Section */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", marginBottom: "24px" }}>
+        <div className="detail__grid">
           {/* Appointment */}
-          <div style={sectionStyle}>
-            <h4 style={headerStyle}>📅 Appointment</h4>
-            <div style={{ marginBottom: "20px" }}>
-              <div style={labelStyle}>Start Date & Time</div>
+          <div className="detail__section">
+            <h4 className="detail__section-title">📅 Appointment</h4>
+            <div className="detail__field--lg">
+              <div className="detail__label">Start Date & Time</div>
               {isEditing ? (
                 <input
+                  className="detail__input"
                   type="datetime-local"
                   value={editAppointmentStart}
                   onChange={(e) => setEditAppointmentStart(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    fontSize: "17px",
-                    border: "2px solid #6b7280",
-                    borderRadius: "8px",
-                    background: "#475569",
-                    color: "#ffffff",
-                    transition: "border-color 0.2s",
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = "#667eea"}
-                  onBlur={(e) => e.target.style.borderColor = "#6b7280"}
                 />
               ) : claim.appointment_start ? (
-                <div style={valueStyle}>
+                <div className="detail__value">
                   {new Date(claim.appointment_start).toLocaleString('en-US', {
                     weekday: 'short',
                     year: 'numeric',
@@ -1566,31 +1137,20 @@ export default function ClaimDetail() {
                   })}
                 </div>
               ) : (
-                <div style={{ ...valueStyle, color: "#9ca3af", fontStyle: "italic" }}>No appointment set</div>
+                <div className="detail__value detail__value--muted">No appointment set</div>
               )}
             </div>
             <div>
-              <div style={labelStyle}>End Date & Time</div>
+              <div className="detail__label">End Date & Time</div>
               {isEditing ? (
                 <input
+                  className="detail__input"
                   type="datetime-local"
                   value={editAppointmentEnd}
                   onChange={(e) => setEditAppointmentEnd(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    fontSize: "17px",
-                    border: "2px solid #6b7280",
-                    borderRadius: "8px",
-                    background: "#475569",
-                    color: "#ffffff",
-                    transition: "border-color 0.2s",
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = "#667eea"}
-                  onBlur={(e) => e.target.style.borderColor = "#6b7280"}
                 />
               ) : claim.appointment_end ? (
-                <div style={valueStyle}>
+                <div className="detail__value">
                   {new Date(claim.appointment_end).toLocaleString('en-US', {
                     weekday: 'short',
                     year: 'numeric',
@@ -1601,32 +1161,20 @@ export default function ClaimDetail() {
                   })}
                 </div>
               ) : (
-                <div style={{ ...valueStyle, color: "#9ca3af", fontStyle: "italic" }}>No end time set</div>
+                <div className="detail__value detail__value--muted">No end time set</div>
               )}
             </div>
           </div>
 
           {/* Assignment */}
-          <div style={sectionStyle}>
-            <h4 style={headerStyle}>👥 Assignment</h4>
-            <div style={labelStyle}>Assigned Appraiser</div>
+          <div className="detail__section">
+            <h4 className="detail__section-title">👥 Assignment</h4>
+            <div className="detail__label">Assigned Appraiser</div>
             {isEditing ? (
               <select
+                className="detail__select"
                 value={editAssignedTo}
                 onChange={(e) => setEditAssignedTo(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "12px 16px",
-                  fontSize: "17px",
-                  border: "2px solid #6b7280",
-                  borderRadius: "8px",
-                  background: "#475569",
-                  color: "#ffffff",
-                  cursor: "pointer",
-                  transition: "border-color 0.2s",
-                }}
-                onFocus={(e) => e.target.style.borderColor = "#667eea"}
-                onBlur={(e) => e.target.style.borderColor = "#6b7280"}
               >
                 <option value="">Unassigned</option>
                 {users.map((u) => (
@@ -1636,7 +1184,7 @@ export default function ClaimDetail() {
                 ))}
               </select>
             ) : (
-              <div style={valueStyle}>
+              <div className="detail__value">
                 {claim.assigned_to
                   ? users.find(u => u.user_id === claim.assigned_to)?.full_name || "Unknown User"
                   : "Unassigned"}
@@ -1646,34 +1194,12 @@ export default function ClaimDetail() {
         </div>
 
         {/* Status & Actions */}
-        <div style={sectionStyle}>
-          <h4 style={headerStyle}>⚡ Status & Actions</h4>
+        <div className="detail__section">
+          <h4 className="detail__section-title">⚡ Status & Actions</h4>
 
-          <div style={{ marginBottom: "24px" }}>
-            <div style={labelStyle}>Current Status</div>
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-                padding: "12px 24px",
-                borderRadius: "8px",
-                fontSize: "17px",
-                fontWeight: "bold",
-                background:
-                  claim.status === "COMPLETED"
-                    ? "#4CAF50"
-                    : claim.status === "IN_PROGRESS"
-                    ? "#FF9800"
-                    : claim.status === "SCHEDULED"
-                    ? "#2196F3"
-                    : claim.status === "CANCELED"
-                    ? "#ef4444"
-                    : "#9E9E9E",
-                color: "white",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-              }}
-            >
+          <div className="detail__field">
+            <div className="detail__label">Current Status</div>
+            <div className={`detail__status-badge ${statusClass}`}>
               {claim.status === "COMPLETED" && "✅"}
               {claim.status === "IN_PROGRESS" && "🔧"}
               {claim.status === "SCHEDULED" && "📅"}
@@ -1688,9 +1214,10 @@ export default function ClaimDetail() {
             Appraisers must NOT see status change controls (view + photo capture only)
           */}
           {isAdmin && (
-            <div style={{ marginBottom: "24px" }}>
-              <div style={labelStyle}>Update Status</div>
+            <div className="detail__status-actions">
+              <div className="detail__label">Update Status</div>
               <select
+                className="detail__status-select"
                 onChange={async (e) => {
                   const value = e.target.value;
                   if (value === "DELETE") {
@@ -1733,31 +1260,17 @@ export default function ClaimDetail() {
                   }
                   e.target.value = ""; // Reset dropdown
                 }}
-                style={{
-                  width: "100%",
-                  padding: "12px 16px",
-                  fontSize: "17px",
-                  border: "2px solid #6b7280",
-                  borderRadius: "8px",
-                  background: "#475569",
-                  color: "#ffffff",
-                  cursor: "pointer",
-                  fontWeight: "600",
-                  transition: "border-color 0.2s",
-                }}
-                onFocus={(e) => e.target.style.borderColor = "#667eea"}
-                onBlur={(e) => e.target.style.borderColor = "#6b7280"}
               >
                 <option value="">Choose an action...</option>
                 <option value="SCHEDULED">📅 Mark as Scheduled</option>
                 <option value="IN_PROGRESS">🔧 In Progress</option>
                 <option value="COMPLETED">✅ Mark as Complete</option>
                 <option value="CANCELED">❌ Cancel Claim</option>
-                <option value="DELETE" style={{ color: "#ef4444", fontWeight: "bold" }}>
+                <option value="DELETE">
                   🗑️ Permanently Delete Claim
                 </option>
               </select>
-              <p style={{ fontSize: "14px", color: "#cbd5e1", marginTop: "8px", fontStyle: "italic" }}>
+              <p className="detail__status-hint">
                 ⚠️ Permanent delete cannot be undone. All photos and data will be lost.
               </p>
             </div>
@@ -1765,131 +1278,76 @@ export default function ClaimDetail() {
         </div>
 
         {/* Location & Map */}
-        <div style={sectionStyle}>
-          <h4 style={headerStyle}>📍 Location</h4>
+        <div className="detail__section">
+          <h4 className="detail__section-title">📍 Location</h4>
 
           {isEditing ? (
-            <div style={{ marginBottom: "20px" }}>
-              <div style={{ marginBottom: "16px" }}>
-                <div style={labelStyle}>Address Line 1</div>
+            <div className="detail__field--lg">
+              <div className="detail__field">
+                <div className="detail__label">Address Line 1</div>
                 <input
+                  className="detail__input"
                   type="text"
                   value={editAddressLine1}
                   onChange={(e) => setEditAddressLine1(e.target.value)}
                   placeholder="Street address"
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    fontSize: "17px",
-                    border: "2px solid #6b7280",
-                    borderRadius: "8px",
-                    background: "#475569",
-                    color: "#ffffff",
-                    transition: "border-color 0.2s",
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = "#667eea"}
-                  onBlur={(e) => e.target.style.borderColor = "#6b7280"}
                 />
               </div>
-              <div style={{ marginBottom: "16px" }}>
-                <div style={labelStyle}>Address Line 2 (Optional)</div>
+              <div className="detail__field">
+                <div className="detail__label">Address Line 2 (Optional)</div>
                 <input
+                  className="detail__input"
                   type="text"
                   value={editAddressLine2}
                   onChange={(e) => setEditAddressLine2(e.target.value)}
                   placeholder="Apt, suite, etc."
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    fontSize: "17px",
-                    border: "2px solid #6b7280",
-                    borderRadius: "8px",
-                    background: "#475569",
-                    color: "#ffffff",
-                    transition: "border-color 0.2s",
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = "#667eea"}
-                  onBlur={(e) => e.target.style.borderColor = "#6b7280"}
                 />
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: "12px" }}>
+              <div className="detail__grid--auto">
                 <div>
-                  <div style={labelStyle}>City</div>
+                  <div className="detail__label">City</div>
                   <input
+                    className="detail__input"
                     type="text"
                     value={editCity}
                     onChange={(e) => setEditCity(e.target.value)}
                     placeholder="City"
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      fontSize: "17px",
-                      border: "2px solid #6b7280",
-                      borderRadius: "8px",
-                      background: "#475569",
-                      color: "#ffffff",
-                      transition: "border-color 0.2s",
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = "#667eea"}
-                    onBlur={(e) => e.target.style.borderColor = "#6b7280"}
                   />
                 </div>
                 <div>
-                  <div style={labelStyle}>State</div>
+                  <div className="detail__label">State</div>
                   <input
+                    className="detail__input"
                     type="text"
                     value={editState}
                     onChange={(e) => setEditState(e.target.value)}
                     placeholder="State"
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      fontSize: "17px",
-                      border: "2px solid #6b7280",
-                      borderRadius: "8px",
-                      background: "#475569",
-                      color: "#ffffff",
-                      transition: "border-color 0.2s",
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = "#667eea"}
-                    onBlur={(e) => e.target.style.borderColor = "#6b7280"}
                   />
                 </div>
                 <div>
-                  <div style={labelStyle}>ZIP</div>
+                  <div className="detail__label">ZIP</div>
                   <input
+                    className="detail__input"
                     type="text"
                     value={editZip}
                     onChange={(e) => setEditZip(e.target.value)}
                     placeholder="ZIP"
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      fontSize: "17px",
-                      border: "2px solid #6b7280",
-                      borderRadius: "8px",
-                      background: "#475569",
-                      color: "#ffffff",
-                      transition: "border-color 0.2s",
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = "#667eea"}
-                    onBlur={(e) => e.target.style.borderColor = "#6b7280"}
                   />
                 </div>
               </div>
             </div>
           ) : (
             <>
-              <div style={{ marginBottom: "16px" }}>
-                <div style={labelStyle}>Street Address</div>
-                <div style={valueStyle}>
+              <div className="detail__field">
+                <div className="detail__label">Street Address</div>
+                <div className="detail__value">
                   {claim.address_line1}
                   {claim.address_line2 && <>, {claim.address_line2}</>}
                 </div>
               </div>
-              <div style={{ marginBottom: "20px" }}>
-                <div style={labelStyle}>City, State, ZIP</div>
-                <div style={valueStyle}>
+              <div className="detail__field--lg">
+                <div className="detail__label">City, State, ZIP</div>
+                <div className="detail__value">
                   {claim.city}, {claim.state} {claim.zip}
                 </div>
               </div>
@@ -1897,15 +1355,7 @@ export default function ClaimDetail() {
           )}
 
           {claim.lat && claim.lng ? (
-            <div
-              style={{
-                height: "350px",
-                borderRadius: "12px",
-                overflow: "hidden",
-                boxShadow: "0 4px 6px rgba(0,0,0,0.3)",
-                marginBottom: "16px",
-              }}
-            >
+            <div className="detail__map-wrap">
               <MapContainer
                 center={[claim.lat, claim.lng]}
                 zoom={15}
@@ -1921,80 +1371,27 @@ export default function ClaimDetail() {
               </MapContainer>
             </div>
           ) : (
-            <div
-              style={{
-                padding: "20px",
-                textAlign: "center",
-                background: "#2d3748",
-                borderRadius: "8px",
-                color: "#cbd5e1",
-                fontSize: "16px",
-                marginBottom: "16px",
-              }}
-            >
+            <div className="detail__map-empty">
               No coordinates available
             </div>
           )}
 
           <button
+            className="detail__btn detail__btn--maps"
             onClick={openInMaps}
-            style={{
-              width: "100%",
-              padding: "12px 24px",
-              fontSize: "16px",
-              fontWeight: "600",
-              background: "#10b981",
-              color: "white",
-              border: "none",
-              borderRadius: "8px",
-              cursor: "pointer",
-              transition: "all 0.2s",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "#059669";
-              e.currentTarget.style.transform = "translateY(-1px)";
-              e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.3)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "#10b981";
-              e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
-            }}
           >
             🗺️ Open in Google Maps
           </button>
         </div>
 
         {/* Photos Section */}
-        <div style={sectionStyle}>
-          <h4 style={headerStyle}>📸 Photos ({photos.length})</h4>
+        <div className="detail__section">
+          <h4 className="detail__section-title">📸 Photos ({photos.length})</h4>
 
-          <div style={{ display: "flex", gap: "12px", marginBottom: "24px", flexWrap: "wrap" }}>
+          <div className="detail__photos-actions">
             <label
               htmlFor="photo-upload"
-              style={{
-                flex: "1",
-                minWidth: "200px",
-                padding: "14px 24px",
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                color: "white",
-                borderRadius: "8px",
-                fontWeight: "600",
-                fontSize: "16px",
-                cursor: "pointer",
-                textAlign: "center",
-                transition: "all 0.2s",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-1px)";
-                e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.3)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
-              }}
+              className="detail__photo-label detail__photo-label--camera"
             >
               📷 Take Photo
             </label>
@@ -2004,36 +1401,13 @@ export default function ClaimDetail() {
               accept="image/*"
               capture="environment"
               onChange={handlePhotoInputChange}
-              style={{ display: "none" }}
+              className="detail__file-input"
               multiple
             />
 
             <label
               htmlFor="photo-gallery"
-              style={{
-                flex: "1",
-                minWidth: "200px",
-                padding: "14px 24px",
-                background: "#10b981",
-                color: "white",
-                borderRadius: "8px",
-                fontWeight: "600",
-                fontSize: "16px",
-                cursor: "pointer",
-                textAlign: "center",
-                transition: "all 0.2s",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#059669";
-                e.currentTarget.style.transform = "translateY(-1px)";
-                e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.3)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "#10b981";
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
-              }}
+              className="detail__photo-label detail__photo-label--gallery"
             >
               🖼️ Choose from Gallery
             </label>
@@ -2042,84 +1416,37 @@ export default function ClaimDetail() {
               type="file"
               accept="image/*"
               onChange={handlePhotoInputChange}
-              style={{ display: "none" }}
+              className="detail__file-input"
               multiple
             />
 
             {photos.length > 0 && (
               <button
                 onClick={downloadAllPhotos}
-                style={{
-                  flex: "1",
-                  minWidth: "200px",
-                  padding: "14px 24px",
-                  background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
-                  color: "white",
-                  borderRadius: "8px",
-                  fontWeight: "600",
-                  fontSize: "16px",
-                  cursor: "pointer",
-                  textAlign: "center",
-                  transition: "all 0.2s",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                  border: "none",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "linear-gradient(135deg, #d97706 0%, #b45309 100%)";
-                  e.currentTarget.style.transform = "translateY(-1px)";
-                  e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.3)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)";
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
-                }}
+                className="detail__photo-btn-download"
               >
                 📦 Download All Photos
               </button>
             )}
           </div>
 
-          <p
-            style={{
-              fontSize: "15px",
-              color: "#cbd5e1",
-              marginBottom: "20px",
-              padding: "12px",
-              background: "#2d3748",
-              borderRadius: "8px",
-              borderLeft: "4px solid #667eea",
-            }}
-          >
+          <p className="detail__photo-tip">
             💡 Tip: Photos are automatically compressed and optimized for storage
           </p>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-              gap: "16px",
-            }}
-          >
+          <div className="detail__photo-grid">
             {photos.map((p, index) => {
               const photoUrl = supabase.storage
                 .from("claim-photos")
                 .getPublicUrl(p.storage_path).data.publicUrl;
 
               return (
-                <div key={p.id} style={{ position: "relative" }}>
+                <div key={p.id} className="detail__photo-item">
                   <div
                     onClick={() => setLightboxIndex(index)}
+                    className="detail__photo-thumb"
                     style={{
-                      width: "100%",
-                      height: 200,
                       backgroundImage: `url(${photoUrl})`,
-                      backgroundSize: "cover",
-                      backgroundPosition: "center",
-                      borderRadius: 4,
-                      cursor: "pointer",
-                      border: "2px solid #ddd",
-                      position: "relative",
                     }}
                   >
                     <button
@@ -2127,25 +1454,7 @@ export default function ClaimDetail() {
                         e.stopPropagation();
                         deletePhoto(p);
                       }}
-                      style={{
-                        position: "absolute",
-                        top: 4,
-                        right: 4,
-                        width: 28,
-                        height: 28,
-                        borderRadius: "50%",
-                        background: "rgba(244, 67, 54, 0.9)",
-                        color: "white",
-                        border: "2px solid white",
-                        fontSize: 18,
-                        fontWeight: "bold",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        padding: 0,
-                        lineHeight: 1,
-                      }}
+                      className="detail__photo-delete"
                     >
                       ×
                     </button>
@@ -2154,20 +1463,7 @@ export default function ClaimDetail() {
                     href={photoUrl}
                     download={`claim-${claim?.claim_number}-photo-${p.id}.jpg`}
                     onClick={(e) => e.stopPropagation()}
-                    style={{
-                      display: "block",
-                      width: "100%",
-                      marginTop: 4,
-                      padding: "10px",
-                      background: "#4CAF50",
-                      color: "white",
-                      textAlign: "center",
-                      borderRadius: 4,
-                      textDecoration: "none",
-                      fontSize: 14,
-                      fontWeight: "bold",
-                      boxSizing: "border-box",
-                    }}
+                    className="detail__photo-download"
                   >
                     ⬇️ Download
                   </a>
@@ -2180,6 +1476,7 @@ export default function ClaimDetail() {
         {/* Lightbox Modal */}
         {lightboxIndex !== null && (
           <div
+            className="detail__lightbox"
             onClick={() => {
               setLightboxIndex(null);
               resetViewerState();
@@ -2187,39 +1484,12 @@ export default function ClaimDetail() {
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: "rgba(0,0,0,0.95)",
-              zIndex: 9999,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexDirection: "column",
-              overflow: "hidden",
-            }}
           >
             <button
+              className="detail__lightbox-close"
               onClick={() => {
                 setLightboxIndex(null);
                 resetViewerState();
-              }}
-              style={{
-                position: "absolute",
-                top: 20,
-                right: 20,
-                background: "white",
-                border: "none",
-                borderRadius: 50,
-                width: 40,
-                height: 40,
-                fontSize: 24,
-                cursor: "pointer",
-                fontWeight: "bold",
-                zIndex: 10000,
               }}
             >
               ×
@@ -2227,61 +1497,23 @@ export default function ClaimDetail() {
 
             {/* Zoom Controls */}
             <div
+              className="detail__lightbox-zoom"
               onClick={(e) => e.stopPropagation()}
-              style={{
-                position: "absolute",
-                top: 20,
-                left: 20,
-                display: "flex",
-                flexDirection: "column",
-                gap: 8,
-                zIndex: 10000,
-              }}
             >
               <button
+                className="detail__lightbox-zoom-btn"
                 onClick={handleZoomIn}
                 disabled={zoom >= 4}
-                style={{
-                  padding: "8px 16px",
-                  background: zoom >= 4 ? "#4a5568" : "#667eea",
-                  color: "white",
-                  border: "none",
-                  borderRadius: 6,
-                  fontSize: 18,
-                  fontWeight: "bold",
-                  cursor: zoom >= 4 ? "not-allowed" : "pointer",
-                  opacity: zoom >= 4 ? 0.5 : 1,
-                }}
               >
                 +
               </button>
-              <div
-                style={{
-                  padding: "4px 8px",
-                  background: "rgba(255,255,255,0.2)",
-                  color: "white",
-                  borderRadius: 4,
-                  fontSize: 14,
-                  textAlign: "center",
-                  fontWeight: "bold",
-                }}
-              >
+              <div className="detail__lightbox-zoom-level">
                 {Math.round(zoom * 100)}%
               </div>
               <button
+                className="detail__lightbox-zoom-btn"
                 onClick={handleZoomOut}
                 disabled={zoom <= 1}
-                style={{
-                  padding: "8px 16px",
-                  background: zoom <= 1 ? "#4a5568" : "#667eea",
-                  color: "white",
-                  border: "none",
-                  borderRadius: 6,
-                  fontSize: 18,
-                  fontWeight: "bold",
-                  cursor: zoom <= 1 ? "not-allowed" : "pointer",
-                  opacity: zoom <= 1 ? 0.5 : 1,
-                }}
               >
                 −
               </button>
@@ -2289,67 +1521,29 @@ export default function ClaimDetail() {
 
             {/* Rotation Controls */}
             <div
+              className="detail__lightbox-rotate"
               onClick={(e) => e.stopPropagation()}
-              style={{
-                position: "absolute",
-                top: 20,
-                left: "50%",
-                transform: "translateX(-50%)",
-                display: "flex",
-                gap: 12,
-                zIndex: 10000,
-              }}
             >
               <button
+                className="detail__lightbox-rotate-btn"
                 onClick={rotateLeft}
-                style={{
-                  padding: "10px 20px",
-                  background: "#667eea",
-                  color: "white",
-                  border: "none",
-                  borderRadius: 6,
-                  fontSize: 16,
-                  fontWeight: "bold",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
               >
                 ↺ Rotate Left
               </button>
               <button
+                className="detail__lightbox-rotate-btn"
                 onClick={rotateRight}
-                style={{
-                  padding: "10px 20px",
-                  background: "#667eea",
-                  color: "white",
-                  border: "none",
-                  borderRadius: 6,
-                  fontSize: 16,
-                  fontWeight: "bold",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
               >
                 Rotate Right ↻
               </button>
             </div>
 
             <div
-              style={{
-                position: "relative",
-                maxWidth: "90%",
-                maxHeight: "80%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
+              className="detail__lightbox-image-wrap"
               onClick={(e) => e.stopPropagation()}
             >
               <img
+                className="detail__lightbox-image"
                 src={
                   supabase.storage
                     .from("claim-photos")
@@ -2359,28 +1553,20 @@ export default function ClaimDetail() {
                 onWheel={handleWheel}
                 onMouseDown={handleMouseDown}
                 style={{
-                  maxWidth: "100%",
-                  maxHeight: "80vh",
-                  objectFit: "contain",
                   transform: `rotate(${rotation}deg) scale(${zoom}) translate(${panX / zoom}px, ${panY / zoom}px)`,
                   transition: isDragging ? "none" : "transform 0.2s ease-out",
                   cursor: zoom > 1 ? (isDragging ? "grabbing" : "grab") : "default",
-                  userSelect: "none",
                 }}
                 draggable={false}
               />
             </div>
 
             <div
-              style={{
-                display: "flex",
-                gap: 16,
-                marginTop: 20,
-                alignItems: "center",
-              }}
+              className="detail__lightbox-nav"
               onClick={(e) => e.stopPropagation()}
             >
               <button
+                className="detail__lightbox-btn"
                 onClick={(e) => {
                   e.stopPropagation();
                   resetViewerState();
@@ -2388,43 +1574,22 @@ export default function ClaimDetail() {
                     lightboxIndex > 0 ? lightboxIndex - 1 : photos.length - 1
                   );
                 }}
-                style={{
-                  padding: "12px 24px",
-                  background: "#667eea",
-                  color: "white",
-                  border: "none",
-                  borderRadius: 6,
-                  fontSize: 16,
-                  fontWeight: "bold",
-                  cursor: "pointer",
-                }}
               >
                 ← Previous
               </button>
 
-              <span
-                style={{ color: "white", fontSize: 16, fontWeight: "bold" }}
-              >
+              <span className="detail__lightbox-counter">
                 {lightboxIndex + 1} / {photos.length}
               </span>
 
               <button
+                className="detail__lightbox-btn"
                 onClick={(e) => {
                   e.stopPropagation();
                   resetViewerState();
                   setLightboxIndex(
                     lightboxIndex < photos.length - 1 ? lightboxIndex + 1 : 0
                   );
-                }}
-                style={{
-                  padding: "12px 24px",
-                  background: "#667eea",
-                  color: "white",
-                  border: "none",
-                  borderRadius: 6,
-                  fontSize: 16,
-                  fontWeight: "bold",
-                  cursor: "pointer",
                 }}
               >
                 Next →
@@ -2438,34 +1603,16 @@ export default function ClaimDetail() {
                     .publicUrl
                 }
                 download={`claim-${claim?.claim_number}-photo-${photos[lightboxIndex].id}.jpg`}
-                style={{
-                  padding: "12px 24px",
-                  background: "#4CAF50",
-                  color: "white",
-                  borderRadius: 6,
-                  fontSize: 16,
-                  fontWeight: "bold",
-                  textDecoration: "none",
-                  display: "inline-block",
-                }}
+                className="detail__lightbox-download"
               >
                 ⬇️ Download
               </a>
 
               <button
+                className="detail__lightbox-delete"
                 onClick={(e) => {
                   e.stopPropagation();
                   deletePhoto(photos[lightboxIndex]);
-                }}
-                style={{
-                  padding: "12px 24px",
-                  background: "#f44336",
-                  color: "white",
-                  border: "none",
-                  borderRadius: 6,
-                  fontSize: 16,
-                  fontWeight: "bold",
-                  cursor: "pointer",
                 }}
               >
                 🗑️ Delete

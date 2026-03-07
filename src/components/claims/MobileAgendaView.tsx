@@ -31,12 +31,12 @@ interface MobileAgendaViewProps {
   onClaimUpdate?: () => void;
 }
 
-// Status color mapping
-const STATUS_COLORS: Record<string, string> = {
-  SCHEDULED: '#2196F3',
-  IN_PROGRESS: '#FF9800',
-  COMPLETED: '#4CAF50',
-  CANCELED: '#ef4444',
+// Map claim status to BEM modifier suffix
+const STATUS_MOD: Record<string, string> = {
+  SCHEDULED: 'scheduled',
+  IN_PROGRESS: 'progress',
+  COMPLETED: 'completed',
+  CANCELED: 'canceled',
 };
 
 /**
@@ -199,10 +199,7 @@ export default function MobileAgendaView({ claims, onClaimUpdate }: MobileAgenda
                   {formatTimeWindow(claim.appointment_start, claim.appointment_end)}
                 </span>
                 <span
-                  className="mobile-agenda__item-status"
-                  style={{
-                    backgroundColor: STATUS_COLORS[claim.status] || '#9E9E9E',
-                  }}
+                  className={`mobile-agenda__item-status${STATUS_MOD[claim.status] ? ` mobile-agenda__item-status--${STATUS_MOD[claim.status]}` : ''}`}
                 >
                   {getStatusText(claim.status)}
                 </span>

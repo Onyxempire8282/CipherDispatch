@@ -1,27 +1,25 @@
 export const FIRM_COLORS: Record<string, string> = {
-  Sedgwick: "#9CA3AF",         // Gray
-  ACD: "#F59E0B",              // Amber
-  ClaimSolution: "#EC4899",    // Pink (changed from Violet for better distinction)
-  "Complete Claims": "#EF4444", // Red (was CCS)
-  Doan: "#10B981",             // Emerald
-  Legacy: "#3B82F6",           // Blue
-  AMA: "#FACC15",              // Yellow
-  IANET: "#92400E",            // Brown
-  "A-TEAM": "#06B6D4",         // Cyan (was ATeam)
-  HEA: "#6366F1",              // Indigo
-  Frontline: "#1F2937",        // Dark Gray
-  SCA: "#78350F",              // Dark Brown
+  Sedgwick: "#e8952a",
+  ACD: "#f0a030",
+  ClaimSolution: "#e05050",
+  "Complete Claims": "#c0392b",
+  Doan: "#4a9e6b",
+  Legacy: "#3a8fd4",
+  AMA: "#9b59b6",
+  IANET: "#1abc9c",
+  "A-TEAM": "#e67e22",
+  HEA: "#95a5a6",
+  Frontline: "#bdc3c7",
+  SCA: "#f39c12",
 };
 
 export const getFirmColor = (firmName?: string): string => {
-  if (!firmName) return "#9CA3AF"; // Default gray for unknown
+  if (!firmName) return "#4a5058"; // Default muted for unknown
 
   const normalized = firmName.toUpperCase().trim();
 
-  // Check for exact or partial matches using same logic as fee config
   if (normalized.includes('SEDGWK') || normalized.includes('SEDGWICK')) return FIRM_COLORS.Sedgwick;
   if (normalized.includes('AUTOCLAIMSDI') || normalized.includes('AUTOCLAIMS') || normalized.includes('ACD')) return FIRM_COLORS.ACD;
-  // ClaimSolution variants: CS, CCS, ClaimSolution
   if (normalized === 'CS' || normalized === 'CCS' || normalized.includes('CLAIMSOLUTION') || normalized.includes('CLAIM SOLUTION')) return FIRM_COLORS.ClaimSolution;
   if (normalized.includes('COMPLETE CLAIMS')) return FIRM_COLORS["Complete Claims"];
   if (normalized.includes('SL APPRAISAL') || normalized.includes('DOAN')) return FIRM_COLORS.Doan;
@@ -33,5 +31,5 @@ export const getFirmColor = (firmName?: string): string => {
   if (normalized.includes('FRONTLINE')) return FIRM_COLORS.Frontline;
   if (normalized.includes('SCA')) return FIRM_COLORS.SCA;
 
-  return "#9CA3AF"; // Default gray for unknown firms
+  return "#4a5058"; // Default muted for unknown firms
 };

@@ -1,128 +1,76 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import "./navbar.css";
 
-export const NavBar: React.FC<{ role: 'admin' | 'appraiser' }> = ({ role }) => {
+interface NavBarProps {
+  role: "admin" | "appraiser";
+  userName?: string;
+}
+
+const ADMIN_TABS = [
+  { label: "Claims", path: "/admin/claims" },
+  { label: "Calendar", path: "/admin/claims?view=calendar" },
+  { label: "Vendors", path: "/admin/vendors" },
+  { label: "Payouts", path: "/admin/payouts" },
+];
+
+const APPRAISER_TABS = [
+  { label: "My Claims", path: "/my-claims" },
+  { label: "Calendar", path: "/my-claims?view=calendar" },
+  { label: "My Routes", path: "/my-routes" },
+];
+
+export const NavBar: React.FC<NavBarProps> = ({ role, userName }) => {
   const nav = useNavigate();
+  const location = useLocation();
+  const tabs = role === "admin" ? ADMIN_TABS : APPRAISER_TABS;
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     nav("/login");
   };
 
-  return (
-    <nav
-      style={{
-        background: "rgba(45, 55, 72, 0.95)",
-        backdropFilter: "blur(10px)",
-        borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-        padding: "12px 24px",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        position: "sticky",
-        top: 0,
-        zIndex: 1000,
-      }}
-    >
-      <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
-        <Link
-          to="/"
-          style={{
-            fontSize: 18,
-            fontWeight: "bold",
-            color: "#e2e8f0",
-            textDecoration: "none",
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-          }}
-        >
-          <span>⚡</span>
-          <span>Claim Cipher</span>
-        </Link>
+  const isActiveTab = (tabPath: string): boolean => {
+    const [pathname, search] = tabPath.split("?");
+    if (search) {
+      return location.pathname === pathname && location.search.includes(search);
+    }
+    return location.pathname === pathname && !location.search.includes("view=");
+  };
 
-        <div style={{ display: "flex", gap: 16 }}>
-          {role === "admin" ? (
-            <>
-              <Link
-                to="/admin/claims"
-                style={{
-                  color: "#e2e8f0",
-                  textDecoration: "none",
-                  padding: "6px 12px",
-                  borderRadius: 4,
-                  transition: "background 0.2s",
-                }}
-                onMouseOver={(e) =>
-                  (e.currentTarget.style.background = "rgba(255,255,255,0.1)")
-                }
-                onMouseOut={(e) =>
-                  (e.currentTarget.style.background = "transparent")
-                }
-              >
-                📋 Claims
-              </Link>
-              <Link
-                to="/admin/claims/new"
-                style={{
-                  color: "#e2e8f0",
-                  textDecoration: "none",
-                  padding: "6px 12px",
-                  borderRadius: 4,
-                  transition: "background 0.2s",
-                }}
-                onMouseOver={(e) =>
-                  (e.currentTarget.style.background = "rgba(255,255,255,0.1)")
-                }
-                onMouseOut={(e) =>
-                  (e.currentTarget.style.background = "transparent")
-                }
-              >
-                ➕ New Claim
-              </Link>
-            </>
-          ) : (
-            <>
-              <Link
-                to="/my-claims"
-                style={{
-                  color: "#e2e8f0",
-                  textDecoration: "none",
-                  padding: "6px 12px",
-                  borderRadius: 4,
-                  transition: "background 0.2s",
-                }}
-                onMouseOver={(e) =>
-                  (e.currentTarget.style.background = "rgba(255,255,255,0.1)")
-                }
-                onMouseOut={(e) =>
-                  (e.currentTarget.style.background = "transparent")
-                }
-              >
-                📋 My Claims
-              </Link>
-            </>
-          )}
+  return (
+    <nav className="nav">
+      <div className="nav__left">
+        <Link to="/" className="nav__mark">CD</Link>
+        <Link to="/" className="nav__brand">
+          <div className="nav__brand-name">
+            <span>CIPHER</span>DISPATCH
+          </div>
+          <div className="nav__brand-sub">Claims Operations</div>
+        </Link>
+        <div className="nav__tabs">
+          {tabs.map((tab) => (
+            <Link
+              key={tab.path}
+              to={tab.path}
+              className={`nav__tab${isActiveTab(tab.path) ? " nav__tab--active" : ""}`}
+            >
+              {tab.label}
+            </Link>
+          ))}
         </div>
       </div>
-
-      <button
-        onClick={handleLogout}
-        style={{
-          background: "#ef4444",
-          color: "white",
-          padding: "8px 16px",
-          border: "none",
-          borderRadius: 6,
-          fontWeight: "bold",
-          cursor: "pointer",
-          transition: "background 0.2s",
-        }}
-        onMouseOver={(e) => (e.currentTarget.style.background = "#dc2626")}
-        onMouseOut={(e) => (e.currentTarget.style.background = "#ef4444")}
-      >
-        Logout
-      </button>
+      <div className="nav__right">
+        <div className="nav__user">
+          <span className="nav__user-name">
+            {userName || (role === "admin" ? "Admin" : "Appraiser")}
+          </span>
+          {role === "admin" ? "Dispatcher" : "Field"}
+        </div>
+        <button className="nav__logout" onClick={handleLogout}>
+          Logout
+        </button>
+      </div>
     </nav>
   );
 };

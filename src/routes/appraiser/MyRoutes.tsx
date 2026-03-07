@@ -9,8 +9,10 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Link } from 'react-router-dom';
 import { closeRoute } from '../../utils/routeOperations';
+import { NavBar } from "../../components/NavBar";
+import PageHeader from "../../components/ui/PageHeader";
+import "./my-routes.css";
 
 interface Route {
   id: string;
@@ -110,24 +112,11 @@ export default function MyRoutes() {
   };
 
   const getStatusBadge = (status: string) => {
-    const styles: Record<string, { bg: string; text: string }> = {
-      draft: { bg: '#4a5568', text: '#e2e8f0' },
-      active: { bg: '#2563eb', text: '#ffffff' },
-      closed: { bg: '#059669', text: '#ffffff' },
-    };
-    const s = styles[status] || styles.draft;
+    const modifier = status === 'active' || status === 'closed' || status === 'draft'
+      ? status
+      : 'draft';
     return (
-      <span
-        style={{
-          padding: '4px 12px',
-          borderRadius: 12,
-          fontSize: 12,
-          fontWeight: 600,
-          textTransform: 'uppercase',
-          background: s.bg,
-          color: s.text,
-        }}
-      >
+      <span className={`routes__badge routes__badge--${modifier}`}>
         {status}
       </span>
     );
@@ -135,8 +124,10 @@ export default function MyRoutes() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #1a202c 0%, #2d3748 100%)', padding: 32 }}>
-        <div style={{ maxWidth: 800, margin: '0 auto', color: '#e2e8f0' }}>
+      <div className="routes">
+        <NavBar role="appraiser" />
+        <PageHeader label="Appraiser" title="My Routes" />
+        <div className="routes__loading">
           Loading routes...
         </div>
       </div>
@@ -144,47 +135,13 @@ export default function MyRoutes() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #1a202c 0%, #2d3748 100%)', padding: 32 }}>
-      <div style={{ maxWidth: 800, margin: '0 auto' }}>
-        {/* Header */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 24,
-          }}
-        >
-          <h1 style={{ margin: 0, color: '#e2e8f0' }}>My Routes</h1>
-          <Link
-            to="/"
-            style={{
-              padding: '10px 20px',
-              background: '#4a5568',
-              color: '#e2e8f0',
-              border: 'none',
-              borderRadius: 6,
-              textDecoration: 'none',
-              fontWeight: 500,
-            }}
-          >
-            Back
-          </Link>
-        </div>
-
+    <div className="routes">
+      <NavBar role="appraiser" />
+      <PageHeader label="Appraiser" title="My Routes" />
+      <div className="routes__container">
         {/* Summary Hint */}
         {routes.length > 0 && (
-          <div
-            style={{
-              padding: '12px 16px',
-              marginBottom: 16,
-              background: '#1e293b',
-              border: '1px solid #334155',
-              borderRadius: 8,
-              color: '#94a3b8',
-              fontSize: 14,
-            }}
-          >
+          <div className="routes__summary">
             {(() => {
               const active = routes.filter(r => r.status === 'active');
               const closable = active.filter(r => r.total_miles != null);
@@ -193,10 +150,10 @@ export default function MyRoutes() {
               if (closable.length > 0) {
                 return (
                   <span>
-                    <span style={{ color: '#10b981', fontWeight: 600 }}>{closable.length}</span>
+                    <span className="routes__summary-count">{closable.length}</span>
                     {' '}route{closable.length !== 1 ? 's' : ''} ready to close
                     {closed.length > 0 && (
-                      <span> · <span style={{ color: '#6ee7b7' }}>{closed.length}</span> already logged</span>
+                      <span> · <span className="routes__summary-closed">{closed.length}</span> already logged</span>
                     )}
                   </span>
                 );
@@ -209,7 +166,7 @@ export default function MyRoutes() {
               } else if (closed.length > 0) {
                 return (
                   <span>
-                    All routes closed · <span style={{ color: '#6ee7b7' }}>{closed.length}</span> mileage log{closed.length !== 1 ? 's' : ''} recorded
+                    All routes closed · <span className="routes__summary-closed">{closed.length}</span> mileage log{closed.length !== 1 ? 's' : ''} recorded
                   </span>
                 );
               }
@@ -220,73 +177,37 @@ export default function MyRoutes() {
 
         {/* Success Message */}
         {successMessage && (
-          <div
-            style={{
-              padding: 16,
-              marginBottom: 16,
-              background: '#065f46',
-              border: '1px solid #059669',
-              borderRadius: 8,
-              color: '#d1fae5',
-            }}
-          >
+          <div className="routes__success">
             {successMessage}
           </div>
         )}
 
         {/* Error Message */}
         {error && (
-          <div
-            style={{
-              padding: 16,
-              marginBottom: 16,
-              background: '#7f1d1d',
-              border: '1px solid #ef4444',
-              borderRadius: 8,
-              color: '#fecaca',
-            }}
-          >
+          <div className="routes__error">
             {error}
           </div>
         )}
 
         {/* Routes List */}
         {routes.length === 0 ? (
-          <div
-            style={{
-              background: '#2d3748',
-              border: '1px solid #4a5568',
-              borderRadius: 12,
-              padding: 32,
-              textAlign: 'center',
-              color: '#a0aec0',
-            }}
-          >
+          <div className="routes__empty">
             No routes found. Routes are created during route optimization.
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div className="routes__list">
             {routes.map((route) => (
-              <div
-                key={route.id}
-                style={{
-                  background: '#2d3748',
-                  border: '1px solid #4a5568',
-                  borderRadius: 12,
-                  padding: 20,
-                  boxShadow: '0 4px 6px rgba(0,0,0,0.5)',
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+              <div key={route.id} className="routes__card">
+                <div className="routes__card-header">
                   <div>
-                    <div style={{ color: '#e2e8f0', fontSize: 18, fontWeight: 600, marginBottom: 4 }}>
+                    <div className="routes__card-date">
                       {formatDate(route.date)}
                     </div>
                     {getStatusBadge(route.status)}
                   </div>
-                  <div style={{ textAlign: 'right', color: '#a0aec0', fontSize: 14 }}>
+                  <div className="routes__card-miles">
                     {route.total_miles != null ? (
-                      <span style={{ color: '#10b981', fontWeight: 600, fontSize: 20 }}>
+                      <span className="routes__card-miles-value">
                         {route.total_miles.toFixed(1)} mi
                       </span>
                     ) : (
@@ -296,7 +217,7 @@ export default function MyRoutes() {
                 </div>
 
                 {(route.start_address || route.end_address) && (
-                  <div style={{ color: '#a0aec0', fontSize: 14, marginBottom: 12 }}>
+                  <div className="routes__addresses">
                     {route.start_address && <div>From: {route.start_address}</div>}
                     {route.end_address && <div>To: {route.end_address}</div>}
                   </div>
@@ -305,30 +226,9 @@ export default function MyRoutes() {
                 {/* Close Route Button - only for active routes */}
                 {route.status === 'active' && (
                   <button
+                    className={`routes__close-btn${closingRouteId === route.id ? ' routes__close-btn--closing' : ''}${route.total_miles == null ? ' routes__close-btn--no-miles' : ''}`}
                     onClick={() => handleCloseRoute(route.id)}
                     disabled={closingRouteId === route.id || route.total_miles == null}
-                    style={{
-                      width: '100%',
-                      padding: '12px 24px',
-                      background: closingRouteId === route.id ? '#4a5568' : '#059669',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: 8,
-                      fontWeight: 600,
-                      cursor: closingRouteId === route.id || route.total_miles == null ? 'not-allowed' : 'pointer',
-                      opacity: route.total_miles == null ? 0.5 : 1,
-                      transition: 'background 0.2s',
-                    }}
-                    onMouseOver={(e) => {
-                      if (closingRouteId !== route.id && route.total_miles != null) {
-                        e.currentTarget.style.background = '#047857';
-                      }
-                    }}
-                    onMouseOut={(e) => {
-                      if (closingRouteId !== route.id) {
-                        e.currentTarget.style.background = '#059669';
-                      }
-                    }}
                   >
                     {closingRouteId === route.id
                       ? 'Closing Route...'
@@ -339,17 +239,7 @@ export default function MyRoutes() {
                 )}
 
                 {route.status === 'closed' && (
-                  <div
-                    style={{
-                      padding: '12px 24px',
-                      background: '#1a3d2e',
-                      border: '1px solid #059669',
-                      borderRadius: 8,
-                      color: '#6ee7b7',
-                      textAlign: 'center',
-                      fontSize: 14,
-                    }}
-                  >
+                  <div className="routes__closed-banner">
                     Mileage logged
                   </div>
                 )}

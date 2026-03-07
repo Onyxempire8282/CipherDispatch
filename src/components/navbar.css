@@ -1,0 +1,210 @@
+/**
+ * NavBar Styles
+ *
+ * Sticky top navigation bar for the Cipher Dispatch app.
+ * BEM block: .nav
+ *
+ * Structure:
+ * .nav
+ *   .nav__left
+ *     .nav__mark
+ *     .nav__brand
+ *       .nav__brand-name
+ *       .nav__brand-sub
+ *     .nav__tabs
+ *       .nav__tab (.nav__tab--active)
+ *   .nav__right
+ *     .nav__user
+ *     .nav__logout
+ */
+
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  height: 64px;
+  background: rgba(14, 15, 17, 0.98);
+  border-bottom: 1px solid var(--rivet);
+  box-shadow: 0 1px 0 rgba(232, 149, 42, 0.07);
+}
+
+/* ── Left section ── */
+
+.nav__left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav__mark {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid var(--rivet);
+  background: var(--steel-mid);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  color: var(--amber);
+  box-shadow: 0 0 10px var(--amber-glow);
+  flex-shrink: 0;
+}
+
+.nav__brand {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.nav__brand-name {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--white);
+}
+
+.nav__brand-name span {
+  color: var(--amber);
+}
+
+.nav__brand-sub {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ── Tabs ── */
+
+.nav__tabs {
+  display: flex;
+  height: 64px;
+  margin-left: 24px;
+}
+
+.nav__tab {
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+  border-right: 1px solid var(--rivet);
+  border-left: 1px solid transparent;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  text-decoration: none;
+  background: none;
+}
+
+.nav__tab:first-child {
+  border-left: 1px solid var(--rivet);
+}
+
+.nav__tab:hover {
+  color: var(--text-hi);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.nav__tab--active {
+  color: var(--amber);
+  background: var(--amber-dim);
+  border-bottom-color: var(--amber);
+}
+
+/* ── Right section ── */
+
+.nav__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav__user {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.nav__user-name {
+  color: var(--white);
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.nav__logout {
+  padding: 8px 16px;
+  border: 1px solid var(--rivet);
+  color: var(--muted);
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nav__logout:hover {
+  border-color: var(--rivet-hi);
+  color: var(--text-hi);
+}
+
+/* ── Back button (used on form pages) ── */
+
+.nav__back {
+  padding: 8px 16px;
+  border: 1px solid var(--rivet);
+  color: var(--muted);
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nav__back:hover {
+  border-color: var(--rivet-hi);
+  color: var(--text-hi);
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 768px) {
+  .nav {
+    padding: 0 16px;
+    height: 56px;
+  }
+
+  .nav__tabs {
+    display: none;
+  }
+
+  .nav__brand-sub {
+    display: none;
+  }
+
+  .nav__user {
+    display: none;
+  }
+}

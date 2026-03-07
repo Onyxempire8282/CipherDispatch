@@ -226,6 +226,23 @@
   border-radius: 3px;
   text-transform: uppercase;
   flex-shrink: 0;
+  background: var(--status-unassigned);
+}
+
+.mobile-agenda__item-status--scheduled {
+  background: var(--status-scheduled);
+}
+
+.mobile-agenda__item-status--progress {
+  background: var(--status-progress);
+}
+
+.mobile-agenda__item-status--completed {
+  background: var(--status-completed);
+}
+
+.mobile-agenda__item-status--canceled {
+  background: var(--status-canceled);
 }
 
 /* Row 2: Client name - truncate overflow */

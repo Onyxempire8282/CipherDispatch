@@ -71,6 +71,23 @@
   padding: 4px 10px;
   border-radius: 4px;
   text-transform: uppercase;
+  background: var(--status-unassigned);
+}
+
+.mobile-detail__status--scheduled {
+  background: var(--status-scheduled);
+}
+
+.mobile-detail__status--progress {
+  background: var(--status-progress);
+}
+
+.mobile-detail__status--completed {
+  background: var(--status-completed);
+}
+
+.mobile-detail__status--canceled {
+  background: var(--status-canceled);
 }
 
 .mobile-detail__edit-btn {
@@ -356,6 +373,23 @@
   padding: 4px 12px;
   border-radius: 4px;
   text-transform: uppercase;
+  background: var(--status-unassigned);
+}
+
+.mobile-detail__status-badge--scheduled {
+  background: var(--status-scheduled);
+}
+
+.mobile-detail__status-badge--progress {
+  background: var(--status-progress);
+}
+
+.mobile-detail__status-badge--completed {
+  background: var(--status-completed);
+}
+
+.mobile-detail__status-badge--canceled {
+  background: var(--status-canceled);
 }
 
 .mobile-detail__status-actions {
@@ -424,6 +458,25 @@
 
 .mobile-detail__delete-btn:active {
   background: #dc2626;
+}
+
+/* ========================================
+   Upload Fallback
+   ======================================== */
+
+.mobile-detail__upload-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.mobile-detail__upload-input {
+  display: none;
+}
+
+.mobile-detail__photo-capture-btn--flush {
+  margin-bottom: 0;
 }
 
 /* ========================================

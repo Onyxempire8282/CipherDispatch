@@ -1,0 +1,282 @@
+/**
+ * Dashboard (App) Page Styles
+ *
+ * Command center view for admin users.
+ * BEM block: .dashboard
+ *
+ * Structure:
+ * .dashboard
+ *   .dashboard__main
+ *     .dashboard__stat-strip
+ *       .dashboard__stat-cell
+ *     .dashboard__ops-grid
+ *       .dashboard__op-card
+ */
+
+/* ── Stat strip ── */
+
+.dashboard__main {
+  padding: 24px 40px 80px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.dashboard__stat-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border: 1px solid var(--rivet);
+  margin-bottom: 24px;
+  background: var(--steel);
+}
+
+.dashboard__stat-cell {
+  padding: 20px 24px;
+  border-right: 1px solid var(--rivet);
+}
+
+.dashboard__stat-cell:last-child {
+  border-right: none;
+}
+
+.dashboard__stat-num {
+  font-family: var(--font-heading);
+  font-size: 36px;
+  color: var(--amber);
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.dashboard__stat-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.dashboard__stat-delta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--amber);
+  margin-top: 2px;
+}
+
+.dashboard__stat-delta--warn {
+  color: var(--status-canceled);
+}
+
+/* ── Operations label ── */
+
+.dashboard__ops-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dashboard__ops-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--amber-line), transparent);
+}
+
+/* ── Operations grid ── */
+
+.dashboard__ops-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+  margin-bottom: 3px;
+}
+
+.dashboard__ops-grid--last {
+  margin-bottom: 24px;
+}
+
+/* ── Operation card ── */
+
+.dashboard__op-card {
+  background: var(--steel);
+  border: 1px solid var(--rivet);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  border-left: 3px solid var(--rivet);
+  text-decoration: none;
+  color: inherit;
+}
+
+.dashboard__op-card:hover {
+  background: var(--steel-mid);
+  border-left-color: var(--amber);
+}
+
+/* Rivet dots */
+.dashboard__op-card::before,
+.dashboard__op-card::after {
+  content: '';
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--rivet-hi);
+  border: 1px solid var(--muted);
+}
+
+.dashboard__op-card::before {
+  top: 8px;
+  right: 10px;
+}
+
+.dashboard__op-card::after {
+  bottom: 8px;
+  right: 10px;
+}
+
+.dashboard__op-num {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+}
+
+.dashboard__op-icon {
+  width: 36px;
+  height: 36px;
+  background: var(--steel-mid);
+  border: 1px solid var(--rivet);
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+}
+
+.dashboard__op-name {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  letter-spacing: 0.04em;
+  color: var(--white);
+}
+
+.dashboard__op-desc {
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.dashboard__op-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--rivet);
+  padding-top: 12px;
+  margin-top: auto;
+}
+
+.dashboard__op-stat {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+}
+
+.dashboard__op-stat span {
+  color: var(--amber);
+}
+
+.dashboard__op-open {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: color 0.2s;
+}
+
+.dashboard__op-card:hover .dashboard__op-open {
+  color: var(--amber);
+}
+
+/* ── Appraiser simple link list ── */
+
+.dashboard__link-grid {
+  display: grid;
+  gap: 3px;
+}
+
+.dashboard__link-card {
+  background: var(--steel);
+  border: 1px solid var(--rivet);
+  border-left: 3px solid var(--rivet);
+  padding: 24px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.dashboard__link-card:hover {
+  background: var(--steel-mid);
+  border-left-color: var(--amber);
+}
+
+.dashboard__link-icon {
+  font-size: 24px;
+  width: 48px;
+  height: 48px;
+  background: var(--steel-mid);
+  border: 1px solid var(--rivet);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.dashboard__link-name {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  letter-spacing: 0.04em;
+  color: var(--white);
+}
+
+.dashboard__link-desc {
+  font-size: 12px;
+  color: var(--text);
+  margin-top: 4px;
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 768px) {
+  .dashboard__main {
+    padding: 16px;
+  }
+
+  .dashboard__stat-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dashboard__stat-cell:nth-child(2) {
+    border-right: none;
+  }
+
+  .dashboard__stat-cell:nth-child(1),
+  .dashboard__stat-cell:nth-child(2) {
+    border-bottom: 1px solid var(--rivet);
+  }
+
+  .dashboard__ops-grid {
+    grid-template-columns: 1fr;
+  }
+}

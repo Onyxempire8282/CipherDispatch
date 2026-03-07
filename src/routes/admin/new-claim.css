@@ -1,0 +1,144 @@
+/**
+ * New Claim Form Styles
+ *
+ * BEM block: .new-claim
+ *
+ * Structure:
+ * .new-claim
+ *   .new-claim__wrap
+ *     .new-claim__section  (card sections)
+ *       .new-claim__section-header
+ *       .new-claim__section-body
+ *         .new-claim__grid-2 / .new-claim__grid-3
+ *     .new-claim__map
+ *     .new-claim__holiday-warning
+ */
+
+.new-claim__wrap {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 28px 40px 100px;
+}
+
+/* ── Section cards ── */
+
+.new-claim__section {
+  background: var(--steel);
+  border: 1px solid var(--rivet);
+  border-left: 3px solid var(--rivet);
+  margin-bottom: 16px;
+}
+
+.new-claim__section--accent {
+  border-left-color: var(--amber);
+}
+
+.new-claim__section-header {
+  padding: 12px 20px;
+  background: var(--steel-mid);
+  border-bottom: 1px solid var(--rivet);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.new-claim__section-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.new-claim__section-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--amber-line), transparent);
+}
+
+.new-claim__section-body {
+  padding: 20px 20px 6px;
+}
+
+/* ── Grid layouts ── */
+
+.new-claim__grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 16px;
+}
+
+.new-claim__grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0 12px;
+}
+
+/* ── Map preview button ── */
+
+.new-claim__map-btn {
+  width: 100%;
+  padding: 10px;
+  background: var(--steel-mid);
+  border: 1px solid var(--rivet);
+  color: var(--text-hi);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.new-claim__map-btn:hover {
+  border-color: var(--amber-line);
+  color: var(--amber);
+}
+
+.new-claim__map-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Map container ── */
+
+.new-claim__map {
+  height: 300px;
+  margin-bottom: 14px;
+  border: 1px solid var(--rivet);
+}
+
+/* ── Holiday warning ── */
+
+.new-claim__holiday-warning {
+  margin-top: 8px;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  background: rgba(232, 149, 42, 0.15);
+  border: 1px solid var(--amber-line);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--amber);
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 768px) {
+  .new-claim__wrap {
+    padding: 16px 16px 100px;
+  }
+
+  .new-claim__grid-2,
+  .new-claim__grid-3 {
+    grid-template-columns: 1fr;
+  }
+}

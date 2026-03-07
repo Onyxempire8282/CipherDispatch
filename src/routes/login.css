@@ -1,0 +1,281 @@
+/**
+ * Login Page Styles
+ *
+ * Full-screen centered login card with Cipher Dispatch branding.
+ * BEM block: .login
+ *
+ * Structure:
+ * .login
+ *   .login__wrap
+ *     .login__card
+ *       .login__logo-section
+ *         .login__mark
+ *         .login__wordmark
+ *         .login__tagline
+ *       .login__tabs
+ *         .login__tab (.login__tab--active)
+ *       .login__body
+ *       .login__footer
+ *       .login__card-footer
+ *     .login__version-bar
+ */
+
+/* ── Page container ── */
+
+.login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  position: relative;
+}
+
+.login::after {
+  content: '';
+  position: fixed;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(232, 149, 42, 0.06) 0%, transparent 70%);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Wrap ── */
+
+.login__wrap {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 400px;
+  padding: 20px;
+}
+
+/* ── Card ── */
+
+.login__card {
+  background: var(--steel);
+  border: 1px solid var(--rivet);
+  border-top: 2px solid var(--amber);
+  box-shadow:
+    0 0 0 1px rgba(232, 149, 42, 0.06),
+    0 40px 80px rgba(0, 0, 0, 0.8);
+  position: relative;
+}
+
+/* Corner accents */
+.login__card::before,
+.login__card::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-color: var(--amber);
+  border-style: solid;
+  opacity: 0.25;
+}
+
+.login__card::before {
+  bottom: -1px;
+  left: -1px;
+  border-width: 0 0 1px 1px;
+}
+
+.login__card::after {
+  bottom: -1px;
+  right: -1px;
+  border-width: 0 1px 1px 0;
+}
+
+/* ── Logo section ── */
+
+.login__logo-section {
+  padding: 32px 32px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  border-bottom: 1px solid var(--rivet);
+  background: var(--steel-mid);
+}
+
+.login__mark {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  border: 2px solid var(--rivet);
+  background: var(--plate);
+  display: grid;
+  place-items: center;
+  box-shadow:
+    0 0 0 4px rgba(232, 149, 42, 0.08),
+    0 0 28px var(--amber-glow);
+  font-family: var(--font-heading);
+  font-size: 24px;
+  color: var(--amber);
+}
+
+.login__wordmark {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  letter-spacing: 0.1em;
+  color: var(--white);
+}
+
+.login__wordmark span {
+  color: var(--amber);
+}
+
+.login__tagline {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 3px;
+}
+
+/* ── Tabs ── */
+
+.login__tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--rivet);
+}
+
+.login__tab {
+  padding: 11px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  border-right: 1px solid var(--rivet);
+  border-bottom: 2px solid transparent;
+  background: none;
+  border-top: none;
+  border-left: none;
+}
+
+.login__tab:last-child {
+  border-right: none;
+}
+
+.login__tab--active {
+  color: var(--amber);
+  background: var(--amber-dim);
+  border-bottom-color: var(--amber);
+  margin-bottom: -1px;
+}
+
+.login__tab:hover:not(.login__tab--active) {
+  color: var(--text-hi);
+}
+
+/* ── Body (form fields) ── */
+
+.login__body {
+  padding: 24px 28px 20px;
+}
+
+/* ── Footer (buttons) ── */
+
+.login__footer {
+  padding: 0 28px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.login__forgot {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.login__forgot:hover {
+  color: var(--amber);
+}
+
+/* ── Divider ── */
+
+.login__divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.login__divider-line {
+  flex: 1;
+  height: 1px;
+  background: var(--rivet);
+}
+
+.login__divider-text {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+/* ── Card footer (status bar) ── */
+
+.login__card-footer {
+  padding: 11px 20px;
+  border-top: 1px solid var(--rivet);
+  background: var(--steel-mid);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.login__status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--amber);
+  animation: login-pulse 2s ease-in-out infinite;
+}
+
+@keyframes login-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; box-shadow: 0 0 8px rgba(232, 149, 42, 0.7); }
+}
+
+.login__status-text {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ── Version bar below card ── */
+
+.login__version-bar {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--rivet-hi);
+}

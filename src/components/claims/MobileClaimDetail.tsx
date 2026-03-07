@@ -41,12 +41,12 @@ interface MobileClaimDetailProps {
   onPhoto?: (files: FileList) => void;
 }
 
-// Status colors matching existing app
-const STATUS_COLORS: Record<string, string> = {
-  SCHEDULED: '#2196F3',
-  IN_PROGRESS: '#FF9800',
-  COMPLETED: '#4CAF50',
-  CANCELED: '#ef4444',
+// Map claim status to BEM modifier suffix
+const STATUS_MOD: Record<string, string> = {
+  SCHEDULED: 'scheduled',
+  IN_PROGRESS: 'progress',
+  COMPLETED: 'completed',
+  CANCELED: 'canceled',
 };
 
 // Collapsible Section Component
@@ -163,8 +163,7 @@ export default function MobileClaimDetail({
           <span className="mobile-detail__claim-number">#{claim.claim_number}</span>
           {/* Status badge: read-only for all users */}
           <span
-            className="mobile-detail__status"
-            style={{ backgroundColor: STATUS_COLORS[claim.status] || '#9E9E9E' }}
+            className={`mobile-detail__status${STATUS_MOD[claim.status] ? ` mobile-detail__status--${STATUS_MOD[claim.status]}` : ''}`}
           >
             {getStatusText(claim.status)}
           </span>
@@ -219,7 +218,7 @@ export default function MobileClaimDetail({
         </Link>
 
         {/* TEMP: fallback manual upload for appraisers when guided capture is blocked */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '12px' }}>
+        <div className="mobile-detail__upload-group">
           <input
             id={`mobile-photo-gallery-${claim.id}`}
             type="file"
@@ -232,12 +231,11 @@ export default function MobileClaimDetail({
                 e.target.value = '';
               }
             }}
-            style={{ display: 'none' }}
+            className="mobile-detail__upload-input"
           />
           <label
             htmlFor={`mobile-photo-gallery-${claim.id}`}
-            className="mobile-detail__photo-capture-btn"
-            style={{ marginBottom: 0 }}
+            className="mobile-detail__photo-capture-btn mobile-detail__photo-capture-btn--flush"
           >
             🖼️ Choose from Gallery
           </label>
@@ -373,8 +371,7 @@ export default function MobileClaimDetail({
             <div className="mobile-detail__status-current">
               <span className="mobile-detail__status-label">Current Status:</span>
               <span
-                className="mobile-detail__status-badge"
-                style={{ backgroundColor: STATUS_COLORS[claim.status] || '#9E9E9E' }}
+                className={`mobile-detail__status-badge${STATUS_MOD[claim.status] ? ` mobile-detail__status-badge--${STATUS_MOD[claim.status]}` : ''}`}
               >
                 {getStatusText(claim.status)}
               </span>
