@@ -140,12 +140,6 @@
   flex-wrap: wrap;
 }
 
-/* ── Payout forecast wrapper ── */
-
-.claims__forecast {
-  margin-bottom: 24px;
-}
-
 /* ── Empty state ── */
 
 .claims__empty {

@@ -237,10 +237,18 @@ export default function PhotoCapture() {
     if (!videoRef.current || !streamRef.current) return;
 
     try {
-      const videoTrack = streamRef.current.getVideoTracks()[0];
-      const imageCapture = new ImageCapture(videoTrack);
-
-      const blob = await imageCapture.takePhoto();
+      const video = videoRef.current;
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext("2d")!.drawImage(video, 0, 0);
+      const blob = await new Promise<Blob>((resolve, reject) =>
+        canvas.toBlob(
+          (b) => (b ? resolve(b) : reject(new Error("Capture failed"))),
+          "image/jpeg",
+          0.92
+        )
+      );
 
       if (navigator.vibrate) {
         navigator.vibrate(30);

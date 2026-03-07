@@ -32,26 +32,17 @@ serve(async (req) => {
       });
     }
 
-    // Optional: Verify cron secret to prevent unauthorized access
+    // Verify cron secret to prevent unauthorized access
+    const cronHeader = req.headers.get("x-cron-secret");
+    const cronSecret = Deno.env.get("CRON_SECRET");
 
-    // const cronHeader = req.headers.get("x-cron-secret");
-    // const cronSecret = Deno.env.get("CRON_SECRET");
-
-    // if (cronSecret && cronHeader?.trim() !== cronSecret.trim()) {
-    //   return new Response(JSON.stringify({ error: "Unauthorized" }), {
-    //     status: 401,
-    //     headers: { "Content-Type": "application/json" },
-    //   });
-    // }
-
-    // TEMPORARILY DISABLED FOR TESTING
-    // if (cronSecret && cronHeader?.trim() !== cronSecret.trim()) {
-    //   console.error("Unauthorized cleanup attempt");
-    //   return new Response(JSON.stringify({ error: "Unauthorized" }), {
-    //     status: 401,
-    //     headers: { "Content-Type": "application/json" },
-    //   });
-    // }
+    if (cronSecret && cronHeader?.trim() !== cronSecret.trim()) {
+      console.error("Unauthorized cleanup attempt");
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
 
     // Initialize Supabase client with service role key for elevated permissions
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;

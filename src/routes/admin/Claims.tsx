@@ -10,7 +10,6 @@ import { downloadClaimsCSV } from "../../utils/csvExport";
 import MonthlyCalendar from "../../components/claims/MonthlyCalendar";
 import MobileAgendaView from "../../components/claims/MobileAgendaView";
 import MobileClaimsList from "../../components/claims/MobileClaimsList";
-import PayoutForecast from "../../components/admin/PayoutForecast";
 import { NavBar } from "../../components/NavBar";
 import PageHeader from "../../components/ui/PageHeader";
 import { useIsMobile } from "../../hooks/useIsMobile";
@@ -349,13 +348,6 @@ export default function AdminClaims() {
             </Link>
           </div>
         </div>
-
-        {/* Payout Forecast */}
-        {isAdmin && !showArchived && (
-          <div className="claims__forecast">
-            <PayoutForecast claims={allClaims} />
-          </div>
-        )}
 
         {/* Content area */}
         {showCalendar && !showArchived ? (

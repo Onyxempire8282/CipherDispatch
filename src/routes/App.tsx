@@ -11,6 +11,7 @@ export default function App() {
   const nav = useNavigate();
   const [p, setP] = useState<Profile | null>(null);
   const [clock, setClock] = useState("");
+  const [stats, setStats] = useState({ activeClaims: 0, pendingPayouts: 0, activeVendors: 0, needsScheduling: 0 });
 
   useEffect(() => {
     (async () => {
@@ -25,6 +26,19 @@ export default function App() {
         .single();
       if (!data) return nav("/login");
       setP(data as Profile);
+
+      const [claimsRes, vendorsRes] = await Promise.all([
+        supabase.from("claims_v").select("status, payout_status, appointment_start").is("archived_at", null),
+        supabase.from("vendors").select("active").eq("active", true),
+      ]);
+
+      const claims = claimsRes.data || [];
+      setStats({
+        activeClaims: claims.filter(c => c.status !== "COMPLETED" && c.status !== "CANCELED").length,
+        pendingPayouts: claims.filter(c => c.payout_status === "unpaid" && c.status === "COMPLETED").length,
+        activeVendors: vendorsRes.data?.length || 0,
+        needsScheduling: claims.filter(c => !c.appointment_start && c.status === "IN_PROGRESS").length,
+      });
     })();
   }, []);
 
@@ -70,19 +84,19 @@ export default function App() {
           <div className="dashboard__main">
             <div className="dashboard__stat-strip">
               <div className="dashboard__stat-cell">
-                <div className="dashboard__stat-num">--</div>
+                <div className="dashboard__stat-num">{stats.activeClaims}</div>
                 <div className="dashboard__stat-label">Active Claims</div>
               </div>
               <div className="dashboard__stat-cell">
-                <div className="dashboard__stat-num">--</div>
+                <div className="dashboard__stat-num">{stats.pendingPayouts}</div>
                 <div className="dashboard__stat-label">Pending Payouts</div>
               </div>
               <div className="dashboard__stat-cell">
-                <div className="dashboard__stat-num">--</div>
+                <div className="dashboard__stat-num">{stats.activeVendors}</div>
                 <div className="dashboard__stat-label">Active Vendors</div>
               </div>
               <div className="dashboard__stat-cell">
-                <div className="dashboard__stat-num">--</div>
+                <div className="dashboard__stat-num">{stats.needsScheduling}</div>
                 <div className="dashboard__stat-label">Needs Scheduling</div>
               </div>
             </div>
