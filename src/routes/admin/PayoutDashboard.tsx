@@ -5,7 +5,6 @@
  */
 
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import {
   forecastPayouts,
@@ -17,6 +16,8 @@ import {
   MonthlyTotal,
   Claim
 } from "../../utils/payoutForecasting";
+import { NavBar } from "../../components/NavBar";
+import PageHeader from "../../components/ui/PageHeader";
 import { PayoutSummaryCards } from "../../components/PayoutSummaryCards";
 import { PayoutUpcomingView } from "../../components/PayoutUpcomingView";
 import { PayoutWeeklyView } from "../../components/PayoutWeeklyView";
@@ -151,18 +152,14 @@ export default function PayoutDashboard() {
 
   return (
     <div className="payout-dashboard">
-      {/* Header */}
-      <div className="payout-dashboard__header">
-        <div className="payout-dashboard__header-content">
-          <Link to="/" className="payout-dashboard__home-link">
-            ← Home
-          </Link>
-          <h3 className="payout-dashboard__title">
-            Payout Forecast Dashboard
-          </h3>
-        </div>
-      </div>
+      <NavBar role="admin" />
+      <PageHeader
+        label="Finance"
+        title="Payout Forecast"
+        sub={`${payouts.length} upcoming payouts across all firms`}
+      />
 
+      <div className="payout-dashboard__body">
       {/* Summary Cards */}
       <PayoutSummaryCards payouts={payouts} />
 
@@ -244,6 +241,7 @@ export default function PayoutDashboard() {
         <div className="payout-dashboard__info-text">
           Payout dates calculated from historical deposit patterns for each firm. All recurring firms included (Sedgwick, Legacy, ACD, ClaimSolution, Complete Claims, Doan, HEA, IANET, AMA, A-TEAM, Frontline).
         </div>
+      </div>
       </div>
     </div>
   );
