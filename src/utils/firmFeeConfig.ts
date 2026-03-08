@@ -31,6 +31,11 @@ export const FIRM_FEE_CONFIG: Record<string, FirmFeeStructure> = {
     perMileRate: 0.73,
     notes: 'Pays bi-weekly on Thursday'
   },
+  'CCS': {
+    baseFee: 195,
+    perMileRate: 0.73,
+    notes: 'Pays bi-weekly on Thursday'
+  },
   'Complete Claims': {
     baseFee: 185,
     perMileRate: 0.71,
@@ -41,7 +46,7 @@ export const FIRM_FEE_CONFIG: Record<string, FirmFeeStructure> = {
     perMileRate: 0.68,
     notes: 'Pays bi-weekly'
   },
-  'A-TEAM': {
+  'ATeam': {
     baseFee: 180,
     perMileRate: 0.70,
     notes: 'Pays bi-weekly'
@@ -90,10 +95,11 @@ export function normalizeFirmNameForConfig(firmName: string): string {
   if (normalized.includes('SL APPRAISAL') || normalized === 'DOAN') return 'Doan';
   if (normalized.includes('AUTOCLAIMSDI') || normalized.includes('AUTOCLAIMS')) return 'ACD';
   if (normalized.includes('HEAVY EQUIPMENT') || normalized === 'HEA') return 'HEA';
-  // ClaimSolution variants: CS, CCS, ClaimSolution
-  if (normalized === 'CS' || normalized === 'CCS' || normalized.includes('CLAIMSOLUTION') || normalized.includes('CLAIM SOLUTION')) return 'ClaimSolution';
+  // CCS is its own firm in DB, ClaimSolution is separate
+  if (normalized === 'CCS') return 'CCS';
+  if (normalized === 'CS' || normalized.includes('CLAIMSOLUTION') || normalized.includes('CLAIM SOLUTION')) return 'ClaimSolution';
   if (normalized.includes('AMA')) return 'AMA';
-  if (normalized.includes('A TEAM') || normalized.includes('A-TEAM') || normalized.includes('ATEAM')) return 'A-TEAM';
+  if (normalized.includes('A TEAM') || normalized.includes('A-TEAM') || normalized.includes('ATEAM')) return 'ATeam';
   if (normalized.includes('IANET')) return 'IANET';
   if (normalized.includes('SEDGWK') || normalized === 'SEDGWICK') return 'Sedgwick';
   if (normalized.includes('COMPLETE CLAIMS')) return 'Complete Claims';
