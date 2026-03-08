@@ -1,6 +1,7 @@
 // Payout Forecasting - Based on Historical Deposit Analysis
 // Uses actual deposit dates to infer pay periods and forecast future payouts
 // Forecasts FUTURE payouts based on scheduled appointments
+// Schedule data is injected from the vendors table — no hardcoded values
 
 import { calculateExpectedPayout, normalizeFirmNameForConfig, isRecurringFirm } from './firmFeeConfig';
 
@@ -12,6 +13,12 @@ export interface Claim {
   file_total?: number | null;
   pay_amount?: number | null;
   status: string;
+}
+
+export interface FirmSchedule {
+  pay_schedule_type: 'weekly' | 'biweekly' | 'semimonthly' | 'monthly' | 'irregular';
+  pay_day: number;           // day of week (0-6) or day of month for monthly
+  reference_date?: Date;     // only required for biweekly
 }
 
 export interface PayoutPeriod {
@@ -47,7 +54,6 @@ export interface MonthlyTotal {
 
 // Normalize firm names per deposit data mapping
 export function normalizeFirmName(firmName: string): string {
-  // Use the shared normalizer from firmFeeConfig
   return normalizeFirmNameForConfig(firmName) || 'Unknown';
 }
 
@@ -78,286 +84,195 @@ function getWeekStart(date: Date): Date {
   return addDays(date, diff);
 }
 
-// Main pay period calculation based on deposit analysis
-export function getPayPeriod(firm: string, completedDate: Date): PayoutPeriod {
+// Main pay period calculation — schedule-driven, no hardcoded values
+export function getPayPeriod(firm: string, completedDate: Date, schedule?: FirmSchedule): PayoutPeriod {
   const normalized = normalizeFirmName(firm);
+
+  // If no schedule provided, throw — caller must supply one
+  if (!schedule) {
+    throw new Error(`No schedule provided for firm: ${normalized}`);
+  }
+
   const day = completedDate.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+  const payDay = schedule.pay_day;
 
-  switch(normalized) {
-    case 'Sedgwick': {
-      // Pays WEDNESDAY (corrected from your stated Thursday)
-      // Period: Fri→Thu (work week), paid following Wed
-      const daysUntilWed = (3 - day + 7) % 7 || 7;
-      const payoutWed = addDays(completedDate, daysUntilWed);
+  switch (schedule.pay_schedule_type) {
+    case 'weekly': {
+      // Pays on payDay each week
+      // Period: day after payDay → payDay (work week)
+      const daysUntilPayDay = (payDay - day + 7) % 7 || 7;
+      const payoutDay = addDays(completedDate, daysUntilPayDay);
 
       return {
-        periodStart: addDays(payoutWed, -5), // Friday before
-        periodEnd: addDays(payoutWed, -1),   // Tuesday before payout
-        payoutDate: payoutWed
+        periodStart: addDays(payoutDay, -6), // 6 days before payout
+        periodEnd: payoutDay,
+        payoutDate: payoutDay
       };
     }
 
-    case 'Legacy': {
-      // Bi-weekly Wednesday, period Thu→Wed
-      // Reference: 12/18/2024 (Wed)
-      const refLegacy = new Date('2024-12-18');
-      const daysUntilWed = (3 - day + 7) % 7 || 7;
-      let nextWed = addDays(completedDate, daysUntilWed);
+    case 'biweekly': {
+      if (!schedule.reference_date) {
+        throw new Error(`Bi-weekly firm ${normalized} requires a reference_date`);
+      }
 
-      // Check if this Wed is on the bi-weekly schedule
-      const daysSinceRef = daysBetween(refLegacy, nextWed);
+      const refDate = schedule.reference_date;
+
+      // ClaimSolution special case: pays Thursday, 21 days after period start
+      if (normalized === 'ClaimSolution') {
+        // Find which bi-weekly period CONTAINS the work date
+        const daysSincePayDay = (day - payDay + 7) % 7;
+        const mostRecentPayDay = addDays(completedDate, -daysSincePayDay);
+
+        const daysSinceRef = daysBetween(refDate, mostRecentPayDay);
+        const weeksSinceRef = Math.floor(daysSinceRef / 7);
+
+        let periodStartDay;
+        if (weeksSinceRef % 2 === 0) {
+          periodStartDay = mostRecentPayDay;
+        } else {
+          periodStartDay = addDays(mostRecentPayDay, -7);
+        }
+
+        const periodEnd = addDays(periodStartDay, 13);
+        const payoutDate = addDays(periodStartDay, 21);
+
+        return {
+          periodStart: periodStartDay,
+          periodEnd: periodEnd,
+          payoutDate: payoutDate
+        };
+      }
+
+      // Standard bi-weekly: pays on payDay every 2 weeks
+      const daysUntilPayDay = (payDay - day + 7) % 7 || 7;
+      let nextPayDay = addDays(completedDate, daysUntilPayDay);
+
+      // Check if this day is on the bi-weekly schedule
+      const daysSinceRef = daysBetween(refDate, nextPayDay);
       const weeksSinceRef = Math.floor(daysSinceRef / 7);
       if (weeksSinceRef % 2 !== 0) {
-        nextWed = addDays(nextWed, 7); // Move to next bi-weekly Wed
+        nextPayDay = addDays(nextPayDay, 7); // Move to next bi-weekly cycle
       }
 
       return {
-        periodStart: addDays(nextWed, -13), // Thursday 2 weeks ago
-        periodEnd: addDays(nextWed, -1),    // Tuesday before payout
-        payoutDate: nextWed
+        periodStart: addDays(nextPayDay, -13), // 2 weeks before
+        periodEnd: addDays(nextPayDay, -1),    // day before payout
+        payoutDate: nextPayDay
       };
     }
 
-    case 'ClaimSolution': {
-      // Bi-weekly Thursday payout
-      // Period: Thu-Wed (14 days), paid 3 weeks after period start
-      // Example: 12/12-12/25 work → paid 1/2
-      //          12/26-1/8 work → paid 1/16
-      // Reference: 12/12/2024 (Thu) is a period start
-      const refCS = new Date('2024-12-12'); // Thursday period start reference
-
-      // Strategy: Find which bi-weekly period CONTAINS the work date
-      // Find the most recent Thursday on or before the work date
-      const daysSinceThu = (day - 4 + 7) % 7;
-      const mostRecentThu = addDays(completedDate, -daysSinceThu);
-
-      // Check if this Thursday is on the bi-weekly schedule (even weeks from ref)
-      const daysSinceRef = daysBetween(refCS, mostRecentThu);
-      const weeksSinceRef = Math.floor(daysSinceRef / 7);
-
-      let periodStartThu;
-      if (weeksSinceRef % 2 === 0) {
-        // This Thursday is on the bi-weekly schedule - it's the period start
-        periodStartThu = mostRecentThu;
-      } else {
-        // This Thursday is NOT on schedule - go back one more week
-        periodStartThu = addDays(mostRecentThu, -7);
-      }
-
-      // Period is 2 weeks starting from periodStartThu
-      const periodEnd = addDays(periodStartThu, 13); // Thu + 13 days = next Wed
-      const payoutDate = addDays(periodStartThu, 21); // Thu + 21 days = Thu 3 weeks later
-
-      return {
-        periodStart: periodStartThu,
-        periodEnd: periodEnd,
-        payoutDate: payoutDate
-      };
-    }
-
-    case 'Complete Claims': {
-      // Bi-weekly Wednesday, period Thu→Wed
-      // Reference: 12/4/2024 (Wed)
-      const refCC = new Date('2024-12-04');
-      const daysUntilWed = (3 - day + 7) % 7 || 7;
-      let nextWed = addDays(completedDate, daysUntilWed);
-
-      const daysSinceRef = daysBetween(refCC, nextWed);
-      const weeksSinceRef = Math.floor(daysSinceRef / 7);
-      if (weeksSinceRef % 2 !== 0) {
-        nextWed = addDays(nextWed, 7);
-      }
-
-      return {
-        periodStart: addDays(nextWed, -13), // Thursday 2 weeks ago
-        periodEnd: addDays(nextWed, -1),    // Tuesday before
-        payoutDate: nextWed
-      };
-    }
-
-    case 'Doan': {
-      // Weekly Thursday (low confidence - irregular deposits)
-      // Best guess: period Fri→Thu
-      const daysUntilThu = (4 - day + 7) % 7 || 7;
-      const payoutThu = addDays(completedDate, daysUntilThu);
-
-      return {
-        periodStart: addDays(payoutThu, -6), // Friday before
-        periodEnd: payoutThu,
-        payoutDate: payoutThu
-      };
-    }
-
-    case 'ACD': {
-      // Semi-monthly: 15th & EOM
-      // Work 1-15 → paid 15th; work 16-EOM → paid EOM
+    case 'semimonthly': {
+      // Pays on payDay (e.g. 15th) and end-of-month
       const currMonth = completedDate.getMonth();
       const currYear = completedDate.getFullYear();
       const currDay = completedDate.getDate();
 
-      if (currDay <= 15) {
-        const payout15 = new Date(currYear, currMonth, 15);
+      if (currDay <= payDay) {
+        const payoutMid = new Date(currYear, currMonth, payDay);
         return {
           periodStart: new Date(currYear, currMonth, 1, 0, 0, 0),
-          periodEnd: new Date(currYear, currMonth, 15, 23, 59, 59),
-          payoutDate: adjustForWeekend(payout15)
+          periodEnd: new Date(currYear, currMonth, payDay, 23, 59, 59),
+          payoutDate: adjustForWeekend(payoutMid)
         };
       } else {
         const lastDay = new Date(currYear, currMonth + 1, 0).getDate();
         const payoutEOM = new Date(currYear, currMonth, lastDay);
         return {
-          periodStart: new Date(currYear, currMonth, 16, 0, 0, 0),
+          periodStart: new Date(currYear, currMonth, payDay + 1, 0, 0, 0),
           periodEnd: new Date(currYear, currMonth, lastDay, 23, 59, 59),
           payoutDate: adjustForWeekend(payoutEOM)
         };
       }
     }
 
-    case 'HEA': {
-      // Monthly on 15th, covers PREVIOUS month's work
-      const heaMonth = completedDate.getMonth();
-      const heaYear = completedDate.getFullYear();
-      const heaDay = completedDate.getDate();
+    case 'monthly': {
+      const mMonth = completedDate.getMonth();
+      const mYear = completedDate.getFullYear();
 
-      if (heaDay < 15) {
-        // Work in first half → paid 15th of this month for previous month
-        const payout15 = new Date(heaYear, heaMonth, 15);
-        const prevMonthLast = new Date(heaYear, heaMonth, 0);
+      if (payDay === 0) {
+        // pay_day=0 means end-of-month (same month)
+        const lastDay = new Date(mYear, mMonth + 1, 0).getDate();
+        const payoutEOM = new Date(mYear, mMonth, lastDay);
         return {
-          periodStart: new Date(heaYear, heaMonth - 1, 1, 0, 0, 0),
-          periodEnd: new Date(heaYear, heaMonth, 0, 23, 59, 59),
-          payoutDate: adjustForWeekend(payout15)
+          periodStart: new Date(mYear, mMonth, 1, 0, 0, 0),
+          periodEnd: new Date(mYear, mMonth, lastDay, 23, 59, 59),
+          payoutDate: adjustForWeekend(payoutEOM)
+        };
+      }
+
+      // HEA-style: pays on payDay (e.g. 15th), covers PREVIOUS month's work
+      const mDay = completedDate.getDate();
+      if (mDay < payDay) {
+        // Work in first half → pays payDay of this month for previous month
+        const payoutDay = new Date(mYear, mMonth, payDay);
+        return {
+          periodStart: new Date(mYear, mMonth - 1, 1, 0, 0, 0),
+          periodEnd: new Date(mYear, mMonth, 0, 23, 59, 59),
+          payoutDate: adjustForWeekend(payoutDay)
         };
       } else {
-        // Work after 15th → paid 15th of NEXT month
-        const payout15Next = new Date(heaYear, heaMonth + 1, 15);
+        // Work after payDay → pays payDay of NEXT month
+        const payoutDayNext = new Date(mYear, mMonth + 1, payDay);
         return {
-          periodStart: new Date(heaYear, heaMonth, 1, 0, 0, 0),
-          periodEnd: new Date(heaYear, heaMonth + 1, 0, 23, 59, 59),
-          payoutDate: adjustForWeekend(payout15Next)
+          periodStart: new Date(mYear, mMonth, 1, 0, 0, 0),
+          periodEnd: new Date(mYear, mMonth + 1, 0, 23, 59, 59),
+          payoutDate: adjustForWeekend(payoutDayNext)
         };
       }
     }
 
-    case 'IANET': {
-      // Monthly end-of-month, covers same month
-      const ianetMonth = completedDate.getMonth();
-      const ianetYear = completedDate.getFullYear();
-      const lastDay = new Date(ianetYear, ianetMonth + 1, 0).getDate();
-      const payoutEOM = new Date(ianetYear, ianetMonth, lastDay);
-
+    case 'irregular': {
+      // Treat as monthly EOM
+      const iMonth = completedDate.getMonth();
+      const iYear = completedDate.getFullYear();
+      const lastDay = new Date(iYear, iMonth + 1, 0).getDate();
+      const payoutEOM = new Date(iYear, iMonth, lastDay);
       return {
-        periodStart: new Date(ianetYear, ianetMonth, 1, 0, 0, 0),
-        periodEnd: new Date(ianetYear, ianetMonth, lastDay, 23, 59, 59),
-        payoutDate: adjustForWeekend(payoutEOM)
-      };
-    }
-
-    case 'AMA': {
-      // Bi-weekly (assuming similar to Complete Claims)
-      // Reference date to be determined from actual deposits
-      const refAMA = new Date('2024-12-04');
-      const daysUntilWed = (3 - day + 7) % 7 || 7;
-      let nextWed = addDays(completedDate, daysUntilWed);
-
-      const daysSinceRef = daysBetween(refAMA, nextWed);
-      const weeksSinceRef = Math.floor(daysSinceRef / 7);
-      if (weeksSinceRef % 2 !== 0) {
-        nextWed = addDays(nextWed, 7);
-      }
-
-      return {
-        periodStart: addDays(nextWed, -13),
-        periodEnd: addDays(nextWed, -1),
-        payoutDate: nextWed
-      };
-    }
-
-    case 'A-TEAM': {
-      // Bi-weekly (assuming Thursday)
-      const refATEAM = new Date('2024-12-19');
-      const daysUntilThu = (4 - day + 7) % 7 || 7;
-      let nextThu = addDays(completedDate, daysUntilThu);
-
-      const daysSinceRef = daysBetween(refATEAM, nextThu);
-      const weeksSinceRef = Math.floor(daysSinceRef / 7);
-      if (weeksSinceRef % 2 !== 0) {
-        nextThu = addDays(nextThu, 7);
-      }
-
-      return {
-        periodStart: addDays(nextThu, -13),
-        periodEnd: nextThu,
-        payoutDate: nextThu
-      };
-    }
-
-    case 'Frontline': {
-      // Monthly end-of-month (similar to IANET)
-      const frontlineMonth = completedDate.getMonth();
-      const frontlineYear = completedDate.getFullYear();
-      const lastDay = new Date(frontlineYear, frontlineMonth + 1, 0).getDate();
-      const payoutEOM = new Date(frontlineYear, frontlineMonth, lastDay);
-
-      return {
-        periodStart: new Date(frontlineYear, frontlineMonth, 1, 0, 0, 0),
-        periodEnd: new Date(frontlineYear, frontlineMonth, lastDay, 23, 59, 59),
-        payoutDate: adjustForWeekend(payoutEOM)
-      };
-    }
-
-    case 'SCA': {
-      // Irregular - treat as monthly EOM
-      const scaMonth = completedDate.getMonth();
-      const scaYear = completedDate.getFullYear();
-      const lastDay = new Date(scaYear, scaMonth + 1, 0).getDate();
-      const payoutEOM = new Date(scaYear, scaMonth, lastDay);
-
-      return {
-        periodStart: new Date(scaYear, scaMonth, 1, 0, 0, 0),
-        periodEnd: new Date(scaYear, scaMonth, lastDay, 23, 59, 59),
+        periodStart: new Date(iYear, iMonth, 1, 0, 0, 0),
+        periodEnd: new Date(iYear, iMonth, lastDay, 23, 59, 59),
         payoutDate: adjustForWeekend(payoutEOM)
       };
     }
 
     default:
-      throw new Error(`Unknown or excluded firm: ${normalized}`);
+      throw new Error(`Unknown schedule type for firm ${normalized}: ${schedule.pay_schedule_type}`);
   }
 }
 
-// Main forecasting function
-export function forecastPayouts(claims: Claim[], todayDate: Date = new Date()): PayoutForecast[] {
+// Main forecasting function — schedule-driven
+export function forecastPayouts(
+  claims: Claim[],
+  firmSchedules: Record<string, FirmSchedule> = {}
+): PayoutForecast[] {
   const payoutMap = new Map<string, PayoutForecast>();
 
   for (const claim of claims) {
     const firmNormalized = normalizeFirmName(claim.firm);
 
-    // Skip if not a recurring firm
+    // Skip if not a recurring firm or no schedule entry
     if (!isRecurringFirm(claim.firm)) continue;
+    const schedule = firmSchedules[firmNormalized];
+    if (!schedule) continue;
 
-    // Determine the work date - use completion_date if completed, otherwise use appointment_start
+    // Determine the work date
     let workDate: Date | null = null;
     let expectedAmount = 0;
 
     if (claim.status === 'COMPLETED' && claim.completion_date) {
-      // For completed claims, use actual completion date and file_total/pay_amount
       workDate = new Date(claim.completion_date);
       expectedAmount = claim.file_total || claim.pay_amount || 0;
     } else if (claim.appointment_start) {
-      // For scheduled claims, use appointment date and pay_amount from calendar
       workDate = new Date(claim.appointment_start);
-      // Use pay_amount if set in calendar, otherwise use firm's base fee
       expectedAmount = claim.pay_amount || calculateExpectedPayout(claim.firm) || 0;
     }
 
     if (!workDate || expectedAmount <= 0) continue;
 
     try {
-      const period = getPayPeriod(firmNormalized, workDate);
+      const period = getPayPeriod(firmNormalized, workDate, schedule);
 
       // Only include if work falls in a valid period
       if (workDate >= period.periodStart && workDate <= period.periodEnd) {
-        // Normalize payout date to date-only string (YYYY-MM-DD) to avoid time component differences
         const payoutDateKey = period.payoutDate.toISOString().split('T')[0];
         const key = `${firmNormalized}|${payoutDateKey}`;
 

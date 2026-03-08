@@ -6,7 +6,8 @@ import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { getSupabaseAuthz } from "../../lib/supabaseAuthz";
 import { getFirmColor } from "../../constants/firmColors";
 import { calculateExpectedPayout } from "../../utils/firmFeeConfig";
-import { getPayPeriod } from "../../utils/payoutForecasting";
+import { getPayPeriod, FirmSchedule } from "../../utils/payoutForecasting";
+import { normalizeFirmNameForConfig } from "../../utils/firmFeeConfig";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import MobileClaimDetail from "../../components/claims/MobileClaimDetail";
 import { NavBar } from "../../components/NavBar";
@@ -57,6 +58,7 @@ export default function ClaimDetail() {
   const [editFileTotal, setEditFileTotal] = useState("");
   const [editFirmName, setEditFirmName] = useState("");
   const [firms, setFirms] = useState<any[]>([]);
+  const [firmSchedules, setFirmSchedules] = useState<Record<string, FirmSchedule>>({});
 
   const load = async () => {
     const { data } = await supabase
@@ -112,14 +114,25 @@ export default function ClaimDetail() {
         .order("full_name");
       setUsers(data || []);
     })();
-    // Load firms for firm dropdown
+    // Load firms for firm dropdown + schedule data
     (async () => {
       const { data } = await supabase
         .from("vendors")
-        .select("id, name")
+        .select("id, name, pay_schedule_type, pay_day, reference_date")
         .eq("active", true)
         .order("name");
       setFirms(data || []);
+      const schedules: Record<string, FirmSchedule> = {};
+      for (const v of data || []) {
+        if (v.pay_schedule_type) {
+          schedules[normalizeFirmNameForConfig(v.name)] = {
+            pay_schedule_type: v.pay_schedule_type,
+            pay_day: v.pay_day ?? 0,
+            reference_date: v.reference_date ? new Date(v.reference_date) : undefined,
+          };
+        }
+      }
+      setFirmSchedules(schedules);
     })();
   }, [id]);
 
@@ -309,7 +322,7 @@ export default function ClaimDetail() {
       let expectedPayoutDate = null;
       if (claim.firm) {
         try {
-          const payPeriod = getPayPeriod(claim.firm, now);
+          const payPeriod = getPayPeriod(claim.firm, now, firmSchedules[normalizeFirmNameForConfig(claim.firm)]);
           const payYear = payPeriod.payoutDate.getFullYear();
           const payMonth = String(payPeriod.payoutDate.getMonth() + 1).padStart(2, '0');
           const payDay = String(payPeriod.payoutDate.getDate()).padStart(2, '0');
@@ -528,7 +541,7 @@ export default function ClaimDetail() {
       let expectedPayoutDate = null;
       if (claim.firm) {
         try {
-          const payPeriod = getPayPeriod(claim.firm, now);
+          const payPeriod = getPayPeriod(claim.firm, now, firmSchedules[normalizeFirmNameForConfig(claim.firm)]);
           const payYear = payPeriod.payoutDate.getFullYear();
           const payMonth = String(payPeriod.payoutDate.getMonth() + 1).padStart(2, '0');
           const payDay = String(payPeriod.payoutDate.getDate()).padStart(2, '0');
@@ -1238,7 +1251,7 @@ export default function ClaimDetail() {
                     let expectedPayoutDate = null;
                     if (claim.firm) {
                       try {
-                        const payPeriod = getPayPeriod(claim.firm, now);
+                        const payPeriod = getPayPeriod(claim.firm, now, firmSchedules[normalizeFirmNameForConfig(claim.firm)]);
                         const payYear = payPeriod.payoutDate.getFullYear();
                         const payMonth = String(payPeriod.payoutDate.getMonth() + 1).padStart(2, '0');
                         const payDay = String(payPeriod.payoutDate.getDate()).padStart(2, '0');

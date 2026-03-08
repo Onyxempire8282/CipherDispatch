@@ -12,10 +12,12 @@ import {
   getMonthlyView,
   getUpcomingPayouts,
   PayoutForecast,
+  FirmSchedule,
   WeeklyTotal,
   MonthlyTotal,
   Claim
 } from "../../utils/payoutForecasting";
+import { normalizeFirmNameForConfig } from "../../utils/firmFeeConfig";
 import { NavBar } from "../../components/NavBar";
 import PageHeader from "../../components/ui/PageHeader";
 import { PayoutSummaryCards } from "../../components/PayoutSummaryCards";
@@ -41,6 +43,7 @@ export default function PayoutDashboard() {
   const [viewMode, setViewMode] = useState<ViewMode>('upcoming');
   const [selectedPayout, setSelectedPayout] = useState<PayoutForecast | null>(null);
   const [payoutClaims, setPayoutClaims] = useState<ClaimDetail[]>([]);
+  const [firmSchedules, setFirmSchedules] = useState<Record<string, FirmSchedule>>({});
 
   useEffect(() => {
     loadData();
@@ -48,19 +51,39 @@ export default function PayoutDashboard() {
 
   const loadData = async () => {
     try {
-      const { data: claimsData, error } = await supabase
-        .from('claims_v')
-        .select('id, firm, completion_date, appointment_start, file_total, pay_amount, status')
-        .is('archived_at', null)
-        .or('status.eq.COMPLETED,status.eq.SCHEDULED,status.eq.IN_PROGRESS')
-        .or('completion_date.not.is.null,appointment_start.not.is.null');
+      const [claimsRes, vendorsRes] = await Promise.all([
+        supabase
+          .from('claims_v')
+          .select('id, firm, completion_date, appointment_start, file_total, pay_amount, status')
+          .is('archived_at', null)
+          .or('status.eq.COMPLETED,status.eq.SCHEDULED,status.eq.IN_PROGRESS'),
+        supabase
+          .from('vendors')
+          .select('name, pay_schedule_type, pay_day, reference_date')
+          .eq('active', true)
+      ]);
 
-      if (error) throw error;
+      if (claimsRes.error) throw claimsRes.error;
 
-      const allClaims = (claimsData || []) as Claim[];
+      const allClaims = (claimsRes.data || []) as Claim[];
       setClaims(allClaims);
 
-      const allPayouts = forecastPayouts(allClaims);
+      // Build firm schedules map from vendors table
+      const schedules: Record<string, FirmSchedule> = Object.fromEntries(
+        (vendorsRes.data || [])
+          .filter((v: any) => v.pay_schedule_type)
+          .map((v: any) => [
+            normalizeFirmNameForConfig(v.name),
+            {
+              pay_schedule_type: v.pay_schedule_type,
+              pay_day: v.pay_day ?? 0,
+              reference_date: v.reference_date ? new Date(v.reference_date) : undefined
+            }
+          ])
+      );
+      setFirmSchedules(schedules);
+
+      const allPayouts = forecastPayouts(allClaims, schedules);
       setPayouts(allPayouts);
 
       setWeeklyView(getWeeklyView(allPayouts));
@@ -216,8 +239,16 @@ export default function PayoutDashboard() {
         <PayoutDetailModal
           payout={selectedPayout}
           claims={payoutClaims}
+          firmSchedule={firmSchedules[selectedPayout.firm]}
           onClose={() => setSelectedPayout(null)}
           onUpdateAmount={handleUpdateAmount}
+          onUpdateReferenceDate={async (firmName, newDate) => {
+            await supabase
+              .from('vendors')
+              .update({ reference_date: newDate, reference_date_updated_at: new Date().toISOString() })
+              .eq('name', firmName);
+            await loadData();
+          }}
         />
       )}
 

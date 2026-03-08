@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import { PayoutForecast, Claim } from '../utils/payoutForecasting';
+import { PayoutForecast, Claim, FirmSchedule } from '../utils/payoutForecasting';
 import { calculateExpectedPayout } from '../utils/firmFeeConfig';
 
 interface ClaimDetail extends Claim {
@@ -15,19 +15,25 @@ interface ClaimDetail extends Claim {
 interface PayoutDetailModalProps {
   payout: PayoutForecast;
   claims: ClaimDetail[];
+  firmSchedule?: FirmSchedule;
   onClose: () => void;
   onUpdateAmount: (claimId: string, newAmount: number, claim: ClaimDetail) => Promise<void>;
+  onUpdateReferenceDate?: (firmName: string, newDate: string) => Promise<void>;
 }
 
 export function PayoutDetailModal({
   payout,
   claims,
+  firmSchedule,
   onClose,
-  onUpdateAmount
+  onUpdateAmount,
+  onUpdateReferenceDate
 }: PayoutDetailModalProps) {
   const [editingClaimId, setEditingClaimId] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState<string>('');
   const [editingClaim, setEditingClaim] = useState<ClaimDetail | null>(null);
+  const [editingRefDate, setEditingRefDate] = useState(false);
+  const [newRefDate, setNewRefDate] = useState('');
 
   const handleEditAmount = (claim: ClaimDetail, currentAmount: number) => {
     setEditingClaimId(claim.id);
@@ -88,6 +94,55 @@ export function PayoutDetailModal({
             <div className="payout-modal__subtitle">
               Work Period: {payout.periodStart.toLocaleDateString()} - {payout.periodEnd.toLocaleDateString()}
             </div>
+            {firmSchedule?.pay_schedule_type === 'biweekly' && onUpdateReferenceDate && (
+              <div className="payout-modal__subtitle">
+                {editingRefDate ? (
+                  <span className="claim-card__edit-controls">
+                    <input
+                      type="date"
+                      className="claim-card__edit-input"
+                      value={newRefDate}
+                      onChange={(e) => setNewRefDate(e.target.value)}
+                    />
+                    <button
+                      className="claim-card__save-button"
+                      onClick={async () => {
+                        if (newRefDate) {
+                          await onUpdateReferenceDate(payout.firm, newRefDate);
+                          setEditingRefDate(false);
+                        }
+                      }}
+                    >
+                      ✓
+                    </button>
+                    <button
+                      className="claim-card__cancel-button"
+                      onClick={() => setEditingRefDate(false)}
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ) : (
+                  <span>
+                    Reference Date: {firmSchedule.reference_date?.toLocaleDateString() || 'Not set'}
+                    {' '}
+                    <button
+                      className="claim-card__edit-button"
+                      onClick={() => {
+                        setNewRefDate(
+                          firmSchedule.reference_date
+                            ? firmSchedule.reference_date.toISOString().split('T')[0]
+                            : ''
+                        );
+                        setEditingRefDate(true);
+                      }}
+                    >
+                      Update
+                    </button>
+                  </span>
+                )}
+              </div>
+            )}
           </div>
           <button className="payout-modal__close-button" onClick={onClose}>
             ✕
