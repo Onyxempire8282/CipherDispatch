@@ -19,7 +19,7 @@
     radial-gradient(ellipse 60% 200% at 0% 50%, rgba(232, 149, 42, 0.07) 0%, transparent 60%),
     var(--steel);
   border-bottom: 1px solid var(--rivet);
-  padding: 20px 40px;
+  padding: 24px 40px;
   position: relative;
   z-index: 1;
 }
@@ -45,7 +45,7 @@
 
 .page-header__title {
   font-family: var(--font-heading);
-  font-size: 30px;
+  font-size: 32px;
   letter-spacing: 0.06em;
   color: var(--white);
   line-height: 1;
@@ -53,8 +53,8 @@
 
 .page-header__sub {
   font-size: 12px;
-  color: var(--muted);
-  margin-top: 3px;
+  color: var(--text-sub);
+  margin-top: 2px;
 }
 
 .page-header__aside {

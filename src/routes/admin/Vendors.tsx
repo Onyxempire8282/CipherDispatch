@@ -233,80 +233,85 @@ export default function Vendors() {
               className="vendors__modal"
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="vendors__modal-title">
-                {editingVendor ? "Edit Vendor" : "Add New Vendor"}
-              </h3>
-
-              <Field label="Vendor Name">
-                <input
-                  type="text"
-                  className="field__input"
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                  placeholder="Enter vendor name"
-                />
-              </Field>
-
-              <Field label="Color">
-                <div className="vendors__color-row">
-                  <input
-                    type="color"
-                    value={formColor}
-                    onChange={(e) => setFormColor(e.target.value)}
-                    className="vendors__color-swatch"
-                  />
-                  <input
-                    type="text"
-                    className="field__input vendors__color-text"
-                    value={formColor}
-                    onChange={(e) => setFormColor(e.target.value)}
-                    placeholder="#9CA3AF"
-                  />
-                </div>
-              </Field>
-
-              <Field label="Pay Cycle Type">
-                <select
-                  className="field__select"
-                  value={formPayCycleType}
-                  onChange={(e) => setFormPayCycleType(e.target.value as PayCycleType)}
-                >
-                  <option value="weekly_thu_fri_thu">Weekly Thu (Fri→Thu work, paid Thu)</option>
-                  <option value="biweekly_thu_fri_thu">Bi-weekly Wed (2-week period, paid Wed)</option>
-                  <option value="biweekly_fri_sat_fri">Bi-weekly Thu (2-week period, paid Thu)</option>
-                  <option value="monthly_15th_prev_month">Monthly 15th (previous month work)</option>
-                  <option value="semimonthly_15th_end">Semi-monthly: 15th & End-of-Month</option>
-                  <option value="monthly_last_same_month">Monthly EOM (same month work)</option>
-                </select>
-              </Field>
-
-              {formPayCycleType.startsWith('biweekly') && (
-                <Field
-                  label="Reference Pay Date (for bi-weekly calculation)"
-                  hint="Enter a known pay date to calculate bi-weekly schedule"
-                >
-                  <input
-                    type="date"
-                    className="field__input"
-                    value={formReferencePayDate}
-                    onChange={(e) => setFormReferencePayDate(e.target.value)}
-                  />
-                </Field>
-              )}
-
-              <div className="vendors__checkbox-field">
-                <label className="vendors__checkbox-label">
-                  <input
-                    type="checkbox"
-                    className="vendors__checkbox"
-                    checked={formActive}
-                    onChange={(e) => setFormActive(e.target.checked)}
-                  />
-                  Active Vendor
-                </label>
+              <div className="vendors__modal-header">
+                <div className="vendors__modal-eyebrow">Vendor Management</div>
+                <h3 className="vendors__modal-title">
+                  {editingVendor ? "Edit Vendor" : "Add New Vendor"}
+                </h3>
               </div>
 
-              <div className="vendors__modal-actions">
+              <div className="vendors__modal-body">
+                <Field label="Vendor Name">
+                  <input
+                    type="text"
+                    className="field__input"
+                    value={formName}
+                    onChange={(e) => setFormName(e.target.value)}
+                    placeholder="Enter vendor name"
+                  />
+                </Field>
+
+                <Field label="Color">
+                  <div className="vendors__color-row">
+                    <input
+                      type="color"
+                      value={formColor}
+                      onChange={(e) => setFormColor(e.target.value)}
+                      className="vendors__color-swatch"
+                    />
+                    <input
+                      type="text"
+                      className="field__input vendors__color-text"
+                      value={formColor}
+                      onChange={(e) => setFormColor(e.target.value)}
+                      placeholder="#9CA3AF"
+                    />
+                  </div>
+                </Field>
+
+                <Field label="Pay Cycle Type">
+                  <select
+                    className="field__select"
+                    value={formPayCycleType}
+                    onChange={(e) => setFormPayCycleType(e.target.value as PayCycleType)}
+                  >
+                    <option value="weekly_thu_fri_thu">Weekly Thu (Fri→Thu work, paid Thu)</option>
+                    <option value="biweekly_thu_fri_thu">Bi-weekly Wed (2-week period, paid Wed)</option>
+                    <option value="biweekly_fri_sat_fri">Bi-weekly Thu (2-week period, paid Thu)</option>
+                    <option value="monthly_15th_prev_month">Monthly 15th (previous month work)</option>
+                    <option value="semimonthly_15th_end">Semi-monthly: 15th & End-of-Month</option>
+                    <option value="monthly_last_same_month">Monthly EOM (same month work)</option>
+                  </select>
+                </Field>
+
+                {formPayCycleType.startsWith('biweekly') && (
+                  <Field
+                    label="Reference Pay Date (for bi-weekly calculation)"
+                    hint="Enter a known pay date to calculate bi-weekly schedule"
+                  >
+                    <input
+                      type="date"
+                      className="field__input"
+                      value={formReferencePayDate}
+                      onChange={(e) => setFormReferencePayDate(e.target.value)}
+                    />
+                  </Field>
+                )}
+
+                <div className="vendors__checkbox-field">
+                  <label className="vendors__checkbox-label">
+                    <input
+                      type="checkbox"
+                      className="vendors__checkbox"
+                      checked={formActive}
+                      onChange={(e) => setFormActive(e.target.checked)}
+                    />
+                    Active Vendor
+                  </label>
+                </div>
+              </div>
+
+              <div className="vendors__modal-footer">
                 <button onClick={handleCancel} className="vendors__cancel-btn">
                   Cancel
                 </button>

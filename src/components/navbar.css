@@ -25,8 +25,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 32px;
-  height: 64px;
+  padding: 0 40px 0 24px;
+  height: 72px;
   background: rgba(14, 15, 17, 0.98);
   border-bottom: 1px solid var(--rivet);
   box-shadow: 0 1px 0 rgba(232, 149, 42, 0.07);
@@ -85,7 +85,7 @@
 
 .nav__tabs {
   display: flex;
-  height: 64px;
+  height: 72px;
   margin-left: 24px;
 }
 
@@ -94,8 +94,8 @@
   align-items: center;
   padding: 0 20px;
   font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.12em;
+  font-size: 11px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted);
   cursor: pointer;
@@ -127,7 +127,7 @@
 .nav__right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 
 .nav__user {

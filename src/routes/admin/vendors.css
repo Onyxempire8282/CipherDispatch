@@ -31,7 +31,7 @@
   color: var(--text);
   font-family: var(--font-mono);
   font-size: 11px;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -61,7 +61,7 @@
   margin-top: 12px;
   font-family: var(--font-mono);
   font-size: 11px;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -85,7 +85,7 @@
   cursor: pointer;
   font-family: var(--font-mono);
   font-size: 11px;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   font-weight: 700;
 }
@@ -102,7 +102,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(7, 8, 10, 0.88);
+  backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -112,18 +113,56 @@
 .vendors__modal {
   background: var(--plate);
   border: 1px solid var(--rivet);
-  border-top: 3px solid var(--amber);
-  padding: 28px 32px;
+  border-top: 2px solid var(--amber);
+  padding: 0;
   max-width: 500px;
   width: 90%;
+  box-shadow: 0 0 0 1px rgba(232, 149, 42, 0.06), 0 40px 80px rgba(0, 0, 0, 0.8);
+  animation: modal-in 0.18s ease forwards;
+}
+
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.vendors__modal-header {
+  padding: 18px 24px 14px;
+  border-bottom: 1px solid var(--rivet);
+  background: var(--steel-mid);
+}
+
+.vendors__modal-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 3px;
 }
 
 .vendors__modal-title {
-  margin: 0 0 24px;
+  margin: 0;
   color: var(--white);
   font-family: var(--font-heading);
-  font-size: 26px;
-  letter-spacing: 0.04em;
+  font-size: 24px;
+  letter-spacing: 0.05em;
+  line-height: 1;
+}
+
+.vendors__modal-body {
+  padding: 20px 24px;
+  background: var(--steel);
+}
+
+.vendors__modal-footer {
+  padding: 14px 24px;
+  border-top: 1px solid var(--rivet);
+  background: var(--steel-mid);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 /* ── Color picker row ── */
@@ -160,7 +199,7 @@
   cursor: pointer;
   font-family: var(--font-mono);
   font-size: 10px;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -171,15 +210,6 @@
   accent-color: var(--amber);
 }
 
-/* ── Modal actions ── */
-
-.vendors__modal-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  margin-top: 8px;
-}
-
 .vendors__cancel-btn {
   padding: 10px 20px;
   background: var(--rivet);
@@ -188,7 +218,7 @@
   cursor: pointer;
   font-family: var(--font-mono);
   font-size: 11px;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -204,7 +234,7 @@
   cursor: pointer;
   font-family: var(--font-mono);
   font-size: 11px;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   font-weight: 700;
 }
@@ -227,7 +257,7 @@
   color: var(--muted);
   font-family: var(--font-mono);
   font-size: 11px;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -283,7 +313,7 @@
   color: var(--status-canceled);
   font-family: var(--font-mono);
   font-size: 9px;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   background: rgba(239, 68, 68, 0.12);
   padding: 2px 8px;
@@ -313,7 +343,7 @@
   cursor: pointer;
   font-family: var(--font-mono);
   font-size: 10px;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -330,7 +360,7 @@
   cursor: pointer;
   font-family: var(--font-mono);
   font-size: 10px;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 

@@ -31,12 +31,14 @@
   --amber:      #e8952a;
   --amber-dim:  rgba(232, 149, 42, 0.12);
   --amber-line: rgba(232, 149, 42, 0.35);
-  --amber-glow: rgba(232, 149, 42, 0.15);
+  --amber-glow: rgba(232, 149, 42, 0.06);
 
   /* Text hierarchy */
   --white:      #edeae4;
   --text-hi:    #b8bdc2;
-  --text:       #7a8088;
+  --text:       #8f9399;
+  --text-sub:   #8a9099;
+  --text-dim:   #6b7480;
   --muted:      #4a5058;
 
   /* Firm colors */
@@ -104,8 +106,8 @@ body::before {
   inset: 0;
   z-index: 0;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.014) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.014) 1px, transparent 1px);
+    linear-gradient(rgba(255, 255, 255, 0.013) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.013) 1px, transparent 1px);
   background-size: 48px 48px;
   pointer-events: none;
 }
@@ -166,9 +168,10 @@ body::before {
 .btn {
   font-family: var(--font-mono);
   font-size: 11px;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  padding: 12px 24px;
+  padding: 12px 28px;
+  border: none;
   cursor: pointer;
   transition: all 0.2s;
   border-radius: 0;
@@ -216,15 +219,14 @@ body::before {
 }
 
 .btn--danger {
-  background: var(--status-canceled);
-  color: var(--white);
-  font-weight: 600;
-  border: 1px solid var(--status-canceled);
+  border: 1px solid rgba(192, 57, 43, 0.4);
+  background: rgba(192, 57, 43, 0.1);
+  color: #e74c3c;
 }
 
 .btn--danger:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
+  background: rgba(192, 57, 43, 0.2);
+  border-color: rgba(192, 57, 43, 0.6);
 }
 
 .btn--sm {
@@ -264,7 +266,7 @@ body::before {
 .card__title {
   font-family: var(--font-mono);
   font-size: 11px;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--amber);
 }

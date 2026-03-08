@@ -23,7 +23,7 @@
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--text-hi);
 }
 
 .field__label-optional {
@@ -39,7 +39,7 @@
   background: var(--input-bg);
   border: 1px solid var(--rivet);
   border-top: 1px solid var(--rivet-hi);
-  padding: 10px 12px;
+  padding: 11px 14px;
   color: var(--white);
   font-size: 13px;
   font-family: var(--font-body);
@@ -61,7 +61,7 @@
 
 .field__input::placeholder,
 .field__textarea::placeholder {
-  color: var(--muted);
+  color: var(--text-dim);
 }
 
 /* ── Select ── */
