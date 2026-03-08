@@ -165,9 +165,22 @@ export default function NewClaim() {
       return;
     }
 
-    const { error } = await supabase
-      .from("claims")
-      .insert([claimPayload]);
+    const { error } = await supabase.rpc('create_claim', {
+      p_owner_id: claimPayload.owner_id,
+      p_firm: claimPayload.firm,
+      p_claim_number: claimPayload.claim_number,
+      p_file_number: claimPayload.file_number,
+      p_customer_name: claimPayload.customer_name,
+      p_customer_phone: claimPayload.customer_phone,
+      p_vehicle_make: claimPayload.vehicle_make,
+      p_vehicle_model: claimPayload.vehicle_model,
+      p_vehicle_year: claimPayload.vehicle_year,
+      p_vin: claimPayload.vin,
+      p_inspection_address: claimPayload.inspection_address,
+      p_zip: claimPayload.zip,
+      p_scheduled_at: claimPayload.scheduled_at,
+      p_notes: claimPayload.notes
+    });
 
     if (error) {
       if (error.code === "23505") {
