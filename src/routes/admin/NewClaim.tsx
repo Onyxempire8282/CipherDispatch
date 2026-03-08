@@ -127,14 +127,34 @@ export default function NewClaim() {
     if (!form.customer_name) return alert("Please enter a Customer Name");
     if (!form.address_line1) return alert("Please enter an Address");
 
-    const full = `${form.address_line1} ${form.address_line2 || ""} ${form.city || ""} ${form.state || ""} ${form.zip || ""}`.trim();
-    let coords = { lat: null as any, lng: null as any };
-    if (full) coords = await geocode(full);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return alert("You must be logged in to create a claim");
+
+    const inspectionAddress = [form.address_line1, form.city, form.state].filter(Boolean).join(", ");
+
+    const claimPayload = {
+      firm: form.insurance_company || null,
+      claim_number: form.claim_number,
+      file_number: null as string | null,
+      customer_name: form.customer_name,
+      customer_phone: form.customer_phone || null,
+      vehicle_make: form.vehicle_make || null,
+      vehicle_model: form.vehicle_model || null,
+      vehicle_year: form.vehicle_year || null,
+      vin: form.vin || null,
+      inspection_address: inspectionAddress || null,
+      location_name: null as string | null,
+      location_phone: null as string | null,
+      zip: form.zip || null,
+      scheduled_at: form.appointment_start || null,
+      notes: form.notes || null,
+      owner_id: user.id,
+    };
 
     if (override) {
       const { error } = await supabase
-        .from("claims_v")
-        .update({ ...form, ...coords })
+        .from("claims")
+        .update(claimPayload)
         .eq("claim_number", form.claim_number);
       if (error) {
         alert(`Error updating claim: ${error.message}`);
@@ -146,8 +166,8 @@ export default function NewClaim() {
     }
 
     const { error } = await supabase
-      .from("claims_v")
-      .insert([{ ...form, ...coords }]);
+      .from("claims")
+      .insert([claimPayload]);
 
     if (error) {
       if (error.code === "23505") {

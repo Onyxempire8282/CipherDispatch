@@ -1,6 +1,6 @@
 -- ═══════════════════════════════════════════════════════════════
--- Update claims_v view to include archived_at column
--- Fixes: "column claims_v.archived_at does not exist" error
+-- Update claims_v view to include all required columns
+-- Fixes: missing columns error when updating claims
 -- ═══════════════════════════════════════════════════════════════
 
 CREATE OR REPLACE VIEW public.claims_v AS
@@ -26,6 +26,7 @@ SELECT
   appointment_start,
   appointment_end,
   firm,
+  firm_name,
   pay_amount,
   file_total,
   status,
@@ -33,7 +34,12 @@ SELECT
   lng,
   created_at,
   updated_at,
-  archived_at
+  archived_at,
+  completion_date,
+  completed_month,
+  expected_payout_date,
+  payout_status,
+  actual_payout_date
 FROM public.claims;
 
 -- Grant permissions (match existing table permissions)

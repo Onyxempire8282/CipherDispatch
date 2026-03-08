@@ -196,25 +196,27 @@ serve(async (req) => {
       );
     }
 
+    // Get owner from Authorization header (JWT)
+    const authHeader = req.headers.get("authorization") || "";
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user } } = await supabase.auth.getUser(token);
+
     // Build claim data - soft-required fields allowed as null
     const claimData = {
       // Hard-required fields (validated above)
       firm: firm,
       claim_number: claimNumber,
       customer_name: body.customer_name!.trim(),
-      address_line1: body.address_line1!.trim(),
-      city: body.city!.trim(),
-      state: body.state!.trim(),
+      inspection_address: [body.address_line1!.trim(), body.city!.trim(), body.state!.trim()].filter(Boolean).join(", "),
       zip: body.zip!.trim(),
       // Soft-required fields (null if missing)
       file_number: body.file_number?.trim() || null,
-      insurance_company: body.insurance_company?.trim() || null,
       customer_phone: body.customer_phone?.trim() || null,
       location_name: body.location_name?.trim() || null,
       location_phone: body.location_phone?.trim() || null,
       // Auto-set fields
-      claim_status: "created",
-      status: "IN_PROGRESS",
+      claim_status: "new_claim",
+      owner_id: user?.id || null,
     };
 
     // Insert new claim
