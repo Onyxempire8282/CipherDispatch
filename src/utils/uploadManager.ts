@@ -3,6 +3,27 @@ import { UploadTask, InspectionState } from '../types/photoCapture';
 import { PHOTO_SLOTS } from '../config/photoSlots';
 import imageCompression from 'browser-image-compression';
 
+const OLD_BUCKET_URL = 'https://qrouuoycvxxxutkxkxpp.supabase.co/storage/v1/object/public/claim-photos';
+
+export function getPhotoUrl(supabase: any, storagePath: string): string {
+  // Try HQ bucket first, fall back to old Cypher Mobile bucket
+  const { data } = supabase.storage.from('claim-photos').getPublicUrl(storagePath);
+  return data.publicUrl;
+}
+
+export function getPhotoUrlWithFallback(storagePath: string): string {
+  // For old photos that live in Cypher Mobile's bucket
+  return `${OLD_BUCKET_URL}/${storagePath}`;
+}
+
+export function buildPhotoPath(firm: string, claimNumber: string, photoType: string, sequence: number): string {
+  const cleanFirm = firm?.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() || 'UNKNOWN';
+  const cleanClaim = claimNumber?.replace(/[^a-zA-Z0-9-]/g, '') || 'UNKNOWN';
+  const cleanType = photoType?.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase() || 'photo';
+  const seq = String(sequence).padStart(2, '0');
+  return `${cleanFirm}-${cleanClaim}-${cleanType}-${seq}`;
+}
+
 export class UploadManager {
   private queue: UploadTask[] = [];
   private maxRetries = 3;

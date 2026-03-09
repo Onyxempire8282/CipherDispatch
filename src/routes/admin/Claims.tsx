@@ -7,6 +7,7 @@ import {
 } from "../../lib/supabaseAuthz";
 import { getFirmColor } from "../../constants/firmColors";
 import { downloadClaimsCSV } from "../../utils/csvExport";
+import { getPhotoUrlWithFallback } from "../../utils/uploadManager";
 import MonthlyCalendar from "../../components/claims/MonthlyCalendar";
 import MobileAgendaView from "../../components/claims/MobileAgendaView";
 import MobileClaimsList from "../../components/claims/MobileClaimsList";
@@ -157,9 +158,7 @@ export default function AdminClaims() {
 
       for (let i = 0; i < photos.length; i++) {
         const photo = photos[i];
-        const photoUrl = supabase.storage
-          .from("claim-photos")
-          .getPublicUrl(photo.storage_path).data.publicUrl;
+        const photoUrl = getPhotoUrlWithFallback(photo.storage_path);
         const response = await fetch(photoUrl);
         const blob = await response.blob();
         photoFolder?.file(`photo-${i + 1}.jpg`, blob);

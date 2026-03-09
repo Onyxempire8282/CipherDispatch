@@ -12,6 +12,7 @@ import { useIsMobile } from "../../hooks/useIsMobile";
 import MobileClaimDetail from "../../components/claims/MobileClaimDetail";
 import { NavBar } from "../../components/NavBar";
 import JSZip from "jszip";
+import { getPhotoUrlWithFallback } from "../../utils/uploadManager";
 import "./claim-detail.css";
 
 export default function ClaimDetail() {
@@ -420,9 +421,7 @@ export default function ClaimDetail() {
       // Fetch all photos and add to zip
       for (let i = 0; i < photos.length; i++) {
         const photo = photos[i];
-        const photoUrl = supabase.storage
-          .from("claim-photos")
-          .getPublicUrl(photo.storage_path).data.publicUrl;
+        const photoUrl = getPhotoUrlWithFallback(photo.storage_path);
 
         // Fetch photo as blob
         const response = await fetch(photoUrl);
@@ -609,12 +608,7 @@ export default function ClaimDetail() {
             >
               <img
                 className="detail__lightbox-image"
-                src={
-                  supabase.storage
-                    .from("claim-photos")
-                    .getPublicUrl(photos[lightboxIndex].storage_path).data
-                    .publicUrl
-                }
+                src={getPhotoUrlWithFallback(photos[lightboxIndex].storage_path)}
               />
             </div>
 
@@ -1449,9 +1443,7 @@ export default function ClaimDetail() {
 
           <div className="detail__photo-grid">
             {photos.map((p, index) => {
-              const photoUrl = supabase.storage
-                .from("claim-photos")
-                .getPublicUrl(p.storage_path).data.publicUrl;
+              const photoUrl = getPhotoUrlWithFallback(p.storage_path);
 
               return (
                 <div key={p.id} className="detail__photo-item">
@@ -1557,12 +1549,7 @@ export default function ClaimDetail() {
             >
               <img
                 className="detail__lightbox-image"
-                src={
-                  supabase.storage
-                    .from("claim-photos")
-                    .getPublicUrl(photos[lightboxIndex].storage_path).data
-                    .publicUrl
-                }
+                src={getPhotoUrlWithFallback(photos[lightboxIndex].storage_path)}
                 onWheel={handleWheel}
                 onMouseDown={handleMouseDown}
                 style={{
@@ -1609,12 +1596,7 @@ export default function ClaimDetail() {
               </button>
 
               <a
-                href={
-                  supabase.storage
-                    .from("claim-photos")
-                    .getPublicUrl(photos[lightboxIndex].storage_path).data
-                    .publicUrl
-                }
+                href={getPhotoUrlWithFallback(photos[lightboxIndex].storage_path)}
                 download={`claim-${claim?.claim_number}-photo-${photos[lightboxIndex].id}.jpg`}
                 className="detail__lightbox-download"
               >

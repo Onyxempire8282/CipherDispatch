@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getFirmColor } from '../../constants/firmColors';
 import { supabase } from '../../lib/supabase';
+import { getPhotoUrlWithFallback } from '../../utils/uploadManager';
 import './mobile-claim-detail.css';
 
 /**
@@ -317,9 +318,7 @@ export default function MobileClaimDetail({
           ) : (
             <div className="mobile-detail__photos-grid">
               {photos.map((photo, index) => {
-                const photoUrl = supabase.storage
-                  .from('claim-photos')
-                  .getPublicUrl(photo.storage_path).data.publicUrl;
+                const photoUrl = getPhotoUrlWithFallback(photo.storage_path);
                 return (
                   <div
                     key={photo.id}
