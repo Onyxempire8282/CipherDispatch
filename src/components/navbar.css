@@ -273,3 +273,74 @@
     display: none;
   }
 }
+
+/* ══════════════════════════════════════════════
+   BOTTOM NAV — MOBILE ONLY
+   ══════════════════════════════════════════════ */
+
+.bottom-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 9000;
+    background: var(--steel-mid);
+    border-top: 1px solid var(--rivet);
+    padding-bottom: env(safe-area-inset-bottom);
+    height: 60px;
+  }
+
+  .bottom-nav__item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    text-decoration: none;
+    color: var(--muted);
+    transition: color 0.15s;
+    min-height: 44px;
+    padding: 6px 4px;
+    border-top: 2px solid transparent;
+  }
+
+  .bottom-nav__item--active {
+    color: var(--amber);
+    border-top-color: var(--amber);
+  }
+
+  .bottom-nav__icon {
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  .bottom-nav__label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+
+  /* Push page content above bottom nav */
+  .app-content,
+  main {
+    padding-bottom: calc(60px + env(safe-area-inset-bottom));
+  }
+
+  /* Hide hamburger when bottom nav is present */
+  .nav__hamburger {
+    display: none;
+  }
+
+  .nav__drawer {
+    display: none !important;
+  }
+}

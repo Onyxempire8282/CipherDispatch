@@ -21,11 +21,26 @@ const APPRAISER_TABS = [
   { label: "My Routes", path: "/my-routes" },
 ];
 
+const ADMIN_BOTTOM_NAV = [
+  { label: "Claims", icon: "◫", path: "/admin/claims" },
+  { label: "Vendors", icon: "⊹", path: "/admin/vendors" },
+  { label: "Payouts", icon: "⊞", path: "/admin/payouts" },
+  { label: "Home", icon: "⊟", path: "/" },
+];
+
+const APPRAISER_BOTTOM_NAV = [
+  { label: "Claims", icon: "◫", path: "/my-claims" },
+  { label: "Routes", icon: "⊹", path: "/my-routes" },
+  { label: "Capture", icon: "⊡", path: "/appraiser/claim" },
+  { label: "Home", icon: "⊟", path: "/" },
+];
+
 export const NavBar: React.FC<NavBarProps> = ({ role, userName }) => {
   const nav = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const tabs = role === "admin" ? ADMIN_TABS : APPRAISER_TABS;
+  const bottomTabs = role === "admin" ? ADMIN_BOTTOM_NAV : APPRAISER_BOTTOM_NAV;
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -41,6 +56,7 @@ export const NavBar: React.FC<NavBarProps> = ({ role, userName }) => {
   };
 
   return (
+  <>
     <nav className="nav">
       <div className="nav__left">
         <Link to="/" className="nav__mark">CD</Link>
@@ -101,5 +117,27 @@ export const NavBar: React.FC<NavBarProps> = ({ role, userName }) => {
         </button>
       </div>
     </nav>
+
+    <div className="bottom-nav">
+      {bottomTabs.map((item) => (
+        <Link
+          key={item.path}
+          to={item.path}
+          className={`bottom-nav__item ${
+            item.path === "/"
+              ? location.pathname === "/"
+                ? "bottom-nav__item--active"
+                : ""
+              : location.pathname.startsWith(item.path)
+              ? "bottom-nav__item--active"
+              : ""
+          }`}
+        >
+          <span className="bottom-nav__icon">{item.icon}</span>
+          <span className="bottom-nav__label">{item.label}</span>
+        </Link>
+      ))}
+    </div>
+  </>
   );
 };
