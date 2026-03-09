@@ -56,8 +56,7 @@ export default function PayoutDashboard() {
           .from('claims_v')
           .select("*")
           .is('archived_at', null)
-          .or('status.eq.COMPLETED,status.eq.SCHEDULED,status.eq.IN_PROGRESS')
-          .or('is_supplement.is.null,is_supplement.eq.false'),
+          .or('status.eq.COMPLETED,status.eq.SCHEDULED,status.eq.IN_PROGRESS'),
         supabase
           .from('vendors')
           .select('name, pay_schedule_type, pay_day, reference_date')
@@ -66,7 +65,7 @@ export default function PayoutDashboard() {
 
       if (claimsRes.error) throw claimsRes.error;
 
-      const allClaims = (claimsRes.data || []) as Claim[];
+      const allClaims = ((claimsRes.data || []) as Claim[]).filter((c: any) => !c.is_supplement);
       setClaims(allClaims);
 
       // Build firm schedules map from vendors table

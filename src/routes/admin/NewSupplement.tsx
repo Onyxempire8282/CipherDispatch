@@ -54,7 +54,6 @@ export default function NewSupplement() {
       supabase.from("claims_v")
         .select("*")
         .eq("original_claim_id", claimId)
-        .eq("is_supplement", true)
         .order("supplement_number"),
       supabase.from("profiles")
         .select("user_id, full_name, role")
@@ -91,7 +90,7 @@ export default function NewSupplement() {
       .from("claims_v")
       .select("*")
       .or(`claim_number.ilike.%${searchQuery}%,customer_name.ilike.%${searchQuery}%`)
-      .eq("is_supplement", false)
+      .is("original_claim_id", null)
       .is("archived_at", null)
       .limit(8);
     setSearchResults(data || []);
