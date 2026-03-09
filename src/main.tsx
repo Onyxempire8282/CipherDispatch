@@ -15,6 +15,7 @@ import AdminVendors from "./routes/admin/Vendors";
 import PayoutDashboard from "./routes/admin/PayoutDashboard";
 import KPIDashboard from "./routes/admin/KPIDashboard";
 import ContractorManagement from "./components/admin/ContractorManagement";
+import NewSupplement from "./routes/admin/NewSupplement";
 import MyClaims from "./routes/appraiser/MyClaims";
 import MyRoutes from "./routes/appraiser/MyRoutes";
 import ClaimDetail from "./routes/appraiser/ClaimDetail";
@@ -114,6 +115,14 @@ const router = createBrowserRouter(
       element: (
         <ProtectedRoute>
           <ClaimDetail />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/admin/claims/:id/supplement",
+      element: (
+        <ProtectedRoute requiredRole="admin">
+          <NewSupplement />
         </ProtectedRoute>
       ),
     },

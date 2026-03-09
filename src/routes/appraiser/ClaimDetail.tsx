@@ -15,6 +15,42 @@ import JSZip from "jszip";
 import { getPhotoUrlWithFallback } from "../../utils/uploadManager";
 import "./claim-detail.css";
 
+function SupplementHistory({ claimId }: { claimId: string }) {
+  const [supps, setSupps] = useState<any[]>([]);
+  const nav = useNavigate();
+
+  useEffect(() => {
+    supabase.from("claims_v")
+      .select("id, claim_number, supplement_number, status, supplement_reason, created_at")
+      .eq("original_claim_id", claimId)
+      .eq("is_supplement", true)
+      .order("supplement_number")
+      .then(({ data }) => setSupps(data || []));
+  }, [claimId]);
+
+  if (supps.length === 0) return (
+    <div className="detail__value detail__value--muted">No supplements yet</div>
+  );
+
+  return (
+    <div className="detail__supp-list">
+      {supps.map(s => (
+        <div
+          key={s.id}
+          className="detail__supp-row"
+          onClick={() => nav(`/claim/${s.id}`)}
+        >
+          <span className="detail__supp-num">S{s.supplement_number}</span>
+          <span className="detail__supp-reason">{s.supplement_reason}</span>
+          <span className={`detail__supp-status detail__supp-status--${s.status.toLowerCase()}`}>
+            {s.status}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function ClaimDetail() {
   const { id } = useParams();
   const nav = useNavigate();
@@ -96,7 +132,12 @@ export default function ClaimDetail() {
         updated_at,
         location_type,
         confirm_token,
-        appt_confirmed
+        appt_confirmed,
+        is_supplement,
+        original_claim_id,
+        supplement_number,
+        supplement_reason,
+        supp_location_changed
       `)
       .eq("id", id)
       .single();
@@ -1226,6 +1267,51 @@ export default function ClaimDetail() {
             )}
           </div>
         </div>
+
+        {/* Supplement Actions — Admin only, original claims only */}
+        {isAdmin && !claim.is_supplement && (
+          <div className="detail__section">
+            <h4 className="detail__section-title">📎 Supplements</h4>
+            <SupplementHistory claimId={id!} />
+            <Link
+              to={`/admin/claims/${id}/supplement`}
+              className="detail__btn detail__btn--supplement"
+            >
+              + Create Supplement
+            </Link>
+          </div>
+        )}
+
+        {/* Supplement badge — show on supplement claims */}
+        {claim.is_supplement && claim.original_claim_id && (
+          <div className="detail__section">
+            <h4 className="detail__section-title">📎 Supplement Info</h4>
+            <div className="detail__field">
+              <div className="detail__label">Type</div>
+              <div className="detail__value detail__value--amber">
+                Supplement {claim.supplement_number} of Original Claim
+              </div>
+            </div>
+            <div className="detail__field">
+              <div className="detail__label">Reason</div>
+              <div className="detail__value">{claim.supplement_reason || "—"}</div>
+            </div>
+            {claim.supp_location_changed && (
+              <div className="detail__field">
+                <div className="detail__label">Vehicle Moved</div>
+                <div className="detail__value detail__value--amber">
+                  📍 Yes — new location on file
+                </div>
+              </div>
+            )}
+            <Link
+              to={`/claim/${claim.original_claim_id}`}
+              className="detail__btn detail__btn--back"
+            >
+              ← View Original Claim
+            </Link>
+          </div>
+        )}
 
         {/* Scheduling Links — Admin Only */}
         {isAdmin && claim.status === 'SCHEDULED' && claim.location_type !== 'body_shop' && (
