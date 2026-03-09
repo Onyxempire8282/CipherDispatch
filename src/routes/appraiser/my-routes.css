@@ -2,7 +2,7 @@
 
 .routes {
   min-height: 100vh;
-  background: linear-gradient(135deg, var(--plate) 0%, var(--steel) 100%);
+  background: var(--plate);
   padding: 32px;
 }
 
@@ -24,14 +24,14 @@
   margin-bottom: 16px;
   background: var(--steel-mid);
   border: 1px solid var(--rivet);
-  border-radius: 8px;
   color: var(--muted);
   font-size: 14px;
 }
 
 .routes__summary-count {
   color: var(--status-completed);
-  font-weight: 600;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 24px;
 }
 
 .routes__summary-closed {
@@ -42,26 +42,24 @@
 .routes__success {
   padding: 16px;
   margin-bottom: 16px;
-  background: #065f46;
+  background: rgba(74, 158, 107, 0.15);
   border: 1px solid var(--status-completed);
-  border-radius: 8px;
-  color: #d1fae5;
+  color: var(--status-completed);
 }
 
 .routes__error {
   padding: 16px;
   margin-bottom: 16px;
-  background: #7f1d1d;
+  background: rgba(224, 80, 80, 0.15);
   border: 1px solid var(--status-canceled);
-  border-radius: 8px;
-  color: #fecaca;
+  color: var(--status-canceled);
 }
 
 /* Empty state */
 .routes__empty {
   background: var(--steel);
   border: 1px solid var(--rivet);
-  border-radius: 12px;
+  border-left: 3px solid var(--rivet);
   padding: 32px;
   text-align: center;
   color: var(--muted);
@@ -78,7 +76,7 @@
 .routes__card {
   background: var(--steel);
   border: 1px solid var(--rivet);
-  border-radius: 12px;
+  border-left: 3px solid var(--rivet);
   padding: 20px;
   box-shadow: var(--shadow-lift);
 }
@@ -92,8 +90,8 @@
 
 .routes__card-date {
   color: var(--text-hi);
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 18px;
-  font-weight: 600;
   margin-bottom: 4px;
 }
 
@@ -105,16 +103,17 @@
 
 .routes__card-miles-value {
   color: var(--status-completed);
-  font-weight: 600;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 20px;
 }
 
 /* Status badge */
 .routes__badge {
   padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   display: inline-block;
 }
@@ -146,16 +145,19 @@
   width: 100%;
   padding: 12px 24px;
   background: var(--status-completed);
-  color: var(--white);
+  color: #000;
   border: none;
-  border-radius: 8px;
-  font-weight: 600;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: filter 0.2s;
 }
 
 .routes__close-btn:hover:not(:disabled) {
-  background: #047857;
+  filter: brightness(1.1);
 }
 
 .routes__close-btn:disabled {
@@ -173,10 +175,9 @@
 /* Closed banner */
 .routes__closed-banner {
   padding: 12px 24px;
-  background: #1a3d2e;
+  background: rgba(74, 158, 107, 0.15);
   border: 1px solid var(--status-completed);
-  border-radius: 8px;
-  color: var(--amber-line);
+  color: var(--status-completed);
   text-align: center;
   font-size: 14px;
 }

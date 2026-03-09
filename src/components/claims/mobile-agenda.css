@@ -3,18 +3,12 @@
  *
  * Mobile-only styles for the daily agenda view.
  * Designed for field use: large tap targets, clear hierarchy, minimal decoration.
- *
- * Color palette matches existing app (dark theme):
- * - Background: #1a202c (brand-dark-900)
- * - Card bg: #2d3748 (brand-dark-800)
- * - Border: #4a5568 (brand-dark-700)
- * - Text primary: #e2e8f0 (brand-light-100)
- * - Text secondary: #a0aec0 (brand-light-300)
+ * Cipher Dispatch Codex design system.
  */
 
 .mobile-agenda {
   min-height: 100vh;
-  background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+  background: var(--plate);
   padding: 12px;
   padding-bottom: 24px;
 }
@@ -29,22 +23,26 @@
   align-items: center;
   margin-bottom: 12px;
   padding-bottom: 12px;
-  border-bottom: 1px solid #4a5568;
+  border-bottom: 1px solid var(--rivet);
 }
 
 .mobile-agenda__date {
-  font-size: 20px;
-  font-weight: 700;
-  color: #e2e8f0;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 24px;
+  font-weight: 400;
+  color: var(--white);
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
 .mobile-agenda__date-detail {
-  font-size: 14px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
   font-weight: 400;
-  color: #a0aec0;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-sub);
 }
 
 /* ========================================
@@ -58,24 +56,28 @@
 }
 
 .mobile-agenda__nav-btn {
-  background: #374151;
-  border: none;
-  color: #e2e8f0;
+  background: var(--steel-lift);
+  border: 1px solid var(--rivet);
+  color: var(--text);
   padding: 10px 14px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 600;
+  border-radius: 0;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   cursor: pointer;
   min-width: 44px;
   min-height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.15s;
+  transition: background-color 0.15s, border-color 0.15s;
 }
 
 .mobile-agenda__nav-btn:active {
-  background: #4a5568;
+  background: var(--steel-mid);
+  border-color: var(--rivet-hi);
 }
 
 .mobile-agenda__nav-btn--today {
@@ -83,7 +85,9 @@
 }
 
 .mobile-agenda__nav-btn--active {
-  background: #667eea;
+  background: var(--amber);
+  color: #000;
+  border-color: var(--amber);
 }
 
 /* ========================================
@@ -95,29 +99,35 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #2d3748;
-  border: 2px solid #4a5568;
-  border-radius: 8px;
+  background: var(--steel);
+  border: 1px solid var(--rivet);
+  border-left: 3px solid var(--amber);
+  border-radius: 0;
   padding: 14px 16px;
-  color: #e2e8f0;
-  font-size: 15px;
-  font-weight: 600;
+  color: var(--white);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   cursor: pointer;
   margin-bottom: 16px;
   transition: border-color 0.15s;
 }
 
 .mobile-agenda__backlog-btn:active {
-  border-color: #667eea;
+  border-color: var(--amber-line);
 }
 
 .mobile-agenda__backlog-count {
-  background: #667eea;
-  color: white;
+  background: var(--amber);
+  color: #000;
   padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 13px;
-  font-weight: 700;
+  border-radius: 0;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
   min-width: 28px;
   text-align: center;
 }
@@ -132,17 +142,18 @@
   gap: 12px;
 }
 
-/* Empty State - UI-only, no auto-switching or fetching */
+/* Empty State */
 .mobile-agenda__empty {
   text-align: center;
   padding: 48px 24px;
-  color: #a0aec0;
+  color: var(--text-sub);
 }
 
 .mobile-agenda__empty-text {
-  font-size: 16px;
-  font-weight: 500;
-  color: #a0aec0;
+  font-family: 'Barlow', sans-serif;
+  font-size: 15px;
+  font-weight: 300;
+  color: var(--text-sub);
   margin-bottom: 20px;
 }
 
@@ -154,30 +165,33 @@
 }
 
 .mobile-agenda__empty-btn {
-  background: #667eea;
-  color: white;
+  background: var(--amber);
+  color: #000;
   border: none;
-  padding: 12px 24px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 600;
+  padding: 12px 28px;
+  border-radius: 0;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   cursor: pointer;
   min-width: 160px;
   min-height: 44px;
 }
 
 .mobile-agenda__empty-btn:active {
-  background: #5a67d8;
+  opacity: 0.85;
 }
 
 .mobile-agenda__empty-btn--secondary {
   background: transparent;
-  border: 2px solid #4a5568;
-  color: #a0aec0;
+  border: 1px solid var(--rivet);
+  color: var(--muted);
 }
 
 .mobile-agenda__empty-btn--secondary:active {
-  background: #374151;
+  background: var(--steel-lift);
 }
 
 /* ========================================
@@ -190,21 +204,22 @@
 
 .mobile-agenda__item {
   display: block;
-  background: #2d3748;
-  border-radius: 8px;
+  background: var(--steel);
+  border-radius: 0;
   padding: 12px 14px;
   text-decoration: none;
-  color: #e2e8f0;
-  border-left: 4px solid #9CA3AF;
+  color: var(--white);
+  border: 1px solid var(--rivet);
+  border-left: 3px solid var(--rivet);
   transition: transform 0.1s, box-shadow 0.1s;
 }
 
 .mobile-agenda__item:active {
   transform: scale(0.98);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
-/* Row 1: Time window (most prominent) + Status pill */
+/* Row 1: Time window + Status pill */
 .mobile-agenda__item-header {
   display: flex;
   justify-content: space-between;
@@ -213,17 +228,20 @@
 }
 
 .mobile-agenda__item-time {
-  font-size: 15px;
-  font-weight: 700;
-  color: #e2e8f0;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--white);
 }
 
 .mobile-agenda__item-status {
+  font-family: 'DM Mono', monospace;
   font-size: 10px;
-  font-weight: 700;
-  color: white;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: var(--white);
   padding: 3px 8px;
-  border-radius: 3px;
+  border-radius: 0;
   text-transform: uppercase;
   flex-shrink: 0;
   background: var(--status-unassigned);
@@ -245,21 +263,24 @@
   background: var(--status-canceled);
 }
 
-/* Row 2: Client name - truncate overflow */
+/* Row 2: Client name */
 .mobile-agenda__item-client {
+  font-family: 'Barlow', sans-serif;
   font-size: 14px;
-  font-weight: 500;
-  color: #cbd5e0;
+  font-weight: 300;
+  color: var(--text-hi);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   margin-bottom: 2px;
 }
 
-/* Row 3: City / Firm - truncate overflow */
+/* Row 3: City / Firm */
 .mobile-agenda__item-location {
-  font-size: 12px;
-  color: #718096;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -275,13 +296,15 @@
 
 .mobile-agenda__item-divider {
   margin: 0 6px;
-  color: #4a5568;
+  color: var(--rivet);
   flex-shrink: 0;
 }
 
 .mobile-agenda__item-firm {
-  font-size: 12px;
-  font-weight: 600;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
   flex-shrink: 0;
 }
 
@@ -292,7 +315,8 @@
 .mobile-agenda__overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(7, 8, 10, 0.88);
+  backdrop-filter: blur(10px);
   z-index: 100;
 }
 
@@ -301,14 +325,15 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: #1a202c;
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
+  background: var(--steel);
+  border-top: 2px solid var(--amber);
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
   max-height: 70vh;
   z-index: 101;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 0 1px rgba(232, 149, 42, 0.06), 0 -20px 60px rgba(0, 0, 0, 0.6);
 }
 
 .mobile-agenda__sheet-header {
@@ -316,20 +341,22 @@
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  border-bottom: 1px solid #4a5568;
+  background: var(--steel-mid);
+  border-bottom: 1px solid var(--rivet);
   flex-shrink: 0;
 }
 
 .mobile-agenda__sheet-title {
-  font-size: 17px;
-  font-weight: 700;
-  color: #e2e8f0;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--white);
 }
 
 .mobile-agenda__sheet-close {
-  background: #374151;
-  border: none;
-  color: #e2e8f0;
+  background: var(--steel-lift);
+  border: 1px solid var(--rivet);
+  color: var(--text);
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -342,7 +369,8 @@
 }
 
 .mobile-agenda__sheet-close:active {
-  background: #4a5568;
+  background: var(--steel-mid);
+  border-color: var(--rivet-hi);
 }
 
 .mobile-agenda__sheet-content {
@@ -354,24 +382,27 @@
 .mobile-agenda__sheet-empty {
   text-align: center;
   padding: 32px;
-  color: #718096;
-  font-size: 15px;
+  color: var(--text-dim);
+  font-family: 'Barlow', sans-serif;
+  font-size: 14px;
+  font-weight: 300;
 }
 
-/* Backlog Item - READ-ONLY: tap opens claim detail only */
+/* Backlog Item */
 .mobile-agenda__backlog-item {
   display: block;
-  background: #2d3748;
-  border-radius: 8px;
+  background: var(--steel-mid);
+  border-radius: 0;
   padding: 12px 14px;
   margin-bottom: 8px;
   text-decoration: none;
-  color: #e2e8f0;
-  border-left: 4px solid #9CA3AF;
+  color: var(--white);
+  border: 1px solid var(--rivet);
+  border-left: 3px solid var(--rivet);
 }
 
 .mobile-agenda__backlog-item:active {
-  background: #374151;
+  background: var(--steel-lift);
 }
 
 .mobile-agenda__backlog-item-main {
@@ -379,9 +410,10 @@
 }
 
 .mobile-agenda__backlog-item-customer {
+  font-family: 'Barlow', sans-serif;
   font-size: 14px;
-  font-weight: 500;
-  color: #cbd5e0;
+  font-weight: 300;
+  color: var(--text-hi);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -389,8 +421,10 @@
 }
 
 .mobile-agenda__backlog-item-location {
-  font-size: 12px;
-  color: #718096;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -398,5 +432,5 @@
 
 .mobile-agenda__backlog-divider {
   margin: 0 6px;
-  color: #4a5568;
+  color: var(--rivet);
 }

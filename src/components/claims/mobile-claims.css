@@ -1,5 +1,5 @@
 /**
- * Mobile Claims List Styles
+ * Mobile Claims List Styles — Cipher Dispatch Codex
  *
  * Mobile-only styles for the "My Claims" view (<=600px).
  * Designed for field use: large tap targets, clear hierarchy, fast scanning.
@@ -15,23 +15,10 @@
  * - Filters: Horizontal scrollable pills
  * - Sort: Single dropdown (secondary priority)
  * - Cards: 4-row layout with firm color as left border
- *
- * COLOR PALETTE (dark theme):
- * - Background: #0f172a / #1e293b gradient
- * - Card bg: #374151
- * - Border: #4a5568
- * - Text primary: #e2e8f0
- * - Text secondary: #a0aec0
  */
 
 /* ========================================
    ROOT CONTAINER - VIEWPORT CONTAINMENT
-
-   CRITICAL: This prevents horizontal scroll.
-   - width: 100% fills parent
-   - max-width: 100vw hard clamps to viewport
-   - overflow-x: hidden kills any horizontal overflow
-   - box-sizing ensures padding doesn't add width
    ======================================== */
 
 .mobile-claims {
@@ -40,11 +27,10 @@
   overflow-x: hidden;
   box-sizing: border-box;
   min-height: 100vh;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-  padding-bottom: 80px; /* Space for FAB */
+  background: var(--plate);
+  padding-bottom: 80px;
 }
 
-/* Apply box-sizing to all children for consistent width calculations */
 .mobile-claims *,
 .mobile-claims *::before,
 .mobile-claims *::after {
@@ -53,11 +39,6 @@
 
 /* ========================================
    Header: Title + Search Icon
-
-   CONTAINMENT:
-   - width: 100% fills container
-   - No fixed widths
-   - Padding included in width via box-sizing
    ======================================== */
 
 .mobile-claims__header {
@@ -66,47 +47,44 @@
   justify-content: space-between;
   width: 100%;
   padding: 16px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  background: var(--steel-mid);
+  border-bottom: 1px solid var(--rivet);
 }
 
 .mobile-claims__title {
   margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-  color: white;
-  /* Allow title to shrink if needed */
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--white);
+  letter-spacing: 0.04em;
   min-width: 0;
   flex: 1;
 }
 
 .mobile-claims__search-btn {
-  /* Fixed size is OK here - it's small and flex-shrink: 0 keeps it stable */
   flex-shrink: 0;
   width: 40px;
   height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  border-radius: 8px;
+  background: transparent;
+  border: 1px solid var(--rivet);
+  border-radius: 0;
+  color: var(--text);
   font-size: 18px;
   cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
 }
 
 .mobile-claims__search-btn:active {
-  background: rgba(255, 255, 255, 0.3);
+  border-color: var(--amber);
+  color: var(--amber);
 }
 
 /* ========================================
    Search Bar (expanded state)
-
-   CONTAINMENT:
-   - width: 100% fills header
-   - Input uses flex: 1 to fill remaining space
-   - Close button is fixed size but flex-shrink: 0
-   - No overflow possible
    ======================================== */
 
 .mobile-claims__search-bar {
@@ -114,69 +92,71 @@
   align-items: center;
   gap: 8px;
   width: 100%;
-  /* Ensure search bar doesn't exceed container */
   max-width: 100%;
 }
 
 .mobile-claims__search-input {
-  /* flex: 1 fills available space, min-width: 0 allows shrinking */
   flex: 1;
   min-width: 0;
   width: 100%;
   max-width: 100%;
   padding: 10px 14px;
-  font-size: 16px;
-  border: none;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.95);
-  color: #1e293b;
+  font-family: 'Barlow', sans-serif;
+  font-size: 13px;
+  font-weight: 300;
+  border: 1px solid var(--rivet);
+  border-top-color: var(--rivet-hi);
+  border-radius: 0;
+  background: var(--input-bg);
+  color: var(--white);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .mobile-claims__search-input::placeholder {
-  color: #64748b;
+  color: var(--text-dim);
+}
+
+.mobile-claims__search-input:focus {
+  outline: none;
+  border-color: var(--amber-line);
 }
 
 .mobile-claims__search-close {
-  /* Fixed size close button - flex-shrink: 0 keeps it stable */
   flex-shrink: 0;
   width: 40px;
   height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  border-radius: 8px;
-  color: white;
+  background: transparent;
+  border: 1px solid var(--rivet);
+  border-radius: 0;
+  color: var(--text);
   font-size: 24px;
   cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
 }
 
 .mobile-claims__search-close:active {
-  background: rgba(255, 255, 255, 0.3);
+  border-color: var(--amber);
+  color: var(--amber);
 }
 
 /* ========================================
    Filter Pills: Horizontal scrollable
-
-   CONTAINMENT (critical):
-   - Container has width: 100% and max-width: 100%
-   - overflow-x: auto allows pills to scroll INSIDE container
-   - Pills use flex-shrink: 0 to maintain size
-   - Container does NOT expand beyond viewport
    ======================================== */
 
 .mobile-claims__filters {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
   max-width: 100%;
-  padding: 12px 16px;
-  /* Scroll inside container, don't expand it */
+  padding: 10px 16px;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  background: #1e293b;
+  background: var(--steel-mid);
+  border-bottom: 1px solid var(--rivet);
 }
 
 .mobile-claims__filters::-webkit-scrollbar {
@@ -184,75 +164,74 @@
 }
 
 .mobile-claims__filter-pill {
-  /* flex-shrink: 0 maintains pill size during scroll */
   flex-shrink: 0;
-  background: #374151;
-  border: none;
-  color: #a0aec0;
-  padding: 10px 18px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 600;
+  background: transparent;
+  border: 1px solid var(--rivet);
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  color: var(--text);
+  padding: 8px 16px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
   cursor: pointer;
   white-space: nowrap;
-  min-height: 40px;
-  transition: background-color 0.15s, color 0.15s;
+  min-height: 36px;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
 }
 
 .mobile-claims__filter-pill:active {
-  background: #4a5568;
+  background: var(--steel-lift);
 }
 
 .mobile-claims__filter-pill--active {
-  background: #667eea;
-  color: white;
+  background: var(--amber-dim);
+  color: var(--amber);
+  border-color: var(--amber-line);
+  border-bottom: 2px solid var(--amber);
 }
 
 /* ========================================
    Sort: Single dropdown control
-
-   CONTAINMENT:
-   - Container width: 100%
-   - Select width: 100% fills container
-   - Padding included via box-sizing
    ======================================== */
 
 .mobile-claims__sort {
   width: 100%;
   padding: 8px 16px 12px;
-  background: #1e293b;
-  border-bottom: 1px solid #374151;
+  background: var(--steel-mid);
+  border-bottom: 1px solid var(--rivet);
 }
 
 .mobile-claims__sort-select {
   width: 100%;
   max-width: 100%;
   padding: 10px 14px;
-  padding-right: 36px; /* Space for dropdown arrow */
-  font-size: 14px;
-  font-weight: 500;
-  color: #e2e8f0;
-  background-color: #374151;
-  border: 1px solid #4a5568;
-  border-radius: 6px;
+  padding-right: 36px;
+  font-family: 'Barlow', sans-serif;
+  font-size: 13px;
+  font-weight: 300;
+  color: var(--white);
+  background-color: var(--input-bg);
+  border: 1px solid var(--rivet);
+  border-top-color: var(--rivet-hi);
+  border-radius: 0;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
   cursor: pointer;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a0aec0' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238f9399' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 12px center;
 }
 
 .mobile-claims__sort-select:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--amber-line);
 }
 
 /* ========================================
    Claims List
-
-   CONTAINMENT:
-   - width: 100% fills container
-   - Padding included via box-sizing
    ======================================== */
 
 .mobile-claims__list {
@@ -271,54 +250,45 @@
 }
 
 .mobile-claims__empty-text {
-  font-size: 16px;
-  font-weight: 500;
-  color: #e2e8f0;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--white);
   margin-bottom: 8px;
 }
 
 .mobile-claims__empty-subtext {
-  font-size: 14px;
-  color: #718096;
+  font-family: 'Barlow', sans-serif;
+  font-size: 13px;
+  font-weight: 300;
+  color: var(--text-dim);
 }
 
 /* ========================================
    Claim Card
 
-   HIERARCHY (critical):
+   HIERARCHY:
    Row 1: CLAIM NUMBER + STATUS BADGE
    Row 2: CUSTOMER NAME
    Row 3: DATE · TIME
    Row 4: FIRM BADGE
-
-   CONTAINMENT:
-   - width: 100% fills list container
-   - border-left does NOT add to width (it's inside box)
-   - Text truncation via ellipsis, never expands
-
-   Rules:
-   - Entire card tappable
-   - Status badge always visible
-   - Firm color as LEFT BORDER only
-   - Max 3 text rows below header
-   - Truncate overflow with ellipsis
    ======================================== */
 
 .mobile-claims__card {
   display: block;
   width: 100%;
-  background: #374151;
-  border-radius: 8px;
+  background: var(--steel);
+  border: 1px solid var(--rivet);
+  border-left: 3px solid var(--rivet);
+  border-radius: 0;
   padding: 14px 16px;
   text-decoration: none;
-  color: #e2e8f0;
-  /* Firm color shown as left border only - does NOT add width */
-  border-left: 4px solid #9CA3AF;
-  transition: transform 0.1s;
+  color: var(--white);
+  transition: border-color 0.15s;
 }
 
 .mobile-claims__card:active {
-  transform: scale(0.98);
+  border-color: var(--rivet-hi);
 }
 
 /* Row 1: Claim Number + Status Badge */
@@ -328,28 +298,29 @@
   align-items: center;
   width: 100%;
   margin-bottom: 8px;
-  /* Prevent row from expanding */
   min-width: 0;
 }
 
 .mobile-claims__card-number {
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 16px;
-  font-weight: 700;
-  color: #e2e8f0;
-  /* Allow number to shrink if needed */
+  font-weight: 400;
+  color: var(--white);
+  letter-spacing: 0.04em;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .mobile-claims__card-status {
-  /* Status badge is fixed size, flex-shrink: 0 keeps it visible */
   flex-shrink: 0;
+  font-family: 'DM Mono', monospace;
   font-size: 10px;
-  font-weight: 700;
-  color: white;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  color: var(--white);
   padding: 3px 8px;
-  border-radius: 3px;
+  border-radius: 0;
   text-transform: uppercase;
   white-space: nowrap;
   background: var(--status-unassigned);
@@ -371,12 +342,13 @@
   background: var(--status-canceled);
 }
 
-/* Row 2: Customer Name - MUST truncate, never expand */
+/* Row 2: Customer Name */
 .mobile-claims__card-row2 {
   width: 100%;
-  font-size: 15px;
-  font-weight: 600;
-  color: #f1f5f9;
+  font-family: 'Barlow', sans-serif;
+  font-size: 14px;
+  font-weight: 300;
+  color: var(--text-hi);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -386,8 +358,10 @@
 /* Row 3: Date · Time */
 .mobile-claims__card-row3 {
   width: 100%;
+  font-family: 'Barlow', sans-serif;
   font-size: 13px;
-  color: #a0aec0;
+  font-weight: 300;
+  color: var(--text);
   margin-bottom: 4px;
   white-space: nowrap;
   overflow: hidden;
@@ -395,16 +369,17 @@
 }
 
 .mobile-claims__card-time-sep {
-  color: #64748b;
+  color: var(--muted);
 }
 
-/* Row 4: Firm Badge - truncate if needed */
+/* Row 4: Firm Badge */
 .mobile-claims__card-row4 {
   width: 100%;
-  font-size: 12px;
-  font-weight: 600;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  font-weight: 400;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.14em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -412,11 +387,6 @@
 
 /* ========================================
    Floating Action Button (Admin only)
-
-   CONTAINMENT:
-   - position: fixed keeps it out of document flow
-   - right: 24px keeps it inside viewport
-   - Does NOT affect layout width
    ======================================== */
 
 .mobile-claims__fab {
@@ -425,8 +395,9 @@
   right: 24px;
   width: 56px;
   height: 56px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: var(--amber);
+  color: #000;
+  border: none;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -434,12 +405,12 @@
   font-size: 28px;
   font-weight: 300;
   text-decoration: none;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 16px rgba(232, 149, 42, 0.35);
   z-index: 50;
   transition: transform 0.15s, box-shadow 0.15s;
 }
 
 .mobile-claims__fab:active {
   transform: scale(0.95);
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 2px 8px rgba(232, 149, 42, 0.25);
 }
