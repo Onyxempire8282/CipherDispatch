@@ -117,6 +117,19 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
 
       const { error } = await supabase.from('claims_v').update(updateData).eq('id', pendingDrop);
       if (error) throw error;
+
+      // Pre-wired for n8n — fires when claim is scheduled
+      supabase.functions.invoke("notify-status-change", {
+        body: {
+          claim_id: pendingDrop,
+          new_status: "SCHEDULED",
+          claim_number: claims.find(c => c.id === pendingDrop)?.claim_number,
+          appointment_start: appointmentStart.toISOString(),
+          customer_name: claims.find(c => c.id === pendingDrop)?.customer_name,
+          assigned_to: selectedAppraiser || null,
+        }
+      }).catch(() => {}); // silent until n8n is live
+
       handleCancelSchedule();
       onClaimUpdate();
     } catch (error: any) {

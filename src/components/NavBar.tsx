@@ -13,6 +13,8 @@ const ADMIN_TABS = [
   { label: "Calendar", path: "/admin/claims?view=calendar" },
   { label: "Vendors", path: "/admin/vendors" },
   { label: "Payouts", path: "/admin/payouts" },
+  { label: "Contractors", path: "/admin/contractors" },
+  { label: "KPI", path: "/admin/kpi" },
 ];
 
 const APPRAISER_TABS = [
@@ -25,7 +27,8 @@ const ADMIN_BOTTOM_NAV = [
   { label: "Claims", icon: "◫", path: "/admin/claims" },
   { label: "Vendors", icon: "⊹", path: "/admin/vendors" },
   { label: "Payouts", icon: "⊞", path: "/admin/payouts" },
-  { label: "Home", icon: "⊟", path: "/" },
+  { label: "KPI", icon: "⊟", path: "/admin/kpi" },
+  { label: "Home", icon: "⌂", path: "/" },
 ];
 
 const APPRAISER_BOTTOM_NAV = [

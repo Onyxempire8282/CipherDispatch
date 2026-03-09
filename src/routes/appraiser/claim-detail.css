@@ -388,6 +388,7 @@
 .detail__status-badge--progress    { background: var(--status-progress); }
 .detail__status-badge--scheduled   { background: var(--status-scheduled); }
 .detail__status-badge--canceled    { background: var(--status-canceled); }
+.detail__status-badge--writing     { background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.4); color: #a78bfa; }
 .detail__status-badge--default     { background: var(--status-unassigned); }
 
 /* ---- Status actions ---- */

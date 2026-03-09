@@ -308,38 +308,16 @@ export default function ClaimDetail() {
   };
 
   const markComplete = async () => {
-    if (confirm("Mark this claim as COMPLETED? This will notify the admin.")) {
-      // Set completed_month to current YYYY-MM when marking as complete
-      const now = new Date();
-      const completedMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-
-      // Store completion_date as date-only at midnight UTC to avoid timezone issues
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
-      const completionDate = `${year}-${month}-${day}T00:00:00Z`;
-
-      // Calculate expected payout date based on firm's pay schedule
-      let expectedPayoutDate = null;
-      if (claim.firm) {
-        try {
-          const payPeriod = getPayPeriod(claim.firm, now, firmSchedules[normalizeFirmNameForConfig(claim.firm)]);
-          const payYear = payPeriod.payoutDate.getFullYear();
-          const payMonth = String(payPeriod.payoutDate.getMonth() + 1).padStart(2, '0');
-          const payDay = String(payPeriod.payoutDate.getDate()).padStart(2, '0');
-          expectedPayoutDate = `${payYear}-${payMonth}-${payDay}T00:00:00Z`;
-        } catch (err) {
-          console.warn("Could not calculate expected payout date:", err);
-        }
-      }
-
+    if (confirm("Mark inspection as complete? This will send the claim to the writer.")) {
       await update({
-        status: "COMPLETED",
-        completed_month: completedMonth,
-        completion_date: completionDate,
-        expected_payout_date: expectedPayoutDate,
-        payout_status: "unpaid"
+        status: "WRITING",
+        writing_started_at: new Date().toISOString(),
+        photos_completed: true,
       });
+      // Fire webhook for n8n (pre-wired, ready for when n8n is connected)
+      supabase.functions.invoke("notify-status-change", {
+        body: { claim_id: id, new_status: "WRITING", claim_number: claim.claim_number }
+      }).catch(() => {}); // silent fail until n8n is live
     }
   };
 
@@ -529,6 +507,10 @@ export default function ClaimDetail() {
       }
       return;
     }
+    if (status === "WRITING") {
+      update({ status: "WRITING", writing_started_at: new Date().toISOString() });
+      return;
+    }
     if (status === "COMPLETED") {
       const now = new Date();
       const year = now.getFullYear();
@@ -550,13 +532,26 @@ export default function ClaimDetail() {
         }
       }
 
-      update({
+      await update({
         status: "COMPLETED",
         completion_date: completionDate,
         completed_month: completedMonth,
         expected_payout_date: expectedPayoutDate,
         payout_status: "unpaid"
       });
+
+      // Pre-wired for n8n Workflow 4
+      supabase.functions.invoke("notify-status-change", {
+        body: {
+          claim_id: id,
+          new_status: "COMPLETED",
+          claim_number: claim.claim_number,
+          customer_name: claim.customer_name,
+          firm: claim.firm,
+          file_total: claim.file_total,
+          pay_amount: claim.pay_amount,
+        }
+      }).catch(() => {});
       return;
     }
     update({ status });
@@ -667,6 +662,8 @@ export default function ClaimDetail() {
       ? "detail__status-badge--progress"
       : claim.status === "SCHEDULED"
       ? "detail__status-badge--scheduled"
+      : claim.status === "WRITING"
+      ? "detail__status-badge--writing"
       : claim.status === "CANCELED"
       ? "detail__status-badge--canceled"
       : "detail__status-badge--default";
@@ -1233,6 +1230,11 @@ export default function ClaimDetail() {
                     if (confirm("Cancel this claim? This will mark it as CANCELED and remove it from active claims.")) {
                       update({ status: "CANCELED" });
                     }
+                  } else if (value === "WRITING") {
+                    update({
+                      status: "WRITING",
+                      writing_started_at: new Date().toISOString()
+                    });
                   } else if (value === "COMPLETED") {
                     // Calculate expected payout date when marking as COMPLETED
                     const now = new Date();
@@ -1255,13 +1257,26 @@ export default function ClaimDetail() {
                       }
                     }
 
-                    update({
+                    await update({
                       status: "COMPLETED",
                       completion_date: completionDate,
                       completed_month: completedMonth,
                       expected_payout_date: expectedPayoutDate,
                       payout_status: "unpaid"
                     });
+
+                    // Pre-wired for n8n Workflow 4
+                    supabase.functions.invoke("notify-status-change", {
+                      body: {
+                        claim_id: id,
+                        new_status: "COMPLETED",
+                        claim_number: claim.claim_number,
+                        customer_name: claim.customer_name,
+                        firm: claim.firm,
+                        file_total: claim.file_total,
+                        pay_amount: claim.pay_amount,
+                      }
+                    }).catch(() => {});
                   } else if (value) {
                     update({ status: value });
                   }
@@ -1271,6 +1286,7 @@ export default function ClaimDetail() {
                 <option value="">Choose an action...</option>
                 <option value="SCHEDULED">📅 Mark as Scheduled</option>
                 <option value="IN_PROGRESS">🔧 In Progress</option>
+                <option value="WRITING">✍️ Send to Writer</option>
                 <option value="COMPLETED">✅ Mark as Complete</option>
                 <option value="CANCELED">❌ Cancel Claim</option>
                 <option value="DELETE">
