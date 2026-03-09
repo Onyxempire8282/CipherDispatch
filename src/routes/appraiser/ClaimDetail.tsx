@@ -209,7 +209,7 @@ export default function ClaimDetail() {
     setEditAddressLine2(claim?.address_line2 || "");
     setEditCity(claim?.city || "");
     setEditState(claim?.state || "");
-    setEditZip(claim?.zip || "");
+    setEditZip(claim?.zip ? String(claim.zip).replace('.0', '') : "");
     setEditAppointmentStart(
       claim?.appointment_start
         ? (() => {
@@ -259,10 +259,10 @@ export default function ClaimDetail() {
       address_line2: editAddressLine2,
       city: editCity,
       state: editState,
-      zip: editZip,
+      zip: editZip ? String(editZip).replace('.0', '') : null,
       assigned_to: editAssignedTo || null,
       firm: editFirmName || null,
-      location_type: editLocationTypeValue,
+      // location_type removed until PostgREST schema cache clears
     };
 
     // Add vehicle year if valid
@@ -660,7 +660,7 @@ export default function ClaimDetail() {
   const openInMaps = () => {
     const q = encodeURIComponent(
       `${claim.address_line1} ${claim.city || ""} ${claim.state || ""} ${
-        claim.zip || ""
+        claim.zip ? String(claim.zip).replace('.0', '') : ""
       }`
     );
     window.open(`https://www.google.com/maps?q=${q}`, "_blank");
@@ -1557,7 +1557,7 @@ export default function ClaimDetail() {
               <div className="detail__field--lg">
                 <div className="detail__label">City, State, ZIP</div>
                 <div className="detail__value">
-                  {claim.city}, {claim.state} {claim.zip}
+                  {claim.city}, {claim.state} {claim.zip ? String(claim.zip).replace('.0', '') : ''}
                 </div>
               </div>
             </>
