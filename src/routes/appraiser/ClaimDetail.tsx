@@ -156,7 +156,7 @@ export default function ClaimDetail() {
           maxSizeMB: 1.5,
           useWebWorker: true,
         });
-        const path = `claim/${id}/${crypto.randomUUID()}.jpg`;
+        const path = `${id}/${crypto.randomUUID()}.jpg`;
         const { error: upErr } = await supabase.storage
           .from("claim-photos")
           .upload(path, compressed, { contentType: "image/jpeg" });
