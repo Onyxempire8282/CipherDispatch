@@ -23,3 +23,25 @@
 @layer components {
   /* BEM-style custom components when Tailwind classes aren't sufficient */
 }
+
+/* Fix datetime-local inputs not tappable on mobile/desktop */
+input[type="datetime-local"],
+input[type="date"],
+input[type="time"] {
+  position: relative;
+  z-index: 1;
+}
+
+input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: auto;
+  height: auto;
+  opacity: 0;
+  cursor: pointer;
+}
