@@ -23,6 +23,7 @@ import PhotoCapture from "./routes/appraiser/PhotoCapture";
 import ConfirmAppointment from "./routes/public/ConfirmAppointment";
 import ClientPortal from "./routes/public/ClientPortal";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import ErrorBoundary from "./components/ErrorBoundary";
 import "./index.css";
 import "leaflet/dist/leaflet.css";
 
@@ -36,13 +37,29 @@ const updateSW = registerSW({
 
 const router = createBrowserRouter(
   [
-    { path: "/", element: <App /> },
-    { path: "/login", element: <Login /> },
+    {
+      path: "/",
+      element: (
+        <ErrorBoundary label="Home">
+          <App />
+        </ErrorBoundary>
+      ),
+    },
+    {
+      path: "/login",
+      element: (
+        <ErrorBoundary label="Login">
+          <Login />
+        </ErrorBoundary>
+      ),
+    },
     {
       path: "/admin/claims",
       element: (
         <ProtectedRoute requiredRole="admin">
-          <AdminClaims />
+          <ErrorBoundary label="Claims">
+            <AdminClaims />
+          </ErrorBoundary>
         </ProtectedRoute>
       ),
     },
@@ -50,7 +67,9 @@ const router = createBrowserRouter(
       path: "/admin/claims/new",
       element: (
         <ProtectedRoute requiredRole="admin">
-          <AdminNewClaim />
+          <ErrorBoundary label="New Claim">
+            <AdminNewClaim />
+          </ErrorBoundary>
         </ProtectedRoute>
       ),
     },
@@ -58,7 +77,9 @@ const router = createBrowserRouter(
       path: "/admin/vendors",
       element: (
         <ProtectedRoute requiredRole="admin">
-          <AdminVendors />
+          <ErrorBoundary label="Vendors">
+            <AdminVendors />
+          </ErrorBoundary>
         </ProtectedRoute>
       ),
     },
@@ -66,7 +87,9 @@ const router = createBrowserRouter(
       path: "/admin/payouts",
       element: (
         <ProtectedRoute requiredRole="admin">
-          <PayoutDashboard />
+          <ErrorBoundary label="Payouts">
+            <PayoutDashboard />
+          </ErrorBoundary>
         </ProtectedRoute>
       ),
     },
@@ -74,7 +97,9 @@ const router = createBrowserRouter(
       path: "/admin/kpi",
       element: (
         <ProtectedRoute requiredRole="admin">
-          <KPIDashboard />
+          <ErrorBoundary label="KPI">
+            <KPIDashboard />
+          </ErrorBoundary>
         </ProtectedRoute>
       ),
     },
@@ -82,7 +107,9 @@ const router = createBrowserRouter(
       path: "/admin/contractors",
       element: (
         <ProtectedRoute requiredRole="admin">
-          <ContractorManagement />
+          <ErrorBoundary label="Contractors">
+            <ContractorManagement />
+          </ErrorBoundary>
         </ProtectedRoute>
       ),
     },
@@ -90,7 +117,9 @@ const router = createBrowserRouter(
       path: "/my-claims",
       element: (
         <ProtectedRoute>
-          <MyClaims />
+          <ErrorBoundary label="My Claims">
+            <MyClaims />
+          </ErrorBoundary>
         </ProtectedRoute>
       ),
     },
@@ -98,7 +127,9 @@ const router = createBrowserRouter(
       path: "/my-routes",
       element: (
         <ProtectedRoute>
-          <MyRoutes />
+          <ErrorBoundary label="My Routes">
+            <MyRoutes />
+          </ErrorBoundary>
         </ProtectedRoute>
       ),
     },
@@ -106,7 +137,9 @@ const router = createBrowserRouter(
       path: "/claim/:id",
       element: (
         <ProtectedRoute>
-          <ClaimDetail />
+          <ErrorBoundary label="Claim Detail">
+            <ClaimDetail />
+          </ErrorBoundary>
         </ProtectedRoute>
       ),
     },
@@ -114,7 +147,9 @@ const router = createBrowserRouter(
       path: "/appraiser/claim/:id",
       element: (
         <ProtectedRoute>
-          <ClaimDetail />
+          <ErrorBoundary label="Claim Detail">
+            <ClaimDetail />
+          </ErrorBoundary>
         </ProtectedRoute>
       ),
     },
@@ -122,23 +157,35 @@ const router = createBrowserRouter(
       path: "/admin/claims/:id/supplement",
       element: (
         <ProtectedRoute requiredRole="admin">
-          <NewSupplement />
+          <ErrorBoundary label="New Supplement">
+            <NewSupplement />
+          </ErrorBoundary>
         </ProtectedRoute>
       ),
     },
     {
       path: "/confirm",
-      element: <ConfirmAppointment />,
+      element: (
+        <ErrorBoundary label="Confirm Appointment">
+          <ConfirmAppointment />
+        </ErrorBoundary>
+      ),
     },
     {
       path: "/portal",
-      element: <ClientPortal />,
+      element: (
+        <ErrorBoundary label="Client Portal">
+          <ClientPortal />
+        </ErrorBoundary>
+      ),
     },
     {
       path: "/appraiser/claim/:id/photos",
       element: (
         <ProtectedRoute>
-          <PhotoCapture />
+          <ErrorBoundary label="Photo Capture">
+            <PhotoCapture />
+          </ErrorBoundary>
         </ProtectedRoute>
       ),
     },
@@ -150,6 +197,8 @@ const router = createBrowserRouter(
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <ErrorBoundary label="Application">
+      <RouterProvider router={router} />
+    </ErrorBoundary>
   </React.StrictMode>
 );
