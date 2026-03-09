@@ -109,9 +109,7 @@ export default function ClaimDetail() {
       .select("*")
       .eq("claim_id", id)
       .order("created_at", { ascending: false });
-    const photoData = ph.data || [];
-    console.log('Photo objects from DB:', photoData.map((p: any) => ({ id: p.id, storage_path: p.storage_path, url: getPhotoUrlWithFallback(p.storage_path) })));
-    setPhotos(photoData);
+    setPhotos(ph.data || []);
   };
 
   useEffect(() => {
@@ -158,7 +156,7 @@ export default function ClaimDetail() {
           maxSizeMB: 1.5,
           useWebWorker: true,
         });
-        const path = `${id}/${crypto.randomUUID()}.jpg`;
+        const path = `claim/${id}/${crypto.randomUUID()}.jpg`;
         const { error: upErr } = await supabase.storage
           .from("claim-photos")
           .upload(path, compressed, { contentType: "image/jpeg" });

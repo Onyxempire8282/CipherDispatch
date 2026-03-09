@@ -6,13 +6,7 @@ import imageCompression from 'browser-image-compression';
 export function getPhotoUrlWithFallback(storagePath: string): string {
   if (!storagePath) return '';
   if (storagePath.startsWith('http')) return storagePath;
-
-  // Strip "claim/" prefix if present - files are stored without it
-  const cleanPath = storagePath.startsWith('claim/')
-    ? storagePath.slice(6)
-    : storagePath;
-
-  return `https://aviwltfqlunxxvkajpyt.supabase.co/storage/v1/object/public/claim-photos/${cleanPath}`;
+  return `https://aviwltfqlunxxvkajpyt.supabase.co/storage/v1/object/public/claim-photos/${storagePath}`;
 }
 
 export function buildPhotoPath(firm: string, claimNumber: string, photoType: string, sequence: number): string {
@@ -90,7 +84,7 @@ export class UploadManager {
       });
 
       // Upload to storage
-      const path = `${claimId}/${task.photoId}.jpg`;
+      const path = `claim/${claimId}/${task.photoId}.jpg`;
       const { error: storageError } = await supabase.storage
         .from('claim-photos')
         .upload(path, compressed, { contentType: 'image/jpeg' });
