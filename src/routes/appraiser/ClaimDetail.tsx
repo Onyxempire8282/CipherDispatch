@@ -109,7 +109,9 @@ export default function ClaimDetail() {
       .select("*")
       .eq("claim_id", id)
       .order("created_at", { ascending: false });
-    setPhotos(ph.data || []);
+    const photoData = ph.data || [];
+    console.log('Photo objects from DB:', photoData.map((p: any) => ({ id: p.id, storage_path: p.storage_path, url: getPhotoUrlWithFallback(p.storage_path) })));
+    setPhotos(photoData);
   };
 
   useEffect(() => {
