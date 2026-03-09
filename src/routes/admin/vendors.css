@@ -372,19 +372,38 @@
 
 /* ── Responsive ── */
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
+  .vendors { padding: 12px; }
+  .vendors__toolbar { flex-direction: column; gap: 8px; }
+  .vendors__search { width: 100%; }
+  .vendors__list { grid-template-columns: 1fr; }
   .vendors__card {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
+    width: 100%;
   }
-
   .vendors__card-actions {
     align-self: flex-end;
+    flex-direction: column;
+    gap: 8px;
   }
-
+  .vendors__card-actions button { width: 100%; }
+  .vendors__add-btn { width: 100%; justify-content: center; }
+  .vendors__modal-panel {
+    width: 100vw;
+    min-height: 100vh;
+    max-height: 100vh;
+    margin: 0;
+    border-top: 2px solid var(--amber);
+  }
   .vendors__modal {
-    padding: 20px;
     width: 95%;
   }
+  .vendors__modal-body { padding: 16px; }
+  .vendors__modal-footer {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .vendors__modal-footer button { width: 100%; }
 }

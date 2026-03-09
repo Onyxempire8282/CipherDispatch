@@ -574,3 +574,22 @@
 .mobile-detail__complete-btn:active {
   opacity: 0.85;
 }
+
+/* ========================================
+   Small Phone Overrides
+   ======================================== */
+
+@media (max-width: 480px) {
+  .mobile-detail { padding: 0; }
+  .mobile-detail__header { padding: 12px 14px; }
+  .mobile-detail__section { margin: 0 8px 8px; }
+  .mobile-detail__section-body { padding: 12px; }
+  .mobile-detail__field-label { font-size: 9px; }
+  .mobile-detail__field-value { font-size: 14px; }
+  .mobile-detail__photos-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+  .mobile-detail__action-bar {
+    padding: 12px 14px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+  .mobile-detail__action-bar button { width: 100%; }
+}

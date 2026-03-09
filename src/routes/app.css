@@ -279,4 +279,23 @@
   .dashboard__ops-grid {
     grid-template-columns: 1fr;
   }
+
+  .dashboard__op-card {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard__stat-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard__stat-cell {
+    border-right: none;
+    border-bottom: 1px solid var(--rivet);
+  }
+
+  .dashboard__stat-cell:last-child {
+    border-bottom: none;
+  }
 }

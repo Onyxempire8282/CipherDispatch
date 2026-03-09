@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import "./navbar.css";
@@ -23,6 +24,7 @@ const APPRAISER_TABS = [
 export const NavBar: React.FC<NavBarProps> = ({ role, userName }) => {
   const nav = useNavigate();
   const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const tabs = role === "admin" ? ADMIN_TABS : APPRAISER_TABS;
 
   const handleLogout = async () => {
@@ -68,6 +70,33 @@ export const NavBar: React.FC<NavBarProps> = ({ role, userName }) => {
           {role === "admin" ? "Dispatcher" : "Field"}
         </div>
         <button className="nav__logout" onClick={handleLogout}>
+          Logout
+        </button>
+        <button
+          className="nav__hamburger"
+          onClick={() => setMenuOpen(!menuOpen)}
+        >
+          {menuOpen ? "\u2715" : "\u2630"}
+        </button>
+      </div>
+      <div className={`nav__drawer${menuOpen ? " nav__drawer--open" : ""}`}>
+        {tabs.map((tab) => (
+          <Link
+            key={tab.path}
+            to={tab.path}
+            className={`nav__drawer-link${isActiveTab(tab.path) ? " nav__drawer-link--active" : ""}`}
+            onClick={() => setMenuOpen(false)}
+          >
+            {tab.label}
+          </Link>
+        ))}
+        <button
+          className="nav__logout"
+          onClick={() => {
+            setMenuOpen(false);
+            handleLogout();
+          }}
+        >
           Logout
         </button>
       </div>

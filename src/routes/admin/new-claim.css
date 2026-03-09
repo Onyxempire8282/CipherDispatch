@@ -133,12 +133,19 @@
 /* ── Responsive ── */
 
 @media (max-width: 768px) {
+  .new-claim { padding: 12px; }
   .new-claim__wrap {
     padding: 16px 16px 100px;
   }
-
+  .new-claim__grid,
+  .new-claim__form-grid,
+  .new-claim__row,
   .new-claim__grid-2,
   .new-claim__grid-3 {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
+  .new-claim__actions { flex-direction: column; gap: 8px; }
+  .new-claim__actions button { width: 100%; }
+  .new-claim__map { height: 200px; }
 }

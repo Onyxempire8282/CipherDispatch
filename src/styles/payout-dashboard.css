@@ -654,24 +654,47 @@
 /* ========== Responsive ========== */
 
 @media (max-width: 768px) {
+  .payout { padding: 12px; }
   .payout-dashboard__body {
     padding: 0 12px;
   }
-
+  .payout__summary-cards { grid-template-columns: 1fr; gap: 8px; }
+  .payout-dashboard__summary-grid { grid-template-columns: 1fr; gap: 8px; }
+  .payout__view-btns { width: 100%; }
+  .payout__view-btns button { flex: 1; }
+  .payout-dashboard__view-buttons { width: 100%; }
+  .payout-dashboard__view-button { flex: 1; }
+  .payout__upcoming-grid { grid-template-columns: 1fr; }
+  .payout__card { width: 100%; }
   .payout-card {
     grid-template-columns: 1fr;
     gap: 12px;
+    width: 100%;
   }
-
   .payout-card__amount-section {
     text-align: left;
   }
-
+  .payout__modal-content { width: 100vw; max-height: 90vh; overflow-y: auto; }
+  .payout-modal {
+    max-width: 100vw;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .payout__modal-body { padding: 16px; }
+  .payout-modal__summary {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .payout-modal__summary-total {
+    text-align: left;
+  }
+  .payout__modal-footer { flex-direction: column; gap: 8px; }
+  .payout__modal-footer button { width: 100%; }
+  .payout__claim-grid { grid-template-columns: 1fr; }
   .claim-card__grid {
     grid-template-columns: 1fr;
     gap: 12px;
   }
-
   .claim-card__amount-section {
     text-align: left;
   }

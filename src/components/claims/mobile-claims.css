@@ -414,3 +414,26 @@
   transform: scale(0.95);
   box-shadow: 0 2px 8px rgba(232, 149, 42, 0.25);
 }
+
+/* ========================================
+   Small Phone Overrides
+   ======================================== */
+
+@media (max-width: 480px) {
+  .mobile-claims { padding: 0; }
+  .mobile-claims__header { padding: 12px 14px; }
+  .mobile-claims__search { padding: 0 12px 8px; }
+  .mobile-claims__search-input { width: 100%; }
+  .mobile-claims__filters {
+    padding: 0 12px 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .mobile-claims__filters::-webkit-scrollbar { display: none; }
+  .mobile-claims__filter-pill { flex-shrink: 0; white-space: nowrap; }
+  .mobile-claims__card { margin: 0 8px 6px; }
+  .mobile-claims__fab {
+    bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+}

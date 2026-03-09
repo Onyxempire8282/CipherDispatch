@@ -334,14 +334,23 @@
 /* ── Responsive ── */
 
 @media (max-width: 768px) {
-  .claims {
-    padding: 8px;
+  .claims { padding: 12px; }
+  .claims__toolbar { flex-direction: column; gap: 8px; }
+  .claims__search { width: 100%; }
+  .claims__filters {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 6px;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
   }
-
-  .claims__grid {
-    grid-template-columns: 1fr;
-  }
-
+  .claims__filters::-webkit-scrollbar { display: none; }
+  .claims__filter-pill { white-space: nowrap; flex-shrink: 0; }
+  .claims__grid { grid-template-columns: 1fr; }
+  .claims__card { width: 100%; }
+  .claims__download { width: 100%; justify-content: center; }
   .claims__status-pill {
     min-width: 70px;
     padding: 8px 10px;

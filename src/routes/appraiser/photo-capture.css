@@ -480,3 +480,30 @@
   opacity: 0.6;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
+
+@media (max-width: 768px) {
+  .capture { padding: 0; min-height: 100vh; display: flex; flex-direction: column; }
+  .capture__viewfinder { width: 100%; aspect-ratio: 4/3; }
+  .capture__slots {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 8px;
+    padding: 12px;
+    background: var(--steel-mid);
+    border-bottom: 1px solid var(--rivet);
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .capture__slots::-webkit-scrollbar { display: none; }
+  .capture__slot-btn { flex-shrink: 0; min-width: 80px; padding: 10px 12px; font-size: 10px; }
+  .capture__capture-btn { width: 100%; min-height: 60px; }
+  .capture__type-btn { width: 100%; min-height: 52px; }
+  .capture__complete-btn { width: 100%; min-height: 60px; }
+  .capture__back-btn { position: fixed; top: 12px; left: 12px; z-index: 100; padding: 10px 16px; }
+  .capture__cards { display: flex; flex-direction: column; gap: 8px; padding: 12px; }
+  .capture__card { width: 100%; }
+  .capture__retake-btn { width: 100%; }
+  .capture__photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 12px; }
+  .capture__photo-img { width: 100%; aspect-ratio: 1; object-fit: cover; }
+}

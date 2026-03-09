@@ -181,3 +181,14 @@
   text-align: center;
   font-size: 14px;
 }
+
+@media (max-width: 768px) {
+  .routes { padding: 12px; }
+  .routes__summary { width: 100%; padding: 14px; }
+  .routes__summary-stats { flex-direction: column; gap: 10px; }
+  .routes__card { width: 100%; padding: 14px; }
+  .routes__badge-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .routes__close-btn { width: 100%; justify-content: center; }
+  .routes__closed-banner { padding: 12px 14px; }
+  .routes__empty { text-align: center; padding: 40px 20px; }
+}

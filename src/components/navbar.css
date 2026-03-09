@@ -188,23 +188,88 @@
   color: var(--text-hi);
 }
 
-/* ── Responsive ── */
+/* ══════════════════════════════════════════════
+   MOBILE RESPONSIVE — NAVBAR
+   ══════════════════════════════════════════════ */
+
+/* Hide hamburger on desktop */
+.nav__hamburger {
+  display: none;
+}
+
+.nav__drawer {
+  display: none;
+}
 
 @media (max-width: 768px) {
   .nav {
-    padding: 0 16px;
     height: 56px;
+    padding: 0 16px;
+    padding-top: env(safe-area-inset-top);
   }
 
   .nav__tabs {
     display: none;
   }
 
-  .nav__brand-sub {
+  .nav__user {
     display: none;
   }
 
-  .nav__user {
+  .nav__hamburger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: none;
+    border: 1px solid var(--rivet);
+    color: var(--text-hi);
+    cursor: pointer;
+    font-size: 20px;
+    padding: 0;
+  }
+
+  .nav__drawer {
+    position: fixed;
+    top: 56px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--steel);
+    border-top: 2px solid var(--amber);
+    z-index: 9999;
+    flex-direction: column;
+    padding: 24px 16px;
+    gap: 4px;
+    overflow-y: auto;
+  }
+
+  .nav__drawer--open {
+    display: flex;
+  }
+
+  .nav__drawer-link {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-hi);
+    padding: 16px 12px;
+    border-bottom: 1px solid var(--rivet);
+    text-decoration: none;
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+  }
+
+  .nav__drawer-link--active {
+    color: var(--amber);
+    border-left: 3px solid var(--amber);
+    padding-left: 9px;
+  }
+
+  .nav__brand-sub {
     display: none;
   }
 }

@@ -580,8 +580,22 @@
 /* ── Responsive ── */
 
 @media (max-width: 768px) {
+  .cal {
+    flex-direction: column;
+  }
+
   .cal__sidebar {
-    display: none;
+    width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--rivet);
+    position: static;
+    max-height: 200px;
+  }
+
+  .cal__main {
+    width: 100%;
   }
 
   .cal__day {
@@ -590,10 +604,24 @@
   }
 
   .cal__claim {
-    display: none;
+    font-size: 9px;
+    padding: 2px 4px;
   }
 
   .cal__day-more {
     display: none;
+  }
+
+  .cal__modal {
+    width: 100vw;
+    max-height: 90vh;
+  }
+
+  .cal__modal-claim {
+    padding: 12px;
+  }
+
+  .cal__schedule-actions .btn {
+    width: 100%;
   }
 }
