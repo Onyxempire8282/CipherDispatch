@@ -96,6 +96,7 @@
   letter-spacing: 1px; color: var(--white); line-height: 1;
 }
 .ctm__stat-num--amber { color: var(--amber); }
+.ctm__stat-num--green { color: #4ade80; }
 .ctm__stat-label {
   font-family: 'DM Mono', monospace; font-size: 8px;
   letter-spacing: 1.5px; color: var(--muted); margin-top: 2px;

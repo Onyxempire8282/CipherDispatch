@@ -317,17 +317,42 @@ export default function ClaimDetail() {
   };
 
   const markComplete = async () => {
-    if (confirm("Mark inspection as complete? This will send the claim to the writer.")) {
-      await update({
-        status: "WRITING",
-        writing_started_at: new Date().toISOString(),
-        photos_completed: true,
-      });
-      // Fire webhook for n8n (pre-wired, ready for when n8n is connected)
-      supabase.functions.invoke("notify-status-change", {
-        body: { claim_id: id, new_status: "WRITING", claim_number: claim.claim_number }
-      }).catch(() => {}); // silent fail until n8n is live
+    if (!confirm("Mark this claim as complete? It will be removed from your active claims.")) return;
+
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const completionDate = `${year}-${month}-${day}T00:00:00Z`;
+    const completedMonth = `${year}-${month}`;
+
+    let expectedPayoutDate = null;
+    if (claim.firm) {
+      try {
+        const payPeriod = getPayPeriod(claim.firm, now, firmSchedules[normalizeFirmNameForConfig(claim.firm)]);
+        const payYear = payPeriod.payoutDate.getFullYear();
+        const payMonth = String(payPeriod.payoutDate.getMonth() + 1).padStart(2, '0');
+        const payDay = String(payPeriod.payoutDate.getDate()).padStart(2, '0');
+        expectedPayoutDate = `${payYear}-${payMonth}-${payDay}T00:00:00Z`;
+      } catch (err) {
+        console.warn("Could not calculate expected payout date:", err);
+      }
     }
+
+    await update({
+      status: "COMPLETED",
+      completion_date: completionDate,
+      completed_month: completedMonth,
+      photos_completed: true,
+      expected_payout_date: expectedPayoutDate,
+      payout_status: "unpaid",
+    });
+
+    supabase.functions.invoke("notify-status-change", {
+      body: { claim_id: id, new_status: "COMPLETED", claim_number: claim.claim_number }
+    }).catch(() => {});
+
+    navigate("/appraiser/claims");
   };
 
   const deleteClaim = async () => {

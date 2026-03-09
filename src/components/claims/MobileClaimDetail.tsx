@@ -278,10 +278,10 @@ export default function MobileClaimDetail({
           </div>
         )}
 
-        {/* Appraiser Complete Button — field workers only, IN_PROGRESS */}
-        {!isAdmin && claim.status === 'IN_PROGRESS' && (
+        {/* Appraiser Complete Button — field workers, any active status */}
+        {!isAdmin && claim.status && claim.status !== 'COMPLETED' && claim.status !== 'CANCELED' && (
           <button className="mobile-detail__complete-btn" onClick={onMarkComplete}>
-            ✅ Mark Inspection Complete
+            MARK COMPLETE
           </button>
         )}
 

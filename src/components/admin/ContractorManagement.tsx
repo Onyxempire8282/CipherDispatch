@@ -7,6 +7,7 @@ const US_STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","
 export default function ContractorManagement() {
   const [contractors, setContractors] = useState<any[]>([]);
   const [claims, setClaims]           = useState<any[]>([]);
+  const [allClaims, setAllClaims]     = useState<any[]>([]);
   const [showInvite, setShowInvite]   = useState(false);
   const [saving, setSaving]           = useState(false);
   const [selected, setSelected]       = useState<any | null>(null);
@@ -20,7 +21,10 @@ export default function ContractorManagement() {
   });
 
   const load = async () => {
-    const [cRes, clRes] = await Promise.all([
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 90);
+
+    const [cRes, clRes, allRes] = await Promise.all([
       supabase.from("profiles")
         .select("*")
         .in("role", ["appraiser", "writer"])
@@ -29,9 +33,37 @@ export default function ContractorManagement() {
         .select("id, assigned_to, status, claim_number, customer_name, firm, appointment_start")
         .is("archived_at", null)
         .not("status", "in", '("COMPLETED","CANCELED")'),
+      supabase.from("claims_v")
+        .select("id, assigned_to, status, created_at, completion_date")
+        .is("archived_at", null)
+        .gte("created_at", thirtyDaysAgo.toISOString()),
     ]);
     setContractors(cRes.data || []);
     setClaims(clRes.data || []);
+    setAllClaims(allRes.data || []);
+  };
+
+  const getPerformance = (uid: string) => {
+    const userClaims = allClaims.filter(c => c.assigned_to === uid);
+    const completed = userClaims.filter(c => c.status === "COMPLETED");
+    const total = userClaims.length;
+    const completionRate = total > 0 ? Math.round((completed.length / total) * 100) : 0;
+
+    // Average turnaround in days
+    let avgTurnaround = 0;
+    const turnarounds = completed
+      .filter(c => c.completion_date && c.created_at)
+      .map(c => {
+        const created = new Date(c.created_at).getTime();
+        const done = new Date(c.completion_date).getTime();
+        return (done - created) / (1000 * 60 * 60 * 24);
+      })
+      .filter(d => d >= 0);
+    if (turnarounds.length > 0) {
+      avgTurnaround = Math.round(turnarounds.reduce((a, b) => a + b, 0) / turnarounds.length * 10) / 10;
+    }
+
+    return { completed: completed.length, total, completionRate, avgTurnaround };
   };
 
   useEffect(() => { load(); }, []);
@@ -114,6 +146,7 @@ export default function ContractorManagement() {
       <div className="ctm__grid">
         {contractors.map(c => {
           const open = getOpenClaims(c.user_id);
+          const perf = getPerformance(c.user_id);
           return (
             <div
               key={c.user_id}
@@ -143,12 +176,31 @@ export default function ContractorManagement() {
                   <div className="ctm__stat-label">OPEN</div>
                 </div>
                 <div className="ctm__stat">
+                  <div className="ctm__stat-num ctm__stat-num--green">{perf.completed}</div>
+                  <div className="ctm__stat-label">DONE (90D)</div>
+                </div>
+                <div className="ctm__stat">
+                  <div className="ctm__stat-num">{perf.completionRate}%</div>
+                  <div className="ctm__stat-label">COMP RATE</div>
+                </div>
+                <div className="ctm__stat">
+                  <div className="ctm__stat-num">{perf.avgTurnaround || "—"}</div>
+                  <div className="ctm__stat-label">AVG DAYS</div>
+                </div>
+              </div>
+
+              <div className="ctm__card-stats">
+                <div className="ctm__stat">
+                  <div className="ctm__stat-num">{c.pay_rate ? `$${c.pay_rate}` : "—"}</div>
+                  <div className="ctm__stat-label">PER CLAIM</div>
+                </div>
+                <div className="ctm__stat">
                   <div className="ctm__stat-num">{c.rating ? c.rating.toFixed(1) : "—"}</div>
                   <div className="ctm__stat-label">RATING</div>
                 </div>
                 <div className="ctm__stat">
-                  <div className="ctm__stat-num">{c.pay_rate ? `${c.pay_rate}` : "—"}</div>
-                  <div className="ctm__stat-label">PER CLAIM</div>
+                  <div className="ctm__stat-num">{perf.total}</div>
+                  <div className="ctm__stat-label">TOTAL (90D)</div>
                 </div>
                 <div className="ctm__stat">
                   <div className={`ctm__stat-num ctm__stat-badge ${
