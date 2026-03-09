@@ -3,17 +3,10 @@ import { UploadTask, InspectionState } from '../types/photoCapture';
 import { PHOTO_SLOTS } from '../config/photoSlots';
 import imageCompression from 'browser-image-compression';
 
-const OLD_BUCKET_URL = 'https://qrouuoycvxxxutkxkxpp.supabase.co/storage/v1/object/public/claim-photos';
-
-export function getPhotoUrl(supabase: any, storagePath: string): string {
-  // Try HQ bucket first, fall back to old Cypher Mobile bucket
-  const { data } = supabase.storage.from('claim-photos').getPublicUrl(storagePath);
-  return data.publicUrl;
-}
-
 export function getPhotoUrlWithFallback(storagePath: string): string {
-  // For old photos that live in Cypher Mobile's bucket
-  return `${OLD_BUCKET_URL}/${storagePath}`;
+  if (!storagePath) return '';
+  if (storagePath.startsWith('http')) return storagePath;
+  return `https://aviwltfqlunxxvkajpyt.supabase.co/storage/v1/object/public/claim-photos/${storagePath}`;
 }
 
 export function buildPhotoPath(firm: string, claimNumber: string, photoType: string, sequence: number): string {
@@ -28,6 +21,7 @@ export class UploadManager {
   private queue: UploadTask[] = [];
   private maxRetries = 3;
   private processing = false;
+  private lastError: string | null = null;
 
   async addPhoto(slotId: string, blob: Blob): Promise<string> {
     const photoId = crypto.randomUUID();
@@ -81,8 +75,9 @@ export class UploadManager {
         throw new Error('No claim ID available');
       }
 
-      // Compress photo
-      const compressed = await imageCompression(task.blob, {
+      // Compress photo — imageCompression expects File, convert Blob
+      const file = new File([task.blob], `${task.photoId}.jpg`, { type: 'image/jpeg' });
+      const compressed = await imageCompression(file, {
         maxWidthOrHeight: 1600,
         maxSizeMB: 1.5,
         useWebWorker: true,
@@ -92,7 +87,7 @@ export class UploadManager {
       const path = `${claimId}/${task.photoId}.jpg`;
       const { error: storageError } = await supabase.storage
         .from('claim-photos')
-        .upload(path, compressed);
+        .upload(path, compressed, { contentType: 'image/jpeg' });
 
       if (storageError) throw storageError;
 
@@ -117,8 +112,10 @@ export class UploadManager {
 
       task.status = 'completed';
 
-    } catch (error) {
-      console.error(`Upload failed for ${task.photoId}:`, error);
+    } catch (error: any) {
+      const msg = error?.message || String(error);
+      console.error(`Upload failed for ${task.photoId}:`, msg);
+      this.lastError = msg;
       task.retryCount++;
       task.status = 'failed';
 
@@ -130,13 +127,13 @@ export class UploadManager {
     }
   }
 
-  getStatus(): { allComplete: boolean; uploading: number; failed: number; pending: number } {
+  getStatus(): { allComplete: boolean; uploading: number; failed: number; pending: number; lastError: string | null } {
     const pending = this.queue.filter(t => t.status === 'pending').length;
     const uploading = this.queue.filter(t => t.status === 'uploading').length;
     const failed = this.queue.filter(t => t.status === 'failed' && t.retryCount >= this.maxRetries).length;
-    const allComplete = this.queue.every(t => t.status === 'completed');
+    const allComplete = this.queue.length > 0 && this.queue.every(t => t.status === 'completed');
 
-    return { allComplete, uploading, failed, pending };
+    return { allComplete, uploading, failed, pending, lastError: this.lastError };
   }
 
   private delay(ms: number): Promise<void> {

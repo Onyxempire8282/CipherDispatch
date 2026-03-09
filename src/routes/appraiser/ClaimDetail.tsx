@@ -23,7 +23,6 @@ function SupplementHistory({ claimId }: { claimId: string }) {
     supabase.from("claims_v")
       .select("*")
       .eq("original_claim_id", claimId)
-      .eq("is_supplement", true)
       .order("supplement_number")
       .then(({ data }) => setSupps(data || []));
   }, [claimId]);

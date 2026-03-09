@@ -164,7 +164,6 @@ export default function MobileClaimDetail({
         .from('claims_v')
         .select('*')
         .eq('original_claim_id', claim.id)
-        .eq('is_supplement', true)
         .order('supplement_number')
         .then(({ data }) => setSupplements(data || []));
     }

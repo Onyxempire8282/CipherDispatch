@@ -35,6 +35,7 @@ export default function PhotoCapture() {
     uploading: 0,
     failed: 0,
     pending: 0,
+    lastError: null as string | null,
   });
   const [showLabelPrompt, setShowLabelPrompt] = useState(false);
   const [isLandscape, setIsLandscape] = useState(false);
@@ -336,9 +337,9 @@ export default function PhotoCapture() {
 
     setState((prev) => ({ ...prev, completed: true }));
 
-    // Mark claim as having photos completed (optional - add field if needed)
+    // Mark claim as having photos completed
     await supabase
-      .from("claims_v")
+      .from("claims")
       .update({ photos_completed: true })
       .eq("id", claimId);
 
@@ -450,8 +451,8 @@ export default function PhotoCapture() {
 
           {uploadStatus.failed > 0 && (
             <div className="capture__upload-status capture__upload-status--failed">
-              ⚠️ {uploadStatus.failed} photo(s) failed to upload. Check
-              connection.
+              ⚠️ {uploadStatus.failed} photo(s) failed to upload.
+              {uploadStatus.lastError && ` Error: ${uploadStatus.lastError}`}
             </div>
           )}
         </div>
@@ -530,7 +531,7 @@ export default function PhotoCapture() {
                     📷 Capture Photo
                   </button>
                   {currentSlot.max_photos === -1 &&
-                    state.captured_photos.get(currentSlot.id)?.length > 0 && (
+                    (state.captured_photos.get(currentSlot.id)?.length ?? 0) > 0 && (
                       <button
                         onClick={() => {
                           const nextIndex = currentSlotIndex + 1;
