@@ -110,6 +110,7 @@ export default function MobileClaimDetail({
   onSaveEdits,
   onCancelEdits,
   onStatusChange,
+  onMarkComplete,
   onPhotoClick,
   onPhotoCapture,
   onPhoto,

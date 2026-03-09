@@ -34,7 +34,6 @@ const ADMIN_BOTTOM_NAV = [
 const APPRAISER_BOTTOM_NAV = [
   { label: "Claims", icon: "◫", path: "/my-claims" },
   { label: "Routes", icon: "⊹", path: "/my-routes" },
-  { label: "Claims", icon: "⊡", path: "/my-claims" },
   { label: "Home", icon: "⊟", path: "/" },
 ];
 

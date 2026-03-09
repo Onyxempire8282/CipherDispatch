@@ -148,11 +148,11 @@ export default function NewSupplement() {
       appointment_start: apptStart ? new Date(apptStart).toISOString() : null,
       notes:             notes || null,
       pay_amount:        payAmount ? parseFloat(payAmount) : null,
-      status:            "IN_PROGRESS",
+      status:            apptStart ? "SCHEDULED" : "IN_PROGRESS",
       payout_status:     "unpaid",
     };
 
-    const { error } = await supabase.from("claims").insert(payload);
+    const { error } = await supabase.from("claims_v").insert(payload);
 
     setSaving(false);
 

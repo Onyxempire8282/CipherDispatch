@@ -16,6 +16,7 @@ type Vendor = {
   color: string;
   pay_cycle_type?: PayCycleType;
   reference_pay_date?: string;
+  pay_amount?: number | null;
   active?: boolean;
   created_at?: string;
 };
@@ -31,6 +32,7 @@ export default function Vendors() {
   const [formColor, setFormColor] = useState("#9CA3AF");
   const [formPayCycleType, setFormPayCycleType] = useState<PayCycleType>('weekly_thu_fri_thu');
   const [formReferencePayDate, setFormReferencePayDate] = useState("");
+  const [formPayAmount, setFormPayAmount] = useState("");
   const [formActive, setFormActive] = useState(true);
 
   const initializeAuth = async () => {
@@ -102,6 +104,7 @@ export default function Vendors() {
     setFormColor("#9CA3AF");
     setFormPayCycleType('weekly_thu_fri_thu');
     setFormReferencePayDate("");
+    setFormPayAmount("");
     setFormActive(true);
   };
 
@@ -112,6 +115,7 @@ export default function Vendors() {
     setFormColor(vendor.color);
     setFormPayCycleType(vendor.pay_cycle_type || 'weekly_thu_fri_thu');
     setFormReferencePayDate(vendor.reference_pay_date || "");
+    setFormPayAmount(vendor.pay_amount?.toString() || "");
     setFormActive(vendor.active !== false);
   };
 
@@ -122,6 +126,7 @@ export default function Vendors() {
     setFormColor("#9CA3AF");
     setFormPayCycleType('weekly_thu_fri_thu');
     setFormReferencePayDate("");
+    setFormPayAmount("");
     setFormActive(true);
   };
 
@@ -143,6 +148,7 @@ export default function Vendors() {
         color: formColor,
         pay_cycle_type: formPayCycleType,
         reference_pay_date: formReferencePayDate || null,
+        pay_amount: formPayAmount ? parseFloat(formPayAmount) : null,
         active: formActive
       };
 
@@ -297,6 +303,17 @@ export default function Vendors() {
                     />
                   </Field>
                 )}
+
+                <Field label="Default Pay Amount">
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="field__input"
+                    value={formPayAmount}
+                    onChange={(e) => setFormPayAmount(e.target.value)}
+                    placeholder="$0.00"
+                  />
+                </Field>
 
                 <div className="vendors__checkbox-field">
                   <label className="vendors__checkbox-label">

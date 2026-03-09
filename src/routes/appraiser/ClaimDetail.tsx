@@ -585,6 +585,7 @@ export default function ClaimDetail() {
 
       await update({
         status: "COMPLETED",
+        writing_completed_at: claim.status === 'WRITING' ? new Date().toISOString() : undefined,
         completion_date: completionDate,
         completed_month: completedMonth,
         expected_payout_date: expectedPayoutDate,
@@ -1398,6 +1399,46 @@ export default function ClaimDetail() {
             </div>
           </div>
 
+          {/* Writer "Mark Writing Complete" button */}
+          {!isAdmin && claim.status === 'WRITING' && claim.writer_id === userInfo?.id && (
+            <button
+              className="detail__btn detail__btn--complete"
+              onClick={async () => {
+                if (!confirm("Mark writing as complete? This will finalize the claim.")) return;
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const completionDate = `${year}-${month}-${day}T00:00:00Z`;
+                const completedMonth = `${year}-${month}`;
+
+                let expectedPayoutDate = null;
+                if (claim.firm) {
+                  try {
+                    const payPeriod = getPayPeriod(claim.firm, now, firmSchedules[normalizeFirmNameForConfig(claim.firm)]);
+                    const payYear = payPeriod.payoutDate.getFullYear();
+                    const payMonth = String(payPeriod.payoutDate.getMonth() + 1).padStart(2, '0');
+                    const payDay = String(payPeriod.payoutDate.getDate()).padStart(2, '0');
+                    expectedPayoutDate = `${payYear}-${payMonth}-${payDay}T00:00:00Z`;
+                  } catch (err) {
+                    console.warn("Could not calculate expected payout date:", err);
+                  }
+                }
+
+                await update({
+                  status: "COMPLETED",
+                  writing_completed_at: now.toISOString(),
+                  completion_date: completionDate,
+                  completed_month: completedMonth,
+                  expected_payout_date: expectedPayoutDate,
+                  payout_status: "unpaid",
+                });
+              }}
+            >
+              Mark Writing Complete
+            </button>
+          )}
+
           {/*
             ROLE GATING: Update Status - Admin only
             Appraisers must NOT see status change controls (view + photo capture only)
@@ -1444,6 +1485,7 @@ export default function ClaimDetail() {
 
                     await update({
                       status: "COMPLETED",
+                      writing_completed_at: claim.status === 'WRITING' ? new Date().toISOString() : undefined,
                       completion_date: completionDate,
                       completed_month: completedMonth,
                       expected_payout_date: expectedPayoutDate,

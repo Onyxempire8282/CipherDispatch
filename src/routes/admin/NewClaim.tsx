@@ -33,6 +33,7 @@ type Claim = {
   firm?: string;
   pay_amount?: number | null;
   status?: string;
+  location_type?: string;
 };
 
 const throttle = (() => {
@@ -133,7 +134,8 @@ export default function NewClaim() {
     const inspectionAddress = [form.address_line1, form.city, form.state].filter(Boolean).join(", ");
 
     const claimPayload = {
-      firm: form.insurance_company || null,
+      firm: form.firm || null,
+      insurance_company: form.insurance_company || null,
       claim_number: form.claim_number,
       file_number: null as string | null,
       customer_name: form.customer_name,
@@ -149,11 +151,12 @@ export default function NewClaim() {
       scheduled_at: form.appointment_start || null,
       notes: form.notes || null,
       owner_id: user.id,
+      location_type: form.location_type || 'customer_address',
     };
 
     if (override) {
       const { error } = await supabase
-        .from("claims")
+        .from("claims_v")
         .update(claimPayload)
         .eq("claim_number", form.claim_number);
       if (error) {
@@ -179,7 +182,8 @@ export default function NewClaim() {
       p_inspection_address: claimPayload.inspection_address,
       p_zip: claimPayload.zip,
       p_scheduled_at: claimPayload.scheduled_at,
-      p_notes: claimPayload.notes
+      p_notes: claimPayload.notes,
+      p_location_type: form.location_type || 'customer_address'
     });
 
     if (error) {
@@ -394,6 +398,21 @@ export default function NewClaim() {
                 />
               </Field>
             </div>
+            <Field label="Location Type">
+              <div className="field__select-wrap">
+                <select
+                  className="field__select"
+                  value={form.location_type || "customer_address"}
+                  onChange={(e) => setForm({ ...form, location_type: e.target.value })}
+                >
+                  <option value="customer_address">Customer Address</option>
+                  <option value="body_shop">Body Shop</option>
+                  <option value="dealership">Dealership</option>
+                  <option value="other">Other</option>
+                </select>
+                <div className="field__select-arrow">&#x25BE;</div>
+              </div>
+            </Field>
             <button
               className="new-claim__map-btn"
               onClick={previewMap}
