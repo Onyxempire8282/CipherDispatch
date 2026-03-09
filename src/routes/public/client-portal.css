@@ -1,0 +1,316 @@
+/* ================================================================
+   CLIENT PORTAL — Public page, token-gated, no auth required
+   ================================================================ */
+
+.portal {
+  min-height: 100vh;
+  background: #0a0c0e;
+  font-family: 'Barlow', -apple-system, sans-serif;
+  color: #edeae4;
+}
+
+/* Nav */
+.portal__nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 32px;
+  height: 60px;
+  background: #161a1d;
+  border-bottom: 1px solid #2e353d;
+}
+
+.portal__nav-logo {
+  font-family: 'Bebas Neue', 'Barlow', sans-serif;
+  font-size: 22px;
+  letter-spacing: 3px;
+  color: #e8952a;
+}
+
+.portal__nav-brand {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: #4a5058;
+}
+
+.portal__nav-client {
+  margin-left: auto;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: #8a9099;
+  padding: 4px 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid #2e353d;
+}
+
+/* Center states */
+.portal__center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 14px;
+  text-align: center;
+  padding: 24px;
+}
+
+.portal__spinner {
+  width: 32px;
+  height: 32px;
+  border: 2px solid #2e353d;
+  border-top-color: #e8952a;
+  border-radius: 50%;
+  animation: portal-spin 0.8s linear infinite;
+}
+
+@keyframes portal-spin { to { transform: rotate(360deg); } }
+
+.portal__loading-msg {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: #4a5058;
+}
+
+.portal__expired-icon { font-size: 40px; }
+
+.portal__expired-title {
+  font-family: 'Barlow', sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: #edeae4;
+}
+
+.portal__expired-sub {
+  font-size: 14px;
+  color: #6b7480;
+  line-height: 1.7;
+  max-width: 360px;
+}
+
+/* Body */
+.portal__body {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+/* Header */
+.portal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.portal__header-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: #e8952a;
+  margin-bottom: 4px;
+}
+
+.portal__header-title {
+  font-family: 'Bebas Neue', 'Barlow', sans-serif;
+  font-size: 32px;
+  letter-spacing: 2px;
+  color: #edeae4;
+  line-height: 1;
+  margin: 0;
+}
+
+.portal__header-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: #6b7480;
+  margin-top: 6px;
+}
+
+.portal__summary {
+  display: flex;
+  gap: 1px;
+  background: #2e353d;
+  border: 1px solid #2e353d;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.portal__summary-stat {
+  background: #161a1d;
+  padding: 12px 20px;
+  text-align: center;
+}
+
+.portal__summary-num {
+  font-family: 'Bebas Neue', 'Barlow', sans-serif;
+  font-size: 28px;
+  color: #edeae4;
+  line-height: 1;
+}
+
+.portal__summary-num--green { color: #4ade80; }
+.portal__summary-num--amber { color: #e8952a; }
+
+.portal__summary-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  color: #4a5058;
+  margin-top: 2px;
+}
+
+/* Section */
+.portal__section { margin-bottom: 28px; }
+
+.portal__section-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: #4a5058;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #1e2328;
+  margin-bottom: 12px;
+}
+
+/* Claims */
+.portal__claims { display: flex; flex-direction: column; gap: 8px; }
+
+.portal__claim {
+  background: #161a1d;
+  border: 1px solid #2e353d;
+  border-left: 3px solid var(--claim-color, #2e353d);
+  cursor: pointer;
+  transition: background 0.15s;
+  overflow: hidden;
+}
+
+.portal__claim:hover        { background: #1e2328; }
+.portal__claim--done        { opacity: 0.7; }
+.portal__claim--done:hover  { opacity: 1; }
+
+.portal__claim-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  gap: 12px;
+}
+
+.portal__claim-vehicle { flex: 1; min-width: 0; }
+
+.portal__claim-year-make {
+  font-size: 15px;
+  font-weight: 500;
+  color: #edeae4;
+}
+
+.portal__claim-vin {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: #6b7480;
+  margin-top: 2px;
+  letter-spacing: 0.5px;
+}
+
+.portal__claim-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.portal__status-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  padding: 3px 8px;
+  border: 1px solid;
+  background: transparent;
+  opacity: 0.9;
+}
+
+.portal__claim-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: #4a5058;
+  letter-spacing: 0.5px;
+}
+
+/* Expanded detail */
+.portal__claim-detail {
+  padding: 12px 16px 14px;
+  border-top: 1px solid #1e2328;
+  background: #0e0f11;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.portal__detail-row {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.portal__detail-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: #4a5058;
+  min-width: 100px;
+  flex-shrink: 0;
+}
+
+.portal__detail-value {
+  font-size: 13px;
+  color: #b8bdc2;
+}
+
+.portal__confirmed-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: #4ade80;
+  margin-left: 6px;
+}
+
+.portal__pending-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: #e8952a;
+  margin-left: 6px;
+}
+
+.portal__empty {
+  text-align: center;
+  padding: 48px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: #4a5058;
+}
+
+/* Footer */
+.portal__page-footer {
+  text-align: center;
+  padding: 24px;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #1e2328;
+  border-top: 1px solid #1e2328;
+}
+
+@media (max-width: 600px) {
+  .portal__nav  { padding: 0 16px; }
+  .portal__body { padding: 20px 16px 48px; }
+  .portal__header { flex-direction: column; }
+  .portal__summary { width: 100%; }
+  .portal__detail-label { min-width: 80px; }
+}

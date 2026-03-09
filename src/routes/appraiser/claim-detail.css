@@ -391,6 +391,45 @@
 .detail__status-badge--writing     { background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.4); color: #a78bfa; }
 .detail__status-badge--default     { background: var(--status-unassigned); }
 
+/* ---- Confirmation link ---- */
+.detail__value--green {
+  color: #4ade80;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  padding: 12px 0;
+}
+
+.detail__confirm-link {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-hi);
+  word-break: break-all;
+  padding: 10px 14px;
+  background: var(--input-bg);
+  border: 1px solid var(--rivet);
+  margin-bottom: 8px;
+}
+
+.detail__btn--copy,
+.detail__btn--generate {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 10px 20px;
+  border: 1px solid var(--rivet);
+  background: var(--steel-mid);
+  color: var(--text-hi);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.detail__btn--copy:hover,
+.detail__btn--generate:hover {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
 /* ---- Status actions ---- */
 .detail__status-actions {
   margin-bottom: 24px;

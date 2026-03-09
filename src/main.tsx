@@ -19,6 +19,8 @@ import MyClaims from "./routes/appraiser/MyClaims";
 import MyRoutes from "./routes/appraiser/MyRoutes";
 import ClaimDetail from "./routes/appraiser/ClaimDetail";
 import PhotoCapture from "./routes/appraiser/PhotoCapture";
+import ConfirmAppointment from "./routes/public/ConfirmAppointment";
+import ClientPortal from "./routes/public/ClientPortal";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import "./index.css";
 import "leaflet/dist/leaflet.css";
@@ -114,6 +116,14 @@ const router = createBrowserRouter(
           <ClaimDetail />
         </ProtectedRoute>
       ),
+    },
+    {
+      path: "/confirm",
+      element: <ConfirmAppointment />,
+    },
+    {
+      path: "/portal",
+      element: <ClientPortal />,
     },
     {
       path: "/appraiser/claim/:id/photos",

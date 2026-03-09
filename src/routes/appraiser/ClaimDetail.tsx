@@ -58,6 +58,7 @@ export default function ClaimDetail() {
   const [editPayAmount, setEditPayAmount] = useState("");
   const [editFileTotal, setEditFileTotal] = useState("");
   const [editFirmName, setEditFirmName] = useState("");
+  const [editLocationTypeValue, setEditLocationTypeValue] = useState("customer_address");
   const [firms, setFirms] = useState<any[]>([]);
   const [firmSchedules, setFirmSchedules] = useState<Record<string, FirmSchedule>>({});
 
@@ -92,7 +93,10 @@ export default function ClaimDetail() {
         lat,
         lng,
         created_at,
-        updated_at
+        updated_at,
+        location_type,
+        confirm_token,
+        appt_confirmed
       `)
       .eq("id", id)
       .single();
@@ -232,6 +236,7 @@ export default function ClaimDetail() {
     setEditPayAmount(claim?.pay_amount?.toString() || "");
     setEditFileTotal(claim?.file_total?.toString() || "");
     setEditFirmName(claim?.firm || "");
+    setEditLocationTypeValue(claim?.location_type || "customer_address");
     setIsEditing(true);
   };
 
@@ -253,6 +258,7 @@ export default function ClaimDetail() {
       zip: editZip,
       assigned_to: editAssignedTo || null,
       firm: editFirmName || null,
+      location_type: editLocationTypeValue,
     };
 
     // Add vehicle year if valid
@@ -1195,7 +1201,72 @@ export default function ClaimDetail() {
               </div>
             )}
           </div>
+
+          {/* Location Type */}
+          <div className="detail__field">
+            <div className="detail__label">Location Type</div>
+            {isEditing ? (
+              <select
+                className="detail__select"
+                value={editLocationTypeValue}
+                onChange={e => setEditLocationTypeValue(e.target.value)}
+              >
+                <option value="customer_address">Customer Address</option>
+                <option value="body_shop">Body Shop</option>
+                <option value="dealership">Dealership</option>
+                <option value="other">Other</option>
+              </select>
+            ) : (
+              <div className="detail__value">
+                {claim.location_type === 'body_shop' ? '🔧 Body Shop'
+                 : claim.location_type === 'dealership' ? '🚗 Dealership'
+                 : claim.location_type === 'other' ? '📍 Other'
+                 : '🏠 Customer Address'}
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* Scheduling Links — Admin Only */}
+        {isAdmin && claim.status === 'SCHEDULED' && claim.location_type !== 'body_shop' && (
+          <div className="detail__section">
+            <h4 className="detail__section-title">🔗 Customer Confirmation</h4>
+
+            {claim.appt_confirmed ? (
+              <div className="detail__value detail__value--green">✓ Customer confirmed appointment</div>
+            ) : claim.confirm_token ? (
+              <div className="detail__field">
+                <div className="detail__label">Confirmation Link</div>
+                <div className="detail__confirm-link">
+                  {`${window.location.origin}/CipherDispatch/confirm?token=${claim.confirm_token}`}
+                </div>
+                <button
+                  className="detail__btn detail__btn--copy"
+                  onClick={() => {
+                    navigator.clipboard.writeText(
+                      `${window.location.origin}/CipherDispatch/confirm?token=${claim.confirm_token}`
+                    );
+                    alert('Link copied to clipboard');
+                  }}
+                >
+                  📋 Copy Link
+                </button>
+              </div>
+            ) : (
+              <button
+                className="detail__btn detail__btn--generate"
+                onClick={async () => {
+                  const { error } = await supabase
+                    .rpc('generate_confirm_token', { claim_id: id });
+                  if (error) alert(error.message);
+                  else await load();
+                }}
+              >
+                🔗 Generate Confirmation Link
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Status & Actions */}
         <div className="detail__section">
