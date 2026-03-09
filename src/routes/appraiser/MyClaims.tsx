@@ -322,6 +322,16 @@ export default function MyClaims() {
   const statusCounts = getStatusCounts();
   const groupedClaims = groupClaimsByDate();
 
+  // Personal performance stats
+  const activeClaims = allClaims.filter(c =>
+    c.status === null || c.status === "SCHEDULED" || c.status === "IN_PROGRESS" || c.status === "WRITING"
+  );
+  const completedClaims = allClaims.filter(c => c.status === "COMPLETED");
+  const todayClaims = activeClaims.filter(c => {
+    if (!c.appointment_start) return false;
+    return new Date(c.appointment_start).toISOString().split('T')[0] === new Date().toISOString().split('T')[0];
+  });
+
   const getBadgeClass = (status: string | null) => {
     switch (status) {
       case "COMPLETED": return "my-claims__card-badge my-claims__card-badge--completed";
@@ -442,6 +452,26 @@ export default function MyClaims() {
     <div className="my-claims">
       <NavBar role="appraiser" />
       <PageHeader label="Appraiser" title="My Claims" />
+
+      {/* Personal stats strip */}
+      <div className="my-claims__stats">
+        <div className="my-claims__stat">
+          <div className="my-claims__stat-num my-claims__stat-num--amber">{todayClaims.length}</div>
+          <div className="my-claims__stat-label">TODAY</div>
+        </div>
+        <div className="my-claims__stat">
+          <div className="my-claims__stat-num">{activeClaims.length}</div>
+          <div className="my-claims__stat-label">OPEN</div>
+        </div>
+        <div className="my-claims__stat">
+          <div className="my-claims__stat-num my-claims__stat-num--green">{completedClaims.length}</div>
+          <div className="my-claims__stat-label">COMPLETED</div>
+        </div>
+        <div className="my-claims__stat">
+          <div className="my-claims__stat-num">{allClaims.length}</div>
+          <div className="my-claims__stat-label">TOTAL</div>
+        </div>
+      </div>
 
       {/* Header with view toggles */}
       <div className="my-claims__toolbar">
