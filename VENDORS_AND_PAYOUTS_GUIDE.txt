@@ -1,0 +1,201 @@
+================================================================================
+  MANAGE VENDORS & PAYOUT DASHBOARD — COMPLETE GUIDE
+  CipherDispatch / Auto-Appraisal
+================================================================================
+
+
+================================================================================
+  MODULE 1: MANAGE VENDORS
+  Location: Admin > Command Center > Vendors (or nav tab "Vendors")
+================================================================================
+
+PURPOSE:
+  The Manage Vendors page is where you add, edit, and manage the insurance
+  firms (vendors) that send you claims. Each vendor has a pay schedule that
+  determines WHEN you get paid for completed work. This data drives the
+  entire Payout Dashboard forecasting system.
+
+WHAT IT DOES:
+  - Add new vendor firms with their name, color code, and pay schedule
+  - Edit existing vendors (name, pay schedule, default pay amount)
+  - Toggle vendors active/inactive (inactive vendors are excluded from
+    payout forecasting)
+  - Delete vendors entirely
+  - Set the pay cycle type that controls how payout dates are calculated
+
+VENDOR FIELDS:
+  1. Vendor Name      — The firm name (e.g., "Sedgwick", "ATeam", "CCS")
+  2. Color            — Hex color used on the calendar and UI for visual ID
+  3. Pay Cycle Type   — How the firm pays you (see schedule types below)
+  4. Reference Date   — Required for bi-weekly firms only. Enter any known
+                         past pay date so the system can calculate the
+                         bi-weekly cadence going forward.
+  5. Default Pay Amt  — Default dollar amount per claim for this firm
+  6. Active           — Toggle on/off. Inactive vendors are excluded from
+                         payout calculations but their data is preserved.
+
+PAY SCHEDULE TYPES:
+  - weekly_thu_fri_thu     Weekly Thursday (work Fri-Thu, paid Thu)
+  - biweekly_thu_fri_thu   Bi-weekly Wednesday (2-week period, paid Wed)
+  - biweekly_fri_sat_fri   Bi-weekly Thursday (2-week period, paid Thu)
+  - monthly_15th_prev_month  Monthly on the 15th (for previous month's work)
+  - semimonthly_15th_end   Semi-monthly: 15th and End-of-Month
+  - monthly_last_same_month  Monthly End-of-Month (same month's work)
+
+HOW VENDORS CONNECT TO PAYOUTS:
+  When you set a vendor's pay_cycle_type and reference_date, the Payout
+  Dashboard uses that information to calculate exactly when you'll receive
+  payment for each completed or scheduled claim from that firm. Change the
+  vendor's schedule here, and all payout forecasts update automatically.
+
+
+================================================================================
+  MODULE 2: PAYOUT DASHBOARD
+  Location: Admin > Command Center > Payouts (or nav tab "Payouts")
+================================================================================
+
+PURPOSE:
+  The Payout Dashboard forecasts when you will receive payment from each
+  firm based on their pay schedules. It takes all your completed and
+  scheduled claims, looks up the firm's pay cycle, and calculates the
+  exact payout date for each claim. This gives you a clear picture of
+  your upcoming cash flow.
+
+WHAT IT SHOWS:
+  - Summary cards: This Week, Next Week, and This Month payout totals
+  - Three view modes: Upcoming (30-day), Weekly, and Monthly
+  - Click any payout to see individual claim details and edit amounts
+
+HOW FORECASTING WORKS:
+  For each claim, the system:
+    1. Identifies the firm and looks up its pay schedule from the vendors table
+    2. Determines the "work date" (completion_date for completed claims,
+       appointment_start for scheduled claims)
+    3. Calculates the pay period (start/end dates) that the work falls into
+    4. Calculates the payout date based on the firm's pay cycle
+    5. Groups claims by firm + payout date
+    6. Sums up the expected amounts
+
+  AMOUNT PRIORITY (what dollar value is used):
+    For COMPLETED claims:
+      1st choice: file_total (the actual amount from the file)
+      2nd choice: pay_amount (the estimated amount)
+      3rd choice: $0
+    For SCHEDULED claims:
+      1st choice: pay_amount (amount set on the claim)
+      2nd choice: firm's base fee from config (e.g., Sedgwick = $200)
+      3rd choice: $0
+
+PAY SCHEDULE CALCULATION EXAMPLES:
+
+  WEEKLY (e.g., Sedgwick pays every Thursday):
+    - You complete a claim on Monday
+    - System finds the next Thursday = payout date
+    - Work period: previous Friday through that Thursday (7 days)
+
+  BI-WEEKLY (e.g., Legacy pays every other Wednesday):
+    - Uses the reference_date to determine which weeks are pay weeks
+    - You complete a claim on Jan 10
+    - System checks: is the next Wednesday a pay week?
+    - If yes, that's the payout date; if no, skip to the following Wednesday
+    - Work period: 14 days ending the day before payout
+
+  SEMI-MONTHLY (e.g., ACD pays on 15th and End-of-Month):
+    - Work done Jan 1-15 → paid Jan 15
+    - Work done Jan 16-31 → paid Jan 31
+    - Weekend adjustment: if payday falls on Sat/Sun, moves to Monday
+
+  MONTHLY 15th (e.g., HEA pays 15th of next month):
+    - All December work → paid January 15
+    - All January work → paid February 15
+
+  MONTHLY EOM (e.g., IANET pays end of same month):
+    - All January work → paid January 31
+
+THREE VIEW MODES:
+
+  1. UPCOMING (default)
+     Shows all payouts occurring in the next 30 days.
+     Each card shows: Firm, Work Period, Payout Date, Claim Count, Amount.
+     Click a card to see individual claims.
+
+  2. WEEKLY
+     Groups all payouts by calendar week (Monday-Sunday).
+     Shows total expected for each week with firm-level breakdown.
+     Up to 12 weeks displayed.
+
+  3. MONTHLY
+     Groups all payouts by calendar month.
+     Shows total expected for each month with firm-level breakdown.
+     Up to 6 months displayed.
+
+  IMPORTANT: All views group by PAYOUT DATE, not work date.
+  Example: December work for ACD that pays Jan 15 appears in January,
+  not December.
+
+ACTIONS AVAILABLE:
+
+  1. View Claim Details — Click any payout card to open a modal showing
+     every claim included in that payout with amounts.
+
+  2. Edit Claim Amount — In the detail modal, click the edit icon next
+     to any claim amount. Enter the new amount and save. This updates
+     the claim's file_total (completed) or pay_amount (scheduled) in
+     the database and recalculates all forecasts.
+
+  3. Edit Reference Date — For bi-weekly firms, the modal shows the
+     current reference date with an edit option. Changing this updates
+     the vendor record and recalculates all bi-weekly payout dates.
+
+FIRMS CONFIGURED FOR FORECASTING:
+
+  Firm            | Base Fee | Schedule Type
+  --------------- | -------- | ------------------
+  Sedgwick        | $200     | Weekly (Wed)
+  Doan            | $180     | Weekly (Thu)
+  Legacy          | $190     | Bi-weekly (Wed)
+  ClaimSolution   | $195     | Bi-weekly (Thu, 21-day)
+  CCS             | $195     | Bi-weekly (Thu)
+  Complete Claims | $185     | Bi-weekly (Wed)
+  AMA             | $175     | Bi-weekly
+  ATeam           | $180     | Bi-weekly
+  ACD             | $200     | Semi-monthly (15th + EOM)
+  HEA             | $210     | Monthly (15th, prev month)
+  IANET           | $195     | Monthly (EOM)
+  Frontline       | $185     | Monthly
+  SCA             | $170     | Irregular (not forecasted)
+
+  Note: SCA is excluded from forecasting due to irregular/low volume.
+  Unknown firms (not in this list) are also excluded from forecasts.
+
+FIRM NAME NORMALIZATION:
+  The system recognizes various spellings and maps them to standard names:
+    "LEGACY", "G T APPRAISALS"         → Legacy
+    "DOAN", "SL APPRAISAL"             → Doan
+    "AUTOCLAIMSDI", "AUTOCLAIMS"       → ACD
+    "HEAVY EQUIPMENT"                  → HEA
+    "CS", "CLAIMSOLUTION"              → ClaimSolution
+    "CCS"                              → CCS (separate from ClaimSolution)
+    "A TEAM", "A-TEAM", "ATEAM"        → ATeam
+    "SEDGWK", "SEDGWICK"              → Sedgwick
+
+
+================================================================================
+  HOW THE TWO MODULES CONNECT
+================================================================================
+
+  1. You ADD a vendor in Manage Vendors with a pay schedule type
+  2. Claims are created and assigned a firm name
+  3. When a claim is completed (or scheduled), the Payout Dashboard:
+     a. Looks up the firm's vendor record
+     b. Uses the pay_schedule_type + pay_day + reference_date
+     c. Calculates when you'll be paid
+     d. Groups and displays the forecast
+
+  Change a vendor's pay schedule → all forecasts recalculate automatically.
+  Mark a vendor inactive → their claims drop out of forecasts.
+  Edit a claim amount in the modal → totals update immediately.
+
+  The Payout Dashboard is READ + EDIT only. It does not create claims
+  or vendors. It reads from both tables and calculates forecasts in
+  real-time on every page load.

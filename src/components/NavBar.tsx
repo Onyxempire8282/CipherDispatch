@@ -11,8 +11,7 @@ interface NavBarProps {
 const ADMIN_TABS = [
   { label: "Claims", path: "/admin/claims" },
   { label: "Calendar", path: "/admin/claims?view=calendar" },
-  { label: "Vendors", path: "/admin/vendors" },
-  { label: "Payouts", path: "/admin/payouts" },
+  { label: "Vendors & Payouts", path: "/admin/vendors-payouts" },
   { label: "Contractors", path: "/admin/contractors" },
   { label: "KPI", path: "/admin/kpi" },
 ];
@@ -25,8 +24,7 @@ const APPRAISER_TABS = [
 
 const ADMIN_BOTTOM_NAV = [
   { label: "Claims", icon: "◫", path: "/admin/claims" },
-  { label: "Vendors", icon: "⊹", path: "/admin/vendors" },
-  { label: "Payouts", icon: "⊞", path: "/admin/payouts" },
+  { label: "Firms", icon: "⊹", path: "/admin/vendors-payouts" },
   { label: "Team", icon: "⊡", path: "/admin/contractors" },
   { label: "KPI", icon: "⊟", path: "/admin/kpi" },
 ];
@@ -53,6 +51,11 @@ export const NavBar: React.FC<NavBarProps> = ({ role, userName }) => {
     const [pathname, search] = tabPath.split("?");
     if (search) {
       return location.pathname === pathname && location.search.includes(search);
+    }
+    // Treat old vendor/payout routes as matching the merged page
+    if (pathname === "/admin/vendors-payouts") {
+      const p = location.pathname;
+      if (p === "/admin/vendors" || p === "/admin/payouts") return true;
     }
     return location.pathname === pathname && !location.search.includes("view=");
   };

@@ -13,6 +13,7 @@ import AdminNewClaim from "./routes/admin/NewClaim";
 import AdminClaims from "./routes/admin/Claims";
 import AdminVendors from "./routes/admin/Vendors";
 import PayoutDashboard from "./routes/admin/PayoutDashboard";
+import VendorsPayouts from "./routes/admin/VendorsPayouts";
 import KPIDashboard from "./routes/admin/KPIDashboard";
 import ContractorManagement from "./components/admin/ContractorManagement";
 import NewSupplement from "./routes/admin/NewSupplement";
@@ -74,11 +75,21 @@ const router = createBrowserRouter(
       ),
     },
     {
+      path: "/admin/vendors-payouts",
+      element: (
+        <ProtectedRoute requiredRole="admin">
+          <ErrorBoundary label="Vendors & Payouts">
+            <VendorsPayouts />
+          </ErrorBoundary>
+        </ProtectedRoute>
+      ),
+    },
+    {
       path: "/admin/vendors",
       element: (
         <ProtectedRoute requiredRole="admin">
-          <ErrorBoundary label="Vendors">
-            <AdminVendors />
+          <ErrorBoundary label="Vendors & Payouts">
+            <VendorsPayouts />
           </ErrorBoundary>
         </ProtectedRoute>
       ),
@@ -87,8 +98,8 @@ const router = createBrowserRouter(
       path: "/admin/payouts",
       element: (
         <ProtectedRoute requiredRole="admin">
-          <ErrorBoundary label="Payouts">
-            <PayoutDashboard />
+          <ErrorBoundary label="Vendors & Payouts">
+            <VendorsPayouts />
           </ErrorBoundary>
         </ProtectedRoute>
       ),

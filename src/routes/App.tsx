@@ -145,34 +145,21 @@ export default function App() {
             </div>
 
             <div className="dashboard__ops-grid">
-              <Link to="/admin/vendors" className="dashboard__op-card">
+              <Link to="/admin/vendors-payouts" className="dashboard__op-card">
                 <div className="dashboard__op-num">04</div>
                 <div className="dashboard__op-icon">🏢</div>
-                <div className="dashboard__op-name">Manage Vendors</div>
+                <div className="dashboard__op-name">Vendors & Payouts</div>
                 <div className="dashboard__op-desc">
-                  Add and edit vendors that provide payouts. Configure rates and firm assignments.
+                  Manage firms, pay schedules, and forecast cash flow from completed and scheduled claims.
                 </div>
                 <div className="dashboard__op-footer">
-                  <div className="dashboard__op-stat">Vendors</div>
-                  <div className="dashboard__op-open">Open →</div>
-                </div>
-              </Link>
-
-              <Link to="/admin/payouts" className="dashboard__op-card">
-                <div className="dashboard__op-num">05</div>
-                <div className="dashboard__op-icon">💰</div>
-                <div className="dashboard__op-name">Payout Dashboard</div>
-                <div className="dashboard__op-desc">
-                  View upcoming vendor payouts and revenue projections. Export billing reports.
-                </div>
-                <div className="dashboard__op-footer">
-                  <div className="dashboard__op-stat">Payouts</div>
+                  <div className="dashboard__op-stat">Firms</div>
                   <div className="dashboard__op-open">Open →</div>
                 </div>
               </Link>
 
               <Link to="/admin/claims?view=calendar" className="dashboard__op-card">
-                <div className="dashboard__op-num">06</div>
+                <div className="dashboard__op-num">05</div>
                 <div className="dashboard__op-icon">📅</div>
                 <div className="dashboard__op-name">Scheduling Calendar</div>
                 <div className="dashboard__op-desc">
@@ -187,7 +174,7 @@ export default function App() {
 
             <div className="dashboard__ops-grid dashboard__ops-grid--last">
               <Link to="/admin/contractors" className="dashboard__op-card">
-                <div className="dashboard__op-num">07</div>
+                <div className="dashboard__op-num">06</div>
                 <div className="dashboard__op-icon">👷</div>
                 <div className="dashboard__op-name">Contractor Management</div>
                 <div className="dashboard__op-desc">
@@ -200,7 +187,7 @@ export default function App() {
               </Link>
 
               <Link to="/admin/kpi" className="dashboard__op-card">
-                <div className="dashboard__op-num">08</div>
+                <div className="dashboard__op-num">07</div>
                 <div className="dashboard__op-icon">📊</div>
                 <div className="dashboard__op-name">KPI Dashboard</div>
                 <div className="dashboard__op-desc">
