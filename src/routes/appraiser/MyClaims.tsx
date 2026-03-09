@@ -89,9 +89,7 @@ export default function MyClaims() {
       // Create base query - load ALL claims
       let query = supabase
         .from("claims_v")
-        .select(
-          "id,claim_number,customer_name,status,appointment_start,appointment_end,vin,vehicle_year,vehicle_make,vehicle_model,address_line1,city,state,zip,firm,pay_amount,file_total,full_name"
-        );
+        .select("*");
 
       // Apply role-based scoping
       query = authz.scopedClaimsQuery(query);

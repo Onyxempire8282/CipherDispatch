@@ -52,7 +52,7 @@ export default function NewSupplement() {
         .eq("id", claimId)
         .single(),
       supabase.from("claims_v")
-        .select("id, claim_number, supplement_number, status, created_at")
+        .select("*")
         .eq("original_claim_id", claimId)
         .eq("is_supplement", true)
         .order("supplement_number"),
@@ -89,7 +89,7 @@ export default function NewSupplement() {
     setSearching(true);
     const { data } = await supabase
       .from("claims_v")
-      .select("id, claim_number, customer_name, vehicle_year, vehicle_make, vehicle_model, firm")
+      .select("*")
       .or(`claim_number.ilike.%${searchQuery}%,customer_name.ilike.%${searchQuery}%`)
       .eq("is_supplement", false)
       .is("archived_at", null)

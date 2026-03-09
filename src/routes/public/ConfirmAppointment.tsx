@@ -17,11 +17,7 @@ export default function ConfirmAppointment() {
     (async () => {
       const { data, error } = await supabase
         .from("claims_v")
-        .select(
-          "id, claim_number, customer_name, vehicle_year, vehicle_make, " +
-          "vehicle_model, appointment_start, appointment_end, " +
-          "address_line1, city, state, zip, appt_confirmed, location_type"
-        )
+        .select("*")
         .eq("confirm_token", token)
         .is("archived_at", null)
         .single();

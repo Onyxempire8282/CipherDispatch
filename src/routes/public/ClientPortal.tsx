@@ -29,11 +29,7 @@ export default function ClientPortal() {
       // Load their claims
       const { data: claimsData, error: cErr } = await supabase
         .from("claims_v")
-        .select(
-          "id, claim_number, customer_name, vehicle_year, vehicle_make, vehicle_model, " +
-          "vin, status, appointment_start, address_line1, city, state, zip, " +
-          "created_at, appt_confirmed, location_type, photo_count"
-        )
+        .select("*")
         .eq("portal_client_id", portal.id)
         .is("archived_at", null)
         .order("created_at", { ascending: false });

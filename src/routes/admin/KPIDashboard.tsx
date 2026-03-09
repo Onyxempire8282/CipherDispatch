@@ -43,11 +43,7 @@ export default function KPIDashboard() {
     const [claimsRes, profilesRes, slaRes] = await Promise.all([
       supabase
         .from('claims_v')
-        .select(
-          'id, claim_number, status, created_at, assigned_to, firm, pay_amount, file_total, ' +
-          'completion_date, completed_month, writing_started_at, is_supplement, ' +
-          'appointment_start, payout_status, expected_payout_date'
-        )
+        .select("*")
         .gte('created_at', thirteenMonthsAgo.toISOString())
         .is('archived_at', null),
       supabase.from('profiles').select('user_id, full_name, role'),

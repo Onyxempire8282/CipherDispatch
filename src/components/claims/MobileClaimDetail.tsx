@@ -162,7 +162,7 @@ export default function MobileClaimDetail({
     if (claim.id && !claim.is_supplement) {
       supabase
         .from('claims_v')
-        .select('id, claim_number, supplement_number, status, supplement_reason, created_at')
+        .select('*')
         .eq('original_claim_id', claim.id)
         .eq('is_supplement', true)
         .order('supplement_number')

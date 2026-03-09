@@ -100,9 +100,7 @@ export default function AdminClaims() {
 
       let query = supabase
         .from("claims_v")
-        .select(
-          "id,claim_number,customer_name,status,vin,vehicle_year,vehicle_make,vehicle_model,assigned_to,appointment_start,appointment_end,firm,notes,created_at,address_line1,city,state,zip,lat,lng,pay_amount,file_total,full_name"
-        )
+        .select("*")
         .order("created_at", { ascending: false });
 
       query = authz.scopedClaimsQuery(query);

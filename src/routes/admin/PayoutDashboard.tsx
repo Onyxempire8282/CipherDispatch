@@ -54,7 +54,7 @@ export default function PayoutDashboard() {
       const [claimsRes, vendorsRes] = await Promise.all([
         supabase
           .from('claims_v')
-          .select('id, firm, completion_date, appointment_start, file_total, pay_amount, status, is_supplement')
+          .select("*")
           .is('archived_at', null)
           .or('status.eq.COMPLETED,status.eq.SCHEDULED,status.eq.IN_PROGRESS')
           .or('is_supplement.is.null,is_supplement.eq.false'),
@@ -103,7 +103,7 @@ export default function PayoutDashboard() {
     try {
       const { data: claimDetails, error } = await supabase
         .from('claims_v')
-        .select('id, claim_number, customer_name, firm, pay_amount, file_total, status, appointment_start, completion_date')
+        .select("*")
         .is('archived_at', null)
         .in('id', payout.claimIds);
 
@@ -153,7 +153,7 @@ export default function PayoutDashboard() {
       if (selectedPayout) {
         const { data: claimDetails } = await supabase
           .from('claims_v')
-          .select('id, claim_number, customer_name, firm, pay_amount, file_total, status, appointment_start, completion_date')
+          .select("*")
           .is('archived_at', null)
           .in('id', selectedPayout.claimIds);
         setPayoutClaims(claimDetails || []);

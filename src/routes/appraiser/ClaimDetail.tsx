@@ -21,7 +21,7 @@ function SupplementHistory({ claimId }: { claimId: string }) {
 
   useEffect(() => {
     supabase.from("claims_v")
-      .select("id, claim_number, supplement_number, status, supplement_reason, created_at")
+      .select("*")
       .eq("original_claim_id", claimId)
       .eq("is_supplement", true)
       .order("supplement_number")
@@ -101,45 +101,7 @@ export default function ClaimDetail() {
   const load = async () => {
     const { data } = await supabase
       .from("claims_v")
-      .select(`
-        id,
-        claim_number,
-        customer_name,
-        customer_phone,
-        email,
-        vehicle_make,
-        vehicle_model,
-        vehicle_year,
-        vin,
-        date_of_loss,
-        insurance_company,
-        address_line1,
-        address_line2,
-        city,
-        state,
-        zip,
-        notes,
-        assigned_to,
-        appointment_start,
-        appointment_end,
-        firm,
-        pay_amount,
-        file_total,
-        status,
-        lat,
-        lng,
-        created_at,
-        updated_at,
-        is_supplement,
-        original_claim_id,
-        supplement_number,
-        supplement_reason,
-        supp_location_changed,
-        writer_id,
-        writing_started_at,
-        writing_completed_at,
-        photos_completed
-      `)
+      .select("*")
       .eq("id", id)
       .single();
     setClaim(data);
