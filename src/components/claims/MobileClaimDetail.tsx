@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { getFirmColor } from '../../constants/firmColors';
 import { supabase } from '../../lib/supabase';
 import { getPhotoUrlWithFallback } from '../../utils/uploadManager';
@@ -46,6 +46,7 @@ interface MobileClaimDetailProps {
 const STATUS_MOD: Record<string, string> = {
   SCHEDULED: 'scheduled',
   IN_PROGRESS: 'progress',
+  WRITING: 'writing',
   COMPLETED: 'completed',
   CANCELED: 'canceled',
 };
@@ -150,8 +151,23 @@ export default function MobileClaimDetail({
     return user?.full_name || 'Unknown User';
   };
 
+  const nav = useNavigate();
   const isArchived = claim.status === 'CANCELED';
   const hasPhotos = photos.length > 0;
+
+  // Load supplements for original claims
+  const [supplements, setSupplements] = useState<any[]>([]);
+  useEffect(() => {
+    if (claim.id && !claim.is_supplement) {
+      supabase
+        .from('claims_v')
+        .select('id, claim_number, supplement_number, status, supplement_reason, created_at')
+        .eq('original_claim_id', claim.id)
+        .eq('is_supplement', true)
+        .order('supplement_number')
+        .then(({ data }) => setSupplements(data || []));
+    }
+  }, [claim.id, claim.is_supplement]);
 
   return (
     <div className="mobile-detail">
@@ -242,6 +258,69 @@ export default function MobileClaimDetail({
           </label>
         </div>
 
+        {/* Supplement Info — shown on supplement claims */}
+        {claim.is_supplement && claim.original_claim_id && (
+          <div className="mobile-detail__supp-info">
+            <div className="mobile-detail__supp-info-label">SUPPLEMENT</div>
+            <div className="mobile-detail__supp-badge">
+              Supplement {claim.supplement_number} of Original Claim
+            </div>
+            {claim.supplement_reason && (
+              <div className="mobile-detail__supp-origin">
+                Reason: {claim.supplement_reason}
+              </div>
+            )}
+            <div className="mobile-detail__supp-origin">
+              <Link to={`/claim/${claim.original_claim_id}`} className="mobile-detail__supp-origin-link">
+                ← View Original Claim
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Appraiser Complete Button — field workers only, IN_PROGRESS */}
+        {!isAdmin && claim.status === 'IN_PROGRESS' && (
+          <button className="mobile-detail__complete-btn" onClick={onMarkComplete}>
+            ✅ Mark Inspection Complete
+          </button>
+        )}
+
+        {/* Customer Confirmation — admin only, SCHEDULED, not body_shop */}
+        {isAdmin && claim.status === 'SCHEDULED' && claim.location_type !== 'body_shop' && (
+          <CollapsibleSection title="Confirmation" icon="🔗" defaultOpen={false}>
+            {claim.appt_confirmed ? (
+              <div className="mobile-detail__confirm-done">✓ Customer confirmed appointment</div>
+            ) : claim.confirm_token ? (
+              <>
+                <div className="mobile-detail__confirm-link">
+                  {`${window.location.origin}/CipherDispatch/confirm?token=${claim.confirm_token}`}
+                </div>
+                <button
+                  className="mobile-detail__action-secondary"
+                  onClick={() => {
+                    navigator.clipboard.writeText(
+                      `${window.location.origin}/CipherDispatch/confirm?token=${claim.confirm_token}`
+                    );
+                    alert('Link copied!');
+                  }}
+                >
+                  📋 Copy Link
+                </button>
+              </>
+            ) : (
+              <button
+                className="mobile-detail__action-secondary mobile-detail__action-secondary--amber"
+                onClick={async () => {
+                  await supabase.rpc('generate_confirm_token', { claim_id: claim.id });
+                  window.location.reload();
+                }}
+              >
+                🔗 Generate Confirmation Link
+              </button>
+            )}
+          </CollapsibleSection>
+        )}
+
         {/*
           SECTION DEFAULTS - Guardrail 1:
           Expanded: Customer, Location, Appointment, Photos (if exist)
@@ -276,6 +355,15 @@ export default function MobileClaimDetail({
           <Field
             label="City"
             value={claim.city ? `${claim.city}, ${claim.state || ''} ${claim.zip || ''}` : null}
+          />
+          <Field
+            label="Location Type"
+            value={
+              claim.location_type === 'body_shop' ? '🔧 Body Shop'
+              : claim.location_type === 'dealership' ? '🚗 Dealership'
+              : claim.location_type === 'other' ? '📍 Other'
+              : '🏠 Customer Address'
+            }
           />
           <button className="mobile-detail__maps-btn" onClick={openInMaps}>
             🗺️ Open in Maps
@@ -389,6 +477,12 @@ export default function MobileClaimDetail({
                 🔧 In Progress
               </button>
               <button
+                className="mobile-detail__action-btn mobile-detail__action-btn--writing"
+                onClick={() => onStatusChange('WRITING')}
+              >
+                ✍️ Writing
+              </button>
+              <button
                 className="mobile-detail__action-btn mobile-detail__action-btn--complete"
                 onClick={() => onStatusChange('COMPLETED')}
               >
@@ -401,6 +495,37 @@ export default function MobileClaimDetail({
                 ❌ Cancel
               </button>
             </div>
+          </CollapsibleSection>
+        )}
+
+        {/* Supplements — admin only, original claims only */}
+        {isAdmin && !claim.is_supplement && (
+          <CollapsibleSection title="Supplements" icon="📎" defaultOpen={false}>
+            {supplements.length > 0 ? (
+              <div className="mobile-detail__supp-list">
+                {supplements.map(s => (
+                  <div
+                    key={s.id}
+                    className="mobile-detail__supp-row"
+                    onClick={() => nav(`/claim/${s.id}`)}
+                  >
+                    <span className="mobile-detail__supp-num">S{s.supplement_number}</span>
+                    <span className="mobile-detail__supp-reason">{s.supplement_reason || '—'}</span>
+                    <span className={`mobile-detail__supp-status mobile-detail__supp-status--${(s.status || '').toLowerCase()}`}>
+                      {s.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <Field label="" value="No supplements yet" />
+            )}
+            <Link
+              to={`/admin/claims/${claim.id}/supplement`}
+              className="mobile-detail__action-secondary mobile-detail__action-secondary--amber"
+            >
+              + Create Supplement
+            </Link>
           </CollapsibleSection>
         )}
 

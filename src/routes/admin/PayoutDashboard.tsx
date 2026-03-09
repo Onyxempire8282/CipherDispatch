@@ -54,9 +54,10 @@ export default function PayoutDashboard() {
       const [claimsRes, vendorsRes] = await Promise.all([
         supabase
           .from('claims_v')
-          .select('id, firm, completion_date, appointment_start, file_total, pay_amount, status')
+          .select('id, firm, completion_date, appointment_start, file_total, pay_amount, status, is_supplement')
           .is('archived_at', null)
-          .or('status.eq.COMPLETED,status.eq.SCHEDULED,status.eq.IN_PROGRESS'),
+          .or('status.eq.COMPLETED,status.eq.SCHEDULED,status.eq.IN_PROGRESS')
+          .or('is_supplement.is.null,is_supplement.eq.false'),
         supabase
           .from('vendors')
           .select('name, pay_schedule_type, pay_day, reference_date')

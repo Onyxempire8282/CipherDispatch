@@ -274,6 +274,11 @@
   background: var(--status-completed);
 }
 
+.claims__badge--writing {
+  background: rgba(167, 139, 250, 0.12);
+  color: #a78bfa;
+}
+
 .claims__badge--canceled {
   background: var(--status-canceled);
 }

@@ -12,7 +12,7 @@ import Button from '../ui/Button';
 
 export interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: 'admin' | 'appraiser';
+  requiredRole?: string | string[];
 }
 
 export default function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
@@ -46,11 +46,13 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
       setUserRole(user.role);
 
       // Check role if required
-      if (requiredRole && user.role !== requiredRole) {
-        // Wrong role
-        setAuthorized(false);
-        setLoading(false);
-        return;
+      if (requiredRole) {
+        const allowed = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
+        if (!allowed.includes(user.role)) {
+          setAuthorized(false);
+          setLoading(false);
+          return;
+        }
       }
 
       // Authorized
@@ -74,7 +76,8 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
   }
 
   // Wrong role - show access denied
-  if (!authorized && requiredRole && userRole !== requiredRole) {
+  const allowedRoles = requiredRole ? (Array.isArray(requiredRole) ? requiredRole : [requiredRole]) : [];
+  if (!authorized && requiredRole && !allowedRoles.includes(userRole || '')) {
     return (
       <div className="min-h-screen bg-gradient-dark flex items-center justify-center p-4">
         <div className="bg-brand-dark-800 border-2 border-red-500 rounded-lg p-8 max-w-md text-center shadow-card-hover">
@@ -99,7 +102,7 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
           </h2>
           <p className="text-brand-light-300 mb-6">
             You don't have permission to access this page. This area is restricted to{' '}
-            <span className="font-semibold text-brand-light-100">{requiredRole}</span> users.
+            <span className="font-semibold text-brand-light-100">{allowedRoles.join(' or ')}</span> users.
           </p>
           <p className="text-sm text-brand-light-400 mb-6">
             Your current role: <span className="font-semibold">{userRole}</span>

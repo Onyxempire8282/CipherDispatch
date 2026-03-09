@@ -45,12 +45,13 @@ type Claim = {
   } | null;
 };
 
-type ClaimStatus = "UNASSIGNED" | "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELED" | "ALL";
+type ClaimStatus = "UNASSIGNED" | "SCHEDULED" | "IN_PROGRESS" | "WRITING" | "COMPLETED" | "CANCELED" | "ALL";
 
 function getStatusBadgeClass(status?: string): string {
   switch (status) {
     case "SCHEDULED": return "claims__badge--scheduled";
     case "IN_PROGRESS": return "claims__badge--progress";
+    case "WRITING": return "claims__badge--writing";
     case "COMPLETED": return "claims__badge--completed";
     case "CANCELED": return "claims__badge--canceled";
     default: return "claims__badge--status";
@@ -106,7 +107,7 @@ export default function AdminClaims() {
 
       query = authz.scopedClaimsQuery(query);
       query = query.gte('created_at', '2025-12-01T00:00:00.000Z');
-      query = query.or("status.is.null,status.in.(SCHEDULED,IN_PROGRESS,COMPLETED)");
+      query = query.or("status.is.null,status.in.(SCHEDULED,IN_PROGRESS,WRITING,COMPLETED)");
 
       const { data, error: queryError } = await query;
 
@@ -275,6 +276,7 @@ export default function AdminClaims() {
     { key: "UNASSIGNED", label: "Unassigned", count: unassignedCount },
     { key: "SCHEDULED", label: "Scheduled", count: statusCounts.SCHEDULED || 0 },
     { key: "IN_PROGRESS", label: "In Progress", count: statusCounts.IN_PROGRESS || 0 },
+    { key: "WRITING", label: "Writing", count: statusCounts.WRITING || 0 },
     { key: "COMPLETED", label: "Completed", count: statusCounts.COMPLETED || 0 },
     { key: "CANCELED", label: "Canceled", count: statusCounts.CANCELED || 0 },
   ];

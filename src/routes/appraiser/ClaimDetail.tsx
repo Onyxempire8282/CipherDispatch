@@ -137,7 +137,11 @@ export default function ClaimDetail() {
         original_claim_id,
         supplement_number,
         supplement_reason,
-        supp_location_changed
+        supp_location_changed,
+        writer_id,
+        writing_started_at,
+        writing_completed_at,
+        photos_completed
       `)
       .eq("id", id)
       .single();
@@ -1239,6 +1243,30 @@ export default function ClaimDetail() {
                 {claim.assigned_to
                   ? users.find(u => u.user_id === claim.assigned_to)?.full_name || "Unknown User"
                   : "Unassigned"}
+              </div>
+            )}
+            {isAdmin && claim.writer_id && (
+              <div className="detail__field">
+                <div className="detail__label">Writer</div>
+                <div className="detail__value">
+                  {users.find(u => u.user_id === claim.writer_id)?.full_name || "Unknown"}
+                </div>
+              </div>
+            )}
+            {isAdmin && claim.writing_started_at && (
+              <div className="detail__field">
+                <div className="detail__label">Writing Started</div>
+                <div className="detail__value">
+                  {new Date(claim.writing_started_at).toLocaleString()}
+                </div>
+              </div>
+            )}
+            {isAdmin && claim.writing_completed_at && (
+              <div className="detail__field">
+                <div className="detail__label">Writing Completed</div>
+                <div className="detail__value">
+                  {new Date(claim.writing_completed_at).toLocaleString()}
+                </div>
               </div>
             )}
           </div>

@@ -27,14 +27,14 @@ const ADMIN_BOTTOM_NAV = [
   { label: "Claims", icon: "◫", path: "/admin/claims" },
   { label: "Vendors", icon: "⊹", path: "/admin/vendors" },
   { label: "Payouts", icon: "⊞", path: "/admin/payouts" },
+  { label: "Team", icon: "⊡", path: "/admin/contractors" },
   { label: "KPI", icon: "⊟", path: "/admin/kpi" },
-  { label: "Home", icon: "⌂", path: "/" },
 ];
 
 const APPRAISER_BOTTOM_NAV = [
   { label: "Claims", icon: "◫", path: "/my-claims" },
   { label: "Routes", icon: "⊹", path: "/my-routes" },
-  { label: "Capture", icon: "⊡", path: "/appraiser/claim" },
+  { label: "Claims", icon: "⊡", path: "/my-claims" },
   { label: "Home", icon: "⊟", path: "/" },
 ];
 

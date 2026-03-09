@@ -54,7 +54,9 @@ export default function KPIDashboard() {
       supabase.functions.invoke('sla-check').catch(() => ({ data: null })),
     ]);
 
-    setClaims(claimsRes.data || []);
+    // Filter out supplements to avoid double-counting in metrics
+    const allClaims = (claimsRes.data || []).filter((c: any) => !c.is_supplement);
+    setClaims(allClaims);
     setProfiles(profilesRes.data || []);
     setSlaAlerts(slaRes.data?.alerts || null);
     setLastUpdated(new Date());

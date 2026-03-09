@@ -116,7 +116,7 @@ const router = createBrowserRouter(
     {
       path: "/my-claims",
       element: (
-        <ProtectedRoute>
+        <ProtectedRoute requiredRole={["appraiser", "writer"]}>
           <ErrorBoundary label="My Claims">
             <MyClaims />
           </ErrorBoundary>

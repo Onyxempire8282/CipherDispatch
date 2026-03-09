@@ -559,21 +559,163 @@
 
 .mobile-detail__complete-btn {
   width: 100%;
-  padding: 14px 28px;
-  background: var(--green);
-  border: none;
-  color: #000;
+  padding: 14px;
+  margin-bottom: 8px;
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  color: #4ade80;
   font-family: 'DM Mono', monospace;
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 1px;
   cursor: pointer;
 }
 
 .mobile-detail__complete-btn:active {
   opacity: 0.85;
 }
+
+/* ========================================
+   WRITING Status
+   ======================================== */
+
+.mobile-detail__status--writing       { background: rgba(167, 139, 250, 0.15); color: #a78bfa; }
+.mobile-detail__status-badge--writing { background: rgba(167, 139, 250, 0.15); color: #a78bfa; }
+.mobile-detail__action-btn--writing   { border-color: rgba(167, 139, 250, 0.4); color: #a78bfa; }
+
+/* ========================================
+   Supplement Info Block
+   ======================================== */
+
+.mobile-detail__supp-info {
+  background: rgba(232, 149, 42, 0.06);
+  border: 1px solid rgba(232, 149, 42, 0.25);
+  border-left: 3px solid var(--amber);
+  padding: 14px;
+  margin-bottom: 8px;
+}
+
+.mobile-detail__supp-info-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--amber);
+  margin-bottom: 10px;
+}
+
+.mobile-detail__supp-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--amber);
+  letter-spacing: 1px;
+}
+
+.mobile-detail__supp-origin {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+.mobile-detail__supp-origin-link {
+  color: var(--amber);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* ========================================
+   Secondary Action Button
+   ======================================== */
+
+.mobile-detail__action-secondary {
+  width: 100%;
+  padding: 11px;
+  margin-top: 8px;
+  background: var(--steel-mid);
+  border: 1px solid var(--rivet);
+  color: var(--text-hi);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.mobile-detail__action-secondary:hover { border-color: var(--rivet-hi); }
+
+.mobile-detail__action-secondary--amber {
+  border-color: rgba(232, 149, 42, 0.35);
+  color: var(--amber);
+  background: rgba(232, 149, 42, 0.06);
+}
+
+/* ========================================
+   Confirmation Link
+   ======================================== */
+
+.mobile-detail__confirm-done {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: #4ade80;
+  padding: 8px 0;
+}
+
+.mobile-detail__confirm-link {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  word-break: break-all;
+  background: var(--input-bg);
+  border: 1px solid var(--rivet);
+  padding: 10px;
+  margin-bottom: 8px;
+}
+
+/* ========================================
+   Supplement List
+   ======================================== */
+
+.mobile-detail__supp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.mobile-detail__supp-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  background: var(--steel-mid);
+  border: 1px solid var(--rivet);
+  cursor: pointer;
+}
+
+.mobile-detail__supp-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--amber);
+  min-width: 24px;
+}
+
+.mobile-detail__supp-reason {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-hi);
+  flex: 1;
+}
+
+.mobile-detail__supp-status {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.mobile-detail__supp-status--completed   { color: #4ade80; }
+.mobile-detail__supp-status--writing     { color: #a78bfa; }
+.mobile-detail__supp-status--scheduled   { color: var(--amber); }
+.mobile-detail__supp-status--in_progress { color: #60a5fa; }
 
 /* ========================================
    Small Phone Overrides
