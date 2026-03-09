@@ -72,6 +72,7 @@ export default function AdminClaims() {
     searchParams.get("view") === "calendar"
   );
   const [selectedStatus, setSelectedStatus] = useState<ClaimStatus>("ALL");
+  const [searchQuery, setSearchQuery] = useState("");
   const [draggingClaimId, setDraggingClaimId] = useState<string | null>(null);
 
   const isMobile = useIsMobile();
@@ -137,6 +138,16 @@ export default function AdminClaims() {
       } else {
         filtered = filtered.filter(claim => claim.status === selectedStatus);
       }
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(claim =>
+        (claim.claim_number || "").toLowerCase().includes(q) ||
+        (claim.customer_name || "").toLowerCase().includes(q) ||
+        (claim.firm || "").toLowerCase().includes(q) ||
+        (claim.vin || "").toLowerCase().includes(q) ||
+        (claim.city || "").toLowerCase().includes(q)
+      );
     }
     setRows(filtered);
   };
@@ -223,7 +234,7 @@ export default function AdminClaims() {
 
   useEffect(() => {
     if (allClaims.length > 0) applyFilters(allClaims);
-  }, [selectedStatus, allClaims]);
+  }, [selectedStatus, searchQuery, allClaims]);
 
   if (loading) {
     return <div className="claims__loading">Loading claims...</div>;
@@ -315,6 +326,13 @@ export default function AdminClaims() {
         <div className="claims__toolbar">
           <div className="claims__toolbar-left">
             <Link to="/" className="btn btn--ghost btn--sm">Home</Link>
+            <input
+              type="text"
+              className="claims__search"
+              placeholder="Search claim #, customer, firm, VIN, city..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
           <div className="claims__toolbar-right">
             <button

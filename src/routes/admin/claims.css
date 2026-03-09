@@ -140,6 +140,33 @@
   flex-wrap: wrap;
 }
 
+/* ── Search bar ── */
+
+.claims__search {
+  background: var(--input-bg);
+  border: 1px solid var(--rivet);
+  color: var(--white);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 300;
+  padding: 10px 14px;
+  min-width: 280px;
+  transition: border-color 0.15s;
+}
+
+.claims__search::placeholder {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.claims__search:focus {
+  outline: none;
+  border-color: var(--amber);
+}
+
 /* ── Empty state ── */
 
 .claims__empty {
