@@ -144,7 +144,7 @@ export default function App() {
               </Link>
             </div>
 
-            <div className="dashboard__ops-grid dashboard__ops-grid--last">
+            <div className="dashboard__ops-grid">
               <Link to="/admin/vendors" className="dashboard__op-card">
                 <div className="dashboard__op-num">04</div>
                 <div className="dashboard__op-icon">🏢</div>
@@ -183,6 +183,36 @@ export default function App() {
                   <div className="dashboard__op-open">Open →</div>
                 </div>
               </Link>
+            </div>
+
+            <div className="dashboard__ops-grid dashboard__ops-grid--last">
+              <Link to="/admin/contractors" className="dashboard__op-card">
+                <div className="dashboard__op-num">07</div>
+                <div className="dashboard__op-icon">👷</div>
+                <div className="dashboard__op-name">Contractor Management</div>
+                <div className="dashboard__op-desc">
+                  Manage field appraisers and writers. Track performance, availability, and coverage areas.
+                </div>
+                <div className="dashboard__op-footer">
+                  <div className="dashboard__op-stat">Team</div>
+                  <div className="dashboard__op-open">Open →</div>
+                </div>
+              </Link>
+
+              <Link to="/admin/kpi" className="dashboard__op-card">
+                <div className="dashboard__op-num">08</div>
+                <div className="dashboard__op-icon">📊</div>
+                <div className="dashboard__op-name">KPI Dashboard</div>
+                <div className="dashboard__op-desc">
+                  Revenue analytics, claim volume trends, inspector performance, and SLA monitoring.
+                </div>
+                <div className="dashboard__op-footer">
+                  <div className="dashboard__op-stat">Analytics</div>
+                  <div className="dashboard__op-open">Open →</div>
+                </div>
+              </Link>
+
+              <div className="dashboard__op-card" style={{ visibility: 'hidden' }}></div>
             </div>
           </div>
         </>

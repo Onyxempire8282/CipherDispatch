@@ -5,6 +5,7 @@ import {
   ResponsiveContainer, Cell
 } from 'recharts';
 import { getSupabaseAuthz } from '../../lib/supabaseAuthz';
+import { NavBar } from '../../components/NavBar';
 import './kpi-dashboard.css';
 
 export default function KPIDashboard() {
@@ -200,14 +201,18 @@ export default function KPIDashboard() {
   };
 
   if (loading) return (
-    <div className="kpi__loading">
-      <div className="kpi__loading-spinner" />
-      <div className="kpi__loading-text">LOADING DASHBOARD</div>
-    </div>
+    <>
+      <NavBar role="admin" />
+      <div className="kpi__loading">
+        <div className="kpi__loading-spinner" />
+        <div className="kpi__loading-text">LOADING DASHBOARD</div>
+      </div>
+    </>
   );
 
   return (
     <div className="kpi">
+      <NavBar role="admin" />
       {/* ── Header ─────────────────────────────────────────────── */}
       <div className="kpi__page-header">
         <div>

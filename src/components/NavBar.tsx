@@ -33,8 +33,8 @@ const ADMIN_BOTTOM_NAV = [
 
 const APPRAISER_BOTTOM_NAV = [
   { label: "Claims", icon: "◫", path: "/my-claims" },
+  { label: "Calendar", icon: "⊞", path: "/my-claims?view=calendar" },
   { label: "Routes", icon: "⊹", path: "/my-routes" },
-  { label: "Home", icon: "⊟", path: "/" },
 ];
 
 export const NavBar: React.FC<NavBarProps> = ({ role, userName }) => {
@@ -126,13 +126,7 @@ export const NavBar: React.FC<NavBarProps> = ({ role, userName }) => {
           key={item.path}
           to={item.path}
           className={`bottom-nav__item ${
-            item.path === "/"
-              ? location.pathname === "/"
-                ? "bottom-nav__item--active"
-                : ""
-              : location.pathname.startsWith(item.path)
-              ? "bottom-nav__item--active"
-              : ""
+            isActiveTab(item.path) ? "bottom-nav__item--active" : ""
           }`}
         >
           <span className="bottom-nav__icon">{item.icon}</span>
