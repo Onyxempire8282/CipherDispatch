@@ -395,9 +395,9 @@
   font-style: italic;
 }
 
-/* ── Download photos button ── */
+/* ── Quick-complete button ── */
 
-.claims__download-btn {
+.claims__complete-btn {
   width: 100%;
   padding: 8px 12px;
   margin-top: 8px;
@@ -412,9 +412,15 @@
   transition: all 0.2s;
 }
 
-.claims__download-btn:hover {
-  border-color: var(--amber-line);
-  color: var(--amber);
+.claims__complete-btn:hover {
+  border-color: var(--status-completed);
+  color: var(--status-completed);
+}
+
+.claims__quick-complete {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
 }
 
 /* ── Completed table ── */

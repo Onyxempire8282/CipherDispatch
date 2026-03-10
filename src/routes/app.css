@@ -63,6 +63,11 @@
   color: var(--status-canceled);
 }
 
+.dashboard__stat-cell--danger {
+  background: rgba(224, 80, 80, 0.08);
+  border: 1px solid rgba(224, 80, 80, 0.25);
+}
+
 /* ── SLA alert strip ── */
 
 .dashboard__sla-strip {
@@ -117,6 +122,10 @@
 
 .dashboard__ops-grid--last {
   margin-bottom: 24px;
+}
+
+.dashboard__ops-grid--full {
+  grid-template-columns: 1fr;
 }
 
 /* ── Operation card ── */

@@ -51,6 +51,7 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
   const [scheduleNotes, setScheduleNotes] = useState('');
   const [selectedAppraiser, setSelectedAppraiser] = useState('');
   const [appraisers, setAppraisers] = useState<Appraiser[]>([]);
+  const [legendOpen, setLegendOpen] = useState(false);
 
   const authz = getSupabaseAuthz();
   const userInfo = authz?.getCurrentUser();
@@ -286,15 +287,20 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
           )}
         </div>
         <div className="cal__legend">
-          <div className="cal__legend-title">Firm Colors</div>
-          <div className="cal__legend-list">
-            {Object.entries(FIRM_COLORS).map(([firm, color]) => (
-              <div key={firm} className="cal__legend-item">
-                <div className="cal__legend-dot" style={{ background: color }} />
-                <div className="cal__legend-name">{firm}</div>
-              </div>
-            ))}
-          </div>
+          <button className="cal__legend-toggle" onClick={() => setLegendOpen(!legendOpen)}>
+            <span className="cal__legend-title">Firm Colors</span>
+            <span className="cal__legend-arrow">{legendOpen ? '\u25B4' : '\u25BE'}</span>
+          </button>
+          {legendOpen && (
+            <div className="cal__legend-list">
+              {Object.entries(FIRM_COLORS).map(([firm, color]) => (
+                <div key={firm} className="cal__legend-item">
+                  <div className="cal__legend-dot" style={{ background: color }} />
+                  <div className="cal__legend-name">{firm}</div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

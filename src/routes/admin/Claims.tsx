@@ -6,8 +6,6 @@ import {
   getSupabaseAuthz,
 } from "../../lib/supabaseAuthz";
 import { getFirmColor } from "../../constants/firmColors";
-import { downloadClaimsCSV } from "../../utils/csvExport";
-import { getPhotoUrlWithFallback } from "../../utils/uploadManager";
 import MonthlyCalendar from "../../components/claims/MonthlyCalendar";
 import MobileAgendaView from "../../components/claims/MobileAgendaView";
 import MobileClaimsList from "../../components/claims/MobileClaimsList";
@@ -15,7 +13,6 @@ import { NavBar } from "../../components/NavBar";
 import { useRole } from "../../hooks/useRole";
 import PageHeader from "../../components/ui/PageHeader";
 import { useIsMobile } from "../../hooks/useIsMobile";
-import JSZip from "jszip";
 import "./claims.css";
 
 type Claim = {
@@ -98,6 +95,7 @@ export default function AdminClaims() {
   const [selectedStatus, setSelectedStatus] = useState<ClaimStatus>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [draggingClaimId, setDraggingClaimId] = useState<string | null>(null);
+  const [confirmingCompleteId, setConfirmingCompleteId] = useState<string | null>(null);
 
   const isMobile = useIsMobile();
   const { role } = useRole();
@@ -226,39 +224,17 @@ export default function AdminClaims() {
     setRows(filtered);
   };
 
-  const downloadClaimPhotos = async (claimId: string, claimNumber: string) => {
+  const handleQuickComplete = async (claimId: string) => {
     try {
-      const { data: photos, error } = await supabase
-        .from("claim_photos")
-        .select("*")
-        .eq("claim_id", claimId)
-        .order("created_at", { ascending: false });
-
-      if (error) { alert(`Error fetching photos: ${error.message}`); return; }
-      if (!photos || photos.length === 0) { alert("No photos to download for this claim"); return; }
-
-      const zip = new JSZip();
-      const photoFolder = zip.folder("photos");
-
-      for (let i = 0; i < photos.length; i++) {
-        const photo = photos[i];
-        const photoUrl = getPhotoUrlWithFallback(photo.storage_path);
-        const response = await fetch(photoUrl);
-        const blob = await response.blob();
-        photoFolder?.file(`photo-${i + 1}.jpg`, blob);
-      }
-
-      const zipBlob = await zip.generateAsync({ type: "blob" });
-      const url = URL.createObjectURL(zipBlob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `claim_${claimNumber}_photos.zip`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (error: any) {
-      alert(`Error creating zip file: ${error.message}`);
+      const { error } = await supabase
+        .from("claims_v")
+        .update({ status: "COMPLETED", completed_at: new Date().toISOString() })
+        .eq("id", claimId);
+      if (error) throw error;
+      setConfirmingCompleteId(null);
+      load();
+    } catch (err: any) {
+      alert(`Error completing claim: ${err.message}`);
     }
   };
 
@@ -423,7 +399,6 @@ export default function AdminClaims() {
         {/* Toolbar */}
         <div className="claims__toolbar">
           <div className="claims__toolbar-left">
-            <Link to="/" className="btn btn--ghost btn--sm">Home</Link>
             <input
               type="text"
               className="claims__search"
@@ -443,21 +418,6 @@ export default function AdminClaims() {
             >
               {showCalendar ? "List View" : "Calendar View"}
             </button>
-            <button
-              className={`btn btn--sm ${showArchived ? "btn--ghost" : "btn--steel"}`}
-              onClick={() => {
-                setShowArchived(!showArchived);
-                if (showCalendar) setShowCalendar(false);
-                setSelectedStatus("ALL");
-              }}
-            >
-              {showArchived ? "View Active" : "View Archived"}
-            </button>
-            {showArchived && (
-              <button className="btn btn--steel btn--sm" onClick={() => downloadClaimsCSV(rows)}>
-                Download CSV
-              </button>
-            )}
             <Link to="/admin/claims/new" className="btn btn--primary btn--sm">
               + New Claim
             </Link>
@@ -611,17 +571,30 @@ export default function AdminClaims() {
                           </div>
                         </div>
 
-                        {isAdmin && (
-                          <button
-                            className="claims__download-btn"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              downloadClaimPhotos(r.id, r.claim_number);
-                            }}
-                          >
-                            Download Photos (ZIP)
-                          </button>
+                        {isAdmin && r.status !== "COMPLETED" && r.status !== "CANCELED" && (
+                          confirmingCompleteId === r.id ? (
+                            <div className="claims__quick-complete" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                              <button
+                                className="btn btn--primary btn--sm"
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleQuickComplete(r.id); }}
+                              >
+                                Confirm
+                              </button>
+                              <button
+                                className="btn btn--ghost btn--sm"
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmingCompleteId(null); }}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              className="claims__complete-btn"
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmingCompleteId(r.id); }}
+                            >
+                              Mark Complete
+                            </button>
+                          )
                         )}
                       </Link>
                     ))}
