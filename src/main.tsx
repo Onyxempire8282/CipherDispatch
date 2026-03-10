@@ -48,6 +48,56 @@ const router = createBrowserRouter(
       ),
     },
     {
+      path: "/claims",
+      element: (
+        <ProtectedRoute requiredRole={["admin", "dispatch", "writer"]}>
+          <ErrorBoundary label="Claims">
+            <AdminClaims />
+          </ErrorBoundary>
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/calendar",
+      element: (
+        <ProtectedRoute requiredRole={["admin", "dispatch", "writer"]}>
+          <ErrorBoundary label="Calendar">
+            <AdminClaims />
+          </ErrorBoundary>
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/vendors",
+      element: (
+        <ProtectedRoute requiredRole="admin">
+          <ErrorBoundary label="Vendors & Payouts">
+            <VendorsPayouts />
+          </ErrorBoundary>
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/contractors",
+      element: (
+        <ProtectedRoute requiredRole={["admin", "dispatch"]}>
+          <ErrorBoundary label="Contractors">
+            <ContractorManagement />
+          </ErrorBoundary>
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/kpi",
+      element: (
+        <ProtectedRoute requiredRole={["admin", "dispatch"]}>
+          <ErrorBoundary label="KPI">
+            <KPIDashboard />
+          </ErrorBoundary>
+        </ProtectedRoute>
+      ),
+    },
+    {
       path: "/admin/claims",
       element: (
         <ProtectedRoute requiredRole={["admin", "dispatch", "writer"]}>

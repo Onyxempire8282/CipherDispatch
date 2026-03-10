@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "../../lib/supabase";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useLocation } from "react-router-dom";
 import {
   initializeSupabaseAuthz,
   getSupabaseAuthz,
@@ -88,8 +88,9 @@ export default function AdminClaims() {
   const [showArchived, setShowArchived] = useState(
     searchParams.get("archived") === "true"
   );
+  const routeLocation = useLocation();
   const [showCalendar, setShowCalendar] = useState(
-    searchParams.get("view") === "calendar"
+    searchParams.get("view") === "calendar" || routeLocation.pathname === "/calendar"
   );
   const [activeTab, setActiveTab] = useState<PipelineTab>("all_active");
   const [tabCounts, setTabCounts] = useState<Record<PipelineTab, number>>({

@@ -81,12 +81,12 @@
   color: var(--muted);
 }
 
-/* ── Tabs ── */
+/* ── Center tabs ── */
 
-.nav__tabs {
+.nav__center {
   display: flex;
   height: 72px;
-  margin-left: 24px;
+  justify-content: center;
 }
 
 .nav__tab {
@@ -208,7 +208,7 @@
     padding-top: env(safe-area-inset-top);
   }
 
-  .nav__tabs {
+  .nav__center {
     display: none;
   }
 

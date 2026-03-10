@@ -10,22 +10,22 @@ interface NavBarProps {
 }
 
 const ADMIN_TABS = [
-  { label: "Claims", path: "/admin/claims" },
-  { label: "Calendar", path: "/admin/claims?view=calendar" },
-  { label: "Vendors & Payouts", path: "/admin/vendors-payouts" },
-  { label: "Contractors", path: "/admin/contractors" },
-  { label: "KPI", path: "/admin/kpi" },
+  { label: "Claims", path: "/claims" },
+  { label: "Calendar", path: "/calendar" },
+  { label: "Vendors & Payouts", path: "/vendors" },
+  { label: "Contractors", path: "/contractors" },
+  { label: "KPI", path: "/kpi" },
 ];
 
 const DISPATCH_TABS = [
-  { label: "Claims", path: "/admin/claims" },
-  { label: "Calendar", path: "/admin/claims?view=calendar" },
-  { label: "Contractors", path: "/admin/contractors" },
+  { label: "Claims", path: "/claims" },
+  { label: "Calendar", path: "/calendar" },
+  { label: "Contractors", path: "/contractors" },
 ];
 
 const WRITER_TABS = [
-  { label: "Claims", path: "/admin/claims" },
-  { label: "Calendar", path: "/admin/claims?view=calendar" },
+  { label: "Claims", path: "/claims" },
+  { label: "Calendar", path: "/calendar" },
 ];
 
 const APPRAISER_TABS = [
@@ -36,19 +36,19 @@ const APPRAISER_TABS = [
 ];
 
 const ADMIN_BOTTOM_NAV = [
-  { label: "Claims", icon: "◫", path: "/admin/claims" },
-  { label: "Firms", icon: "⊹", path: "/admin/vendors-payouts" },
-  { label: "Team", icon: "⊡", path: "/admin/contractors" },
-  { label: "KPI", icon: "⊟", path: "/admin/kpi" },
+  { label: "Claims", icon: "◫", path: "/claims" },
+  { label: "Firms", icon: "⊹", path: "/vendors" },
+  { label: "Team", icon: "⊡", path: "/contractors" },
+  { label: "KPI", icon: "⊟", path: "/kpi" },
 ];
 
 const DISPATCH_BOTTOM_NAV = [
-  { label: "Claims", icon: "◫", path: "/admin/claims" },
-  { label: "Team", icon: "⊡", path: "/admin/contractors" },
+  { label: "Claims", icon: "◫", path: "/claims" },
+  { label: "Team", icon: "⊡", path: "/contractors" },
 ];
 
 const WRITER_BOTTOM_NAV = [
-  { label: "Claims", icon: "◫", path: "/admin/claims" },
+  { label: "Claims", icon: "◫", path: "/claims" },
 ];
 
 const APPRAISER_BOTTOM_NAV = [
@@ -89,16 +89,28 @@ export const NavBar: React.FC<NavBarProps> = ({ role, userName }) => {
   };
 
   const isActiveTab = (tabPath: string): boolean => {
-    const [pathname, search] = tabPath.split("?");
-    if (search) {
-      return location.pathname === pathname && location.search.includes(search);
+    const p = location.pathname;
+    // Calendar tab matches both /calendar and legacy /admin/claims?view=calendar
+    if (tabPath === "/calendar") {
+      return p === "/calendar" || (p === "/admin/claims" && location.search.includes("view=calendar"));
     }
-    // Treat old vendor/payout routes as matching the merged page
-    if (pathname === "/admin/vendors-payouts") {
-      const p = location.pathname;
-      if (p === "/admin/vendors" || p === "/admin/payouts") return true;
+    // Claims tab: match /claims or /admin/claims but NOT when calendar view is active
+    if (tabPath === "/claims") {
+      return (p === "/claims" || p === "/admin/claims") && !location.search.includes("view=");
     }
-    return location.pathname === pathname && !location.search.includes("view=");
+    // Vendors tab: match /vendors or legacy paths
+    if (tabPath === "/vendors") {
+      return p === "/vendors" || p === "/admin/vendors-payouts" || p === "/admin/vendors" || p === "/admin/payouts";
+    }
+    // Contractors tab
+    if (tabPath === "/contractors") {
+      return p === "/contractors" || p === "/admin/contractors";
+    }
+    // KPI tab
+    if (tabPath === "/kpi") {
+      return p === "/kpi" || p === "/admin/kpi";
+    }
+    return p === tabPath;
   };
 
   return (
@@ -112,17 +124,17 @@ export const NavBar: React.FC<NavBarProps> = ({ role, userName }) => {
           </div>
           <div className="nav__brand-sub">Claims Operations</div>
         </Link>
-        <div className="nav__tabs">
-          {tabs.map((tab) => (
-            <Link
-              key={tab.path}
-              to={tab.path}
-              className={`nav__tab${isActiveTab(tab.path) ? " nav__tab--active" : ""}`}
-            >
-              {tab.label}
-            </Link>
-          ))}
-        </div>
+      </div>
+      <div className="nav__center">
+        {tabs.map((tab) => (
+          <Link
+            key={tab.path}
+            to={tab.path}
+            className={`nav__tab${isActiveTab(tab.path) ? " nav__tab--active" : ""}`}
+          >
+            {tab.label}
+          </Link>
+        ))}
       </div>
       <div className="nav__right">
         <div className="nav__user">
