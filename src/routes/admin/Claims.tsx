@@ -162,21 +162,23 @@ export default function AdminClaims() {
       query = query.gte("created_at", "2025-12-01T00:00:00.000Z");
       query = query.is("archived_at", null);
 
-      // Server-side filter by active tab
-      switch (activeTab) {
-        case "all_active":
-          query = query.not("status", "in", '("COMPLETED","CANCELED")');
-          break;
-        case "needs_scheduling":
-          query = query.not("status", "in", '("COMPLETED","CANCELED")');
-          query = query.or("assigned_to.is.null,appointment_start.is.null");
-          break;
-        case "in_progress":
-          query = query.in("status", ["SCHEDULED", "IN_PROGRESS", "WRITING"]);
-          break;
-        case "completed":
-          query = query.eq("status", "COMPLETED");
-          break;
+      // Server-side filter by active tab (skip when calendar is showing)
+      if (!isCalendarRoute) {
+        switch (activeTab) {
+          case "all_active":
+            query = query.not("status", "in", '("COMPLETED","CANCELED")');
+            break;
+          case "needs_scheduling":
+            query = query.not("status", "in", '("COMPLETED","CANCELED")');
+            query = query.or("assigned_to.is.null,appointment_start.is.null");
+            break;
+          case "in_progress":
+            query = query.in("status", ["SCHEDULED", "IN_PROGRESS", "WRITING"]);
+            break;
+          case "completed":
+            query = query.eq("status", "COMPLETED");
+            break;
+        }
       }
 
       const { data, error: queryError } = await query;
