@@ -168,7 +168,6 @@ export default function NewClaim() {
       scheduled_at: form.appointment_start || null,
       notes: form.notes || null,
       owner_id: user.id,
-      location_type: form.location_type || 'customer_address',
     };
 
     if (override) {
@@ -199,8 +198,7 @@ export default function NewClaim() {
       p_inspection_address: claimPayload.inspection_address,
       p_zip: claimPayload.zip,
       p_scheduled_at: claimPayload.scheduled_at,
-      p_notes: claimPayload.notes,
-      p_location_type: form.location_type || 'customer_address'
+      p_notes: claimPayload.notes
     });
 
     if (error) {
