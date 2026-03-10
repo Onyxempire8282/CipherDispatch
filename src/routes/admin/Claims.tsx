@@ -89,9 +89,8 @@ export default function AdminClaims() {
     searchParams.get("archived") === "true"
   );
   const routeLocation = useLocation();
-  const [showCalendar, setShowCalendar] = useState(
-    searchParams.get("view") === "calendar" || routeLocation.pathname === "/calendar"
-  );
+  const isCalendarRoute = routeLocation.pathname === "/calendar" || searchParams.get("view") === "calendar";
+  const [showCalendar, setShowCalendar] = useState(isCalendarRoute);
   const [activeTab, setActiveTab] = useState<PipelineTab>("all_active");
   const [tabCounts, setTabCounts] = useState<Record<PipelineTab, number>>({
     all_active: 0, needs_scheduling: 0, in_progress: 0, completed: 0,
@@ -290,6 +289,9 @@ export default function AdminClaims() {
   const handleDragEnd = () => { setDraggingClaimId(null); };
 
   useEffect(() => { initializeAuth(); }, []);
+
+  // Sync calendar view with route changes
+  useEffect(() => { setShowCalendar(isCalendarRoute); }, [isCalendarRoute]);
 
   useEffect(() => {
     if (authzInitialized) {
