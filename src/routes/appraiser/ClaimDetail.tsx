@@ -543,7 +543,7 @@ export default function ClaimDetail() {
       return;
     }
     if (status === "WRITING") {
-      update({ status: "WRITING", writing_started_at: new Date().toISOString() });
+      update({ status: "WRITING" });
       return;
     }
     if (status === "COMPLETED") {
@@ -1235,14 +1235,6 @@ export default function ClaimDetail() {
                 <div className="detail__label">Writer</div>
                 <div className="detail__value">
                   {users.find(u => u.user_id === claim.writer_id)?.full_name || "Unknown"}
-                </div>
-              </div>
-            )}
-            {isAdmin && claim.writing_started_at && (
-              <div className="detail__field">
-                <div className="detail__label">Writing Started</div>
-                <div className="detail__value">
-                  {new Date(claim.writing_started_at).toLocaleString()}
                 </div>
               </div>
             )}
