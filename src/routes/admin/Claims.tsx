@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "../../lib/supabase";
 import { Link, useSearchParams } from "react-router-dom";
 import {
@@ -12,6 +12,7 @@ import MonthlyCalendar from "../../components/claims/MonthlyCalendar";
 import MobileAgendaView from "../../components/claims/MobileAgendaView";
 import MobileClaimsList from "../../components/claims/MobileClaimsList";
 import { NavBar } from "../../components/NavBar";
+import { useRole } from "../../hooks/useRole";
 import PageHeader from "../../components/ui/PageHeader";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import JSZip from "jszip";
@@ -32,6 +33,7 @@ type Claim = {
   firm?: string;
   notes?: string;
   created_at?: string;
+  completed_at?: string;
   address_line1?: string;
   city?: string;
   state?: string;
@@ -40,12 +42,22 @@ type Claim = {
   lng?: number;
   pay_amount?: number | null;
   file_total?: number | null;
+  pipeline_stage?: string;
+  claim_type?: string;
   profiles?: {
     full_name?: string;
   } | null;
 };
 
 type ClaimStatus = "UNASSIGNED" | "SCHEDULED" | "IN_PROGRESS" | "WRITING" | "COMPLETED" | "CANCELED" | "ALL";
+type PipelineTab = "all_active" | "needs_scheduling" | "in_progress" | "completed";
+
+const PIPELINE_TABS: { key: PipelineTab; label: string }[] = [
+  { key: "all_active", label: "All Active" },
+  { key: "needs_scheduling", label: "Needs Scheduling" },
+  { key: "in_progress", label: "In Progress" },
+  { key: "completed", label: "Completed" },
+];
 
 function getStatusBadgeClass(status?: string): string {
   switch (status) {
@@ -56,6 +68,14 @@ function getStatusBadgeClass(status?: string): string {
     case "CANCELED": return "claims__badge--canceled";
     default: return "claims__badge--status";
   }
+}
+
+function calcCycleTime(created?: string, completed?: string): string {
+  if (!created || !completed) return "---";
+  const diff = new Date(completed).getTime() - new Date(created).getTime();
+  if (diff < 0) return "---";
+  const days = Math.round(diff / (1000 * 60 * 60 * 24));
+  return `${days}d`;
 }
 
 export default function AdminClaims() {
@@ -71,11 +91,16 @@ export default function AdminClaims() {
   const [showCalendar, setShowCalendar] = useState(
     searchParams.get("view") === "calendar"
   );
+  const [activeTab, setActiveTab] = useState<PipelineTab>("all_active");
+  const [tabCounts, setTabCounts] = useState<Record<PipelineTab, number>>({
+    all_active: 0, needs_scheduling: 0, in_progress: 0, completed: 0,
+  });
   const [selectedStatus, setSelectedStatus] = useState<ClaimStatus>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [draggingClaimId, setDraggingClaimId] = useState<string | null>(null);
 
   const isMobile = useIsMobile();
+  const { role } = useRole();
 
   const initializeAuth = async () => {
     try {
@@ -87,7 +112,36 @@ export default function AdminClaims() {
     }
   };
 
-  const load = async () => {
+  const loadTabCounts = useCallback(async () => {
+    const authz = getSupabaseAuthz();
+    if (!authz?.isInitialized) return;
+
+    const baseQuery = () => {
+      let q = supabase.from("claims_v").select("id", { count: "exact", head: true });
+      q = authz.scopedClaimsQuery(q);
+      q = q.gte("created_at", "2025-12-01T00:00:00.000Z");
+      q = q.is("archived_at", null);
+      return q;
+    };
+
+    const [allActive, needsSched, inProg, completed] = await Promise.all([
+      baseQuery().not("status", "in", '("COMPLETED","CANCELED")'),
+      baseQuery()
+        .not("status", "in", '("COMPLETED","CANCELED")')
+        .or("assigned_to.is.null,appointment_start.is.null"),
+      baseQuery().in("status", ["SCHEDULED", "IN_PROGRESS", "WRITING"]),
+      baseQuery().eq("status", "COMPLETED"),
+    ]);
+
+    setTabCounts({
+      all_active: allActive.count ?? 0,
+      needs_scheduling: needsSched.count ?? 0,
+      in_progress: inProg.count ?? 0,
+      completed: completed.count ?? 0,
+    });
+  }, []);
+
+  const load = useCallback(async () => {
     if (!authzInitialized) return;
 
     try {
@@ -105,8 +159,25 @@ export default function AdminClaims() {
         .order("created_at", { ascending: false });
 
       query = authz.scopedClaimsQuery(query);
-      query = query.gte('created_at', '2025-12-01T00:00:00.000Z');
-      query = query.or("status.is.null,status.in.(SCHEDULED,IN_PROGRESS,WRITING,COMPLETED)");
+      query = query.gte("created_at", "2025-12-01T00:00:00.000Z");
+      query = query.is("archived_at", null);
+
+      // Server-side filter by active tab
+      switch (activeTab) {
+        case "all_active":
+          query = query.not("status", "in", '("COMPLETED","CANCELED")');
+          break;
+        case "needs_scheduling":
+          query = query.not("status", "in", '("COMPLETED","CANCELED")');
+          query = query.or("assigned_to.is.null,appointment_start.is.null");
+          break;
+        case "in_progress":
+          query = query.in("status", ["SCHEDULED", "IN_PROGRESS", "WRITING"]);
+          break;
+        case "completed":
+          query = query.eq("status", "COMPLETED");
+          break;
+      }
 
       const { data, error: queryError } = await query;
 
@@ -123,16 +194,17 @@ export default function AdminClaims() {
       const claims = (data as Claim[]) || [];
       setAllClaims(claims);
       applyFilters(claims);
+      loadTabCounts();
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  };
+  }, [authzInitialized, activeTab, loadTabCounts]);
 
   const applyFilters = (claims: Claim[]) => {
     let filtered = [...claims];
-    if (selectedStatus !== "ALL") {
+    if (selectedStatus !== "ALL" && activeTab !== "completed") {
       if (selectedStatus === "UNASSIGNED") {
         filtered = filtered.filter(claim => !claim.assigned_to);
       } else {
@@ -230,7 +302,7 @@ export default function AdminClaims() {
         return () => { supabase.removeChannel(ch); };
       }
     }
-  }, [showArchived, authzInitialized]);
+  }, [showArchived, authzInitialized, activeTab]);
 
   useEffect(() => {
     if (allClaims.length > 0) applyFilters(allClaims);
@@ -254,11 +326,13 @@ export default function AdminClaims() {
     );
   }
 
-  const statusCounts = allClaims.reduce((acc, claim) => {
-    const status = claim.status || "UNASSIGNED";
-    acc[status] = (acc[status] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  const statusCounts = activeTab !== "completed"
+    ? allClaims.reduce((acc, claim) => {
+        const status = claim.status || "UNASSIGNED";
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>)
+    : {};
 
   const unassignedCount = allClaims.filter((r) => !r.assigned_to).length;
 
@@ -278,7 +352,7 @@ export default function AdminClaims() {
 
   const authz = getSupabaseAuthz();
   const userInfo = authz?.getCurrentUser();
-  const isAdmin = userInfo?.role === "admin";
+  const isAdmin = userInfo?.role === "admin" || userInfo?.role === "dispatch";
 
   const STATUS_FILTERS: { key: ClaimStatus; label: string; count: number }[] = [
     { key: "ALL", label: "All Active", count: allClaims.length },
@@ -298,7 +372,7 @@ export default function AdminClaims() {
 
   return (
     <div>
-      <NavBar role="admin" />
+      <NavBar role={role || "admin"} />
       <PageHeader
         label="Cipher Dispatch"
         title={pageTitle}
@@ -306,8 +380,27 @@ export default function AdminClaims() {
       />
 
       <div className="claims">
-        {/* Status filter pills */}
+        {/* Pipeline tabs */}
         {!showArchived && !showCalendar && (
+          <div className="claims__tab-bar">
+            {PIPELINE_TABS.map((t) => (
+              <button
+                key={t.key}
+                className={`claims__tab${activeTab === t.key ? " claims__tab--active" : ""}`}
+                onClick={() => {
+                  setActiveTab(t.key);
+                  setSelectedStatus("ALL");
+                }}
+              >
+                {t.label}
+                <span className="claims__tab-badge">{tabCounts[t.key]}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Status filter pills (hidden on completed tab) */}
+        {!showArchived && !showCalendar && activeTab !== "completed" && (
           <div className="claims__status-bar">
             {STATUS_FILTERS.map((f) => (
               <button
@@ -375,6 +468,51 @@ export default function AdminClaims() {
           )
         ) : rows.length === 0 ? (
           <div className="claims__empty">No claims found matching your filters.</div>
+        ) : activeTab === "completed" ? (
+          <div className="claims__completed-wrap">
+            <table className="claims__completed-table">
+              <thead>
+                <tr>
+                  <th>Claim #</th>
+                  <th>Customer</th>
+                  <th>Firm</th>
+                  <th>Type</th>
+                  <th className="claims__completed-th--right">File Total</th>
+                  <th>Created</th>
+                  <th>Completed</th>
+                  <th className="claims__completed-th--right">Cycle</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.id} className="claims__completed-row">
+                    <td>
+                      <Link to={`/claim/${r.id}`} className="claims__completed-link">
+                        #{r.claim_number}
+                      </Link>
+                    </td>
+                    <td className="claims__completed-name">{r.customer_name}</td>
+                    <td className="claims__completed-firm">{r.firm || "---"}</td>
+                    <td className="claims__completed-type">
+                      {(r.claim_type || "auto").replace(/_/g, " ")}
+                    </td>
+                    <td className="claims__completed-amount">
+                      {r.file_total != null ? `$${Number(r.file_total).toFixed(2)}` : "---"}
+                    </td>
+                    <td className="claims__completed-date">
+                      {r.created_at ? new Date(r.created_at).toLocaleDateString() : "---"}
+                    </td>
+                    <td className="claims__completed-date">
+                      {r.completed_at ? new Date(r.completed_at).toLocaleDateString() : "---"}
+                    </td>
+                    <td className="claims__cycle-time">
+                      {calcCycleTime(r.created_at, r.completed_at)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : isMobile ? (
           <MobileClaimsList claims={rows} showCreateButton={true} createButtonPath="/admin/claims/new" />
         ) : (
@@ -414,6 +552,11 @@ export default function AdminClaims() {
                             {r.firm && (
                               <span className="claims__badge" style={{ background: firmColor }}>
                                 {r.firm}
+                              </span>
+                            )}
+                            {r.pipeline_stage && r.pipeline_stage !== "received" && (
+                              <span className="claims__badge claims__badge--note">
+                                {r.pipeline_stage.replace(/_/g, " ")}
                               </span>
                             )}
                             {r.notes && (

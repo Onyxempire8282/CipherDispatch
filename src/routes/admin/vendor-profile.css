@@ -1,0 +1,391 @@
+/**
+ * Vendor Profile Page Styles
+ *
+ * BEM block: .vprof
+ */
+
+.vprof__loading {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-hi);
+  font-size: 18px;
+}
+
+.vprof__wrap {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 40px 80px;
+}
+
+.vprof__back {
+  margin-bottom: 20px;
+  display: inline-block;
+}
+
+/* -- Sections -- */
+
+.vprof__section {
+  background: var(--steel);
+  border: 1px solid var(--rivet);
+  border-left: 3px solid var(--rivet);
+  margin-bottom: 16px;
+}
+
+.vprof__section--accent {
+  border-left-color: var(--amber);
+}
+
+.vprof__section-header {
+  padding: 12px 20px;
+  background: var(--steel-mid);
+  border-bottom: 1px solid var(--rivet);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.vprof__section-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.vprof__section-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--amber-line), transparent);
+}
+
+.vprof__section-body {
+  padding: 20px;
+}
+
+/* -- Firm header -- */
+
+.vprof__firm-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.vprof__firm-swatch {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.vprof__firm-info {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.vprof__firm-name {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  letter-spacing: 0.04em;
+  color: var(--white);
+}
+
+.vprof__firm-status {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border: 1px solid var(--rivet);
+}
+
+.vprof__firm-status--active {
+  color: var(--status-completed);
+  border-color: var(--status-completed);
+}
+
+.vprof__firm-status--inactive {
+  color: var(--muted);
+}
+
+/* -- Stats -- */
+
+.vprof__stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 3px;
+}
+
+.vprof__stat {
+  padding: 16px;
+  background: var(--plate);
+  border: 1px solid var(--rivet);
+  text-align: center;
+}
+
+.vprof__stat-num {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  color: var(--white);
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.vprof__stat-num--amber {
+  color: var(--amber);
+}
+
+.vprof__stat-num--green {
+  color: var(--status-completed);
+}
+
+.vprof__stat-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+/* -- Fee grid -- */
+
+.vprof__fee-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.vprof__fee-actions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* -- Info grid -- */
+
+.vprof__info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.vprof__info-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.vprof__info-value {
+  font-size: 14px;
+  color: var(--text-hi);
+}
+
+/* -- History pills -- */
+
+.vprof__history-pills {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.vprof__history-pill {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  background: var(--steel-mid);
+  border: 1px solid var(--rivet);
+  color: var(--text-hi);
+}
+
+/* -- History table -- */
+
+.vprof__history-wrap {
+  overflow-x: auto;
+}
+
+.vprof__history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.vprof__history-table thead th {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--rivet);
+  white-space: nowrap;
+}
+
+.vprof__th--sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.12s;
+}
+
+.vprof__th--sortable:hover {
+  color: var(--amber) !important;
+}
+
+.vprof__th--right {
+  text-align: right !important;
+}
+
+.vprof__history-row {
+  border-bottom: 1px solid var(--rivet);
+  transition: background 0.12s;
+}
+
+.vprof__history-row:hover {
+  background: var(--steel-mid);
+}
+
+.vprof__history-row td {
+  padding: 10px 12px;
+  color: var(--text-hi);
+  white-space: nowrap;
+}
+
+.vprof__history-link {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--amber);
+  text-decoration: none;
+}
+
+.vprof__history-link:hover {
+  text-decoration: underline;
+}
+
+.vprof__history-name {
+  color: var(--text-hi);
+}
+
+.vprof__history-status {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  background: var(--steel-mid);
+  border: 1px solid var(--rivet);
+  color: var(--text);
+}
+
+.vprof__history-status--completed {
+  color: var(--status-completed);
+  border-color: var(--status-completed);
+}
+
+.vprof__history-status--scheduled {
+  color: var(--status-scheduled);
+  border-color: var(--status-scheduled);
+}
+
+.vprof__history-status--in_progress {
+  color: var(--status-progress);
+  border-color: var(--status-progress);
+}
+
+.vprof__history-status--writing {
+  color: #a78bfa;
+  border-color: rgba(167, 139, 250, 0.35);
+}
+
+.vprof__history-status--canceled {
+  color: var(--status-canceled);
+  border-color: var(--status-canceled);
+}
+
+.vprof__history-type {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-sub);
+}
+
+.vprof__history-amount {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--amber);
+  text-align: right;
+}
+
+.vprof__history-date {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text);
+}
+
+/* -- Pagination -- */
+
+.vprof__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--rivet);
+}
+
+.vprof__pagination-info {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--text);
+}
+
+/* -- Empty -- */
+
+.vprof__empty {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  padding: 16px 0;
+}
+
+/* -- Responsive -- */
+
+@media (max-width: 768px) {
+  .vprof__wrap {
+    padding: 16px 16px 80px;
+  }
+  .vprof__stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .vprof__fee-grid {
+    grid-template-columns: 1fr;
+  }
+  .vprof__info-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .vprof__history-table {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .vprof__stats {
+    grid-template-columns: 1fr;
+  }
+  .vprof__info-grid {
+    grid-template-columns: 1fr;
+  }
+}

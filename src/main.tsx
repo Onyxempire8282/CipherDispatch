@@ -1,9 +1,7 @@
-// build-version: efb1be5
+// build-version: phase2-redesign-20260309
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import { registerSW } from "virtual:pwa-register";
-
 // CRITICAL: Import Leaflet config FIRST to disable VML before any map code loads
 import "./lib/leafletConfig";
 
@@ -16,9 +14,12 @@ import PayoutDashboard from "./routes/admin/PayoutDashboard";
 import VendorsPayouts from "./routes/admin/VendorsPayouts";
 import KPIDashboard from "./routes/admin/KPIDashboard";
 import ContractorManagement from "./components/admin/ContractorManagement";
+import ContractorDetail from "./routes/admin/ContractorDetail";
+import VendorProfile from "./routes/admin/VendorProfile";
 import NewSupplement from "./routes/admin/NewSupplement";
 import MyClaims from "./routes/appraiser/MyClaims";
 import MyRoutes from "./routes/appraiser/MyRoutes";
+import Scorecard from "./routes/appraiser/Scorecard";
 import ClaimDetail from "./routes/appraiser/ClaimDetail";
 import PhotoCapture from "./routes/appraiser/PhotoCapture";
 import ConfirmAppointment from "./routes/public/ConfirmAppointment";
@@ -27,14 +28,6 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
 import "./index.css";
 import "leaflet/dist/leaflet.css";
-
-const updateSW = registerSW({
-  immediate: true,
-  onNeedRefresh() {
-    updateSW(true);
-    window.location.reload();
-  },
-});
 
 const router = createBrowserRouter(
   [
@@ -57,7 +50,7 @@ const router = createBrowserRouter(
     {
       path: "/admin/claims",
       element: (
-        <ProtectedRoute requiredRole="admin">
+        <ProtectedRoute requiredRole={["admin", "dispatch", "writer"]}>
           <ErrorBoundary label="Claims">
             <AdminClaims />
           </ErrorBoundary>
@@ -67,7 +60,7 @@ const router = createBrowserRouter(
     {
       path: "/admin/claims/new",
       element: (
-        <ProtectedRoute requiredRole="admin">
+        <ProtectedRoute requiredRole={["admin", "dispatch"]}>
           <ErrorBoundary label="New Claim">
             <AdminNewClaim />
           </ErrorBoundary>
@@ -107,7 +100,7 @@ const router = createBrowserRouter(
     {
       path: "/admin/kpi",
       element: (
-        <ProtectedRoute requiredRole="admin">
+        <ProtectedRoute requiredRole={["admin", "dispatch"]}>
           <ErrorBoundary label="KPI">
             <KPIDashboard />
           </ErrorBoundary>
@@ -115,9 +108,19 @@ const router = createBrowserRouter(
       ),
     },
     {
-      path: "/admin/contractors",
+      path: "/admin/vendors/:id",
       element: (
         <ProtectedRoute requiredRole="admin">
+          <ErrorBoundary label="Vendor Profile">
+            <VendorProfile />
+          </ErrorBoundary>
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/admin/contractors",
+      element: (
+        <ProtectedRoute requiredRole={["admin", "dispatch"]}>
           <ErrorBoundary label="Contractors">
             <ContractorManagement />
           </ErrorBoundary>
@@ -125,9 +128,29 @@ const router = createBrowserRouter(
       ),
     },
     {
+      path: "/admin/contractors/:id",
+      element: (
+        <ProtectedRoute requiredRole={["admin", "dispatch"]}>
+          <ErrorBoundary label="Contractor Detail">
+            <ContractorDetail />
+          </ErrorBoundary>
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/appraiser/scorecard",
+      element: (
+        <ProtectedRoute requiredRole="appraiser">
+          <ErrorBoundary label="Scorecard">
+            <Scorecard />
+          </ErrorBoundary>
+        </ProtectedRoute>
+      ),
+    },
+    {
       path: "/my-claims",
       element: (
-        <ProtectedRoute requiredRole={["appraiser", "writer"]}>
+        <ProtectedRoute requiredRole="appraiser">
           <ErrorBoundary label="My Claims">
             <MyClaims />
           </ErrorBoundary>

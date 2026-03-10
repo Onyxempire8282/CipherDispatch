@@ -113,6 +113,40 @@
   border: 1px solid var(--rivet);
 }
 
+/* ── Fee summary ── */
+
+.new-claim__fee-summary {
+  margin-top: 8px;
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  background: var(--plate);
+  border: 1px solid var(--rivet);
+}
+
+.new-claim__fee-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--text-hi);
+}
+
+.new-claim__fee-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0 0;
+  margin-top: 6px;
+  border-top: 1px solid var(--rivet);
+  font-family: var(--font-heading);
+  font-size: 18px;
+  letter-spacing: 0.04em;
+  color: var(--amber);
+}
+
 /* ── Holiday warning ── */
 
 .new-claim__holiday-warning {

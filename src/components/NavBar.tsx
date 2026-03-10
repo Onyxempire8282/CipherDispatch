@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import type { AppRole } from "../lib/supabaseAuthz";
 import "./navbar.css";
 
 interface NavBarProps {
-  role: "admin" | "appraiser";
+  role: AppRole;
   userName?: string;
 }
 
@@ -16,10 +17,22 @@ const ADMIN_TABS = [
   { label: "KPI", path: "/admin/kpi" },
 ];
 
+const DISPATCH_TABS = [
+  { label: "Claims", path: "/admin/claims" },
+  { label: "Calendar", path: "/admin/claims?view=calendar" },
+  { label: "Contractors", path: "/admin/contractors" },
+];
+
+const WRITER_TABS = [
+  { label: "Claims", path: "/admin/claims" },
+  { label: "Calendar", path: "/admin/claims?view=calendar" },
+];
+
 const APPRAISER_TABS = [
   { label: "My Claims", path: "/my-claims" },
   { label: "Calendar", path: "/my-claims?view=calendar" },
   { label: "My Routes", path: "/my-routes" },
+  { label: "Scorecard", path: "/appraiser/scorecard" },
 ];
 
 const ADMIN_BOTTOM_NAV = [
@@ -29,18 +42,46 @@ const ADMIN_BOTTOM_NAV = [
   { label: "KPI", icon: "⊟", path: "/admin/kpi" },
 ];
 
+const DISPATCH_BOTTOM_NAV = [
+  { label: "Claims", icon: "◫", path: "/admin/claims" },
+  { label: "Team", icon: "⊡", path: "/admin/contractors" },
+];
+
+const WRITER_BOTTOM_NAV = [
+  { label: "Claims", icon: "◫", path: "/admin/claims" },
+];
+
 const APPRAISER_BOTTOM_NAV = [
   { label: "Claims", icon: "◫", path: "/my-claims" },
-  { label: "Calendar", icon: "⊞", path: "/my-claims?view=calendar" },
   { label: "Routes", icon: "⊹", path: "/my-routes" },
+  { label: "Score", icon: "⊟", path: "/appraiser/scorecard" },
 ];
+
+const ROLE_LABEL: Record<AppRole, string> = {
+  admin: "Admin",
+  dispatch: "Dispatch",
+  writer: "Writer",
+  appraiser: "Field",
+};
 
 export const NavBar: React.FC<NavBarProps> = ({ role, userName }) => {
   const nav = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
-  const tabs = role === "admin" ? ADMIN_TABS : APPRAISER_TABS;
-  const bottomTabs = role === "admin" ? ADMIN_BOTTOM_NAV : APPRAISER_BOTTOM_NAV;
+  const tabMap: Record<AppRole, typeof ADMIN_TABS> = {
+    admin: ADMIN_TABS,
+    dispatch: DISPATCH_TABS,
+    writer: WRITER_TABS,
+    appraiser: APPRAISER_TABS,
+  };
+  const bottomMap: Record<AppRole, typeof ADMIN_BOTTOM_NAV> = {
+    admin: ADMIN_BOTTOM_NAV,
+    dispatch: DISPATCH_BOTTOM_NAV,
+    writer: WRITER_BOTTOM_NAV,
+    appraiser: APPRAISER_BOTTOM_NAV,
+  };
+  const tabs = tabMap[role];
+  const bottomTabs = bottomMap[role];
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -86,9 +127,9 @@ export const NavBar: React.FC<NavBarProps> = ({ role, userName }) => {
       <div className="nav__right">
         <div className="nav__user">
           <span className="nav__user-name">
-            {userName || (role === "admin" ? "Admin" : "Appraiser")}
+            {userName || ROLE_LABEL[role]}
           </span>
-          {role === "admin" ? "Dispatcher" : "Field"}
+          {ROLE_LABEL[role]}
         </div>
         <button className="nav__logout" onClick={handleLogout}>
           Logout

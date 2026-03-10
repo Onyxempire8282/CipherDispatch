@@ -257,6 +257,27 @@
   color: var(--white);
 }
 
+.vendor-card__profile-btn {
+  display: block;
+  width: 100%;
+  padding: 10px 16px;
+  background: transparent;
+  border: 1px solid var(--amber-line);
+  border-top: none;
+  color: var(--amber);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.vendor-card__profile-btn:hover {
+  background: var(--amber-dim);
+  border-color: var(--amber);
+}
+
 /* ═══════════════════════════════════════════════
    PAYOUT SUMMARY STATS
    ═══════════════════════════════════════════════ */

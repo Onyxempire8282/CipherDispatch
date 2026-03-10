@@ -4,11 +4,14 @@ import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { Link, useNavigate } from "react-router-dom";
 import { isHolidayISO, formatHolidayName } from "../../utils/holidays";
 import { NavBar } from "../../components/NavBar";
+import { useRole } from "../../hooks/useRole";
 import PageHeader from "../../components/ui/PageHeader";
 import Field from "../../components/ui/Field";
 import ActionFooter from "../../components/ui/ActionFooter";
 import "leaflet/dist/leaflet.css";
 import "./new-claim.css";
+
+type ClaimType = "auto" | "heavy_duty" | "photos_scope";
 
 type Claim = {
   claim_number: string;
@@ -34,6 +37,9 @@ type Claim = {
   pay_amount?: number | null;
   status?: string;
   location_type?: string;
+  claim_type?: ClaimType;
+  mileage_add?: number | null;
+  photographer_payout?: number | null;
 };
 
 const throttle = (() => {
@@ -80,18 +86,29 @@ function parseDatetimeLocal(value: string): string {
   return localDate.toISOString();
 }
 
+function getFeeForType(firm: any, claimType: ClaimType): number | null {
+  if (!firm) return null;
+  switch (claimType) {
+    case "heavy_duty": return firm.fee_heavy_duty ?? firm.pay_amount ?? null;
+    case "photos_scope": return firm.fee_photos_scope ?? firm.pay_amount ?? null;
+    default: return firm.fee_auto ?? firm.pay_amount ?? null;
+  }
+}
+
 export default function NewClaim() {
   const [form, setForm] = useState<Claim>({
     claim_number: "",
     customer_name: "",
     address_line1: "",
     status: "IN_PROGRESS",
+    claim_type: "auto",
   });
   const [users, setUsers] = useState<any[]>([]);
   const [firms, setFirms] = useState<any[]>([]);
   const [mapCoords, setMapCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [loadingMap, setLoadingMap] = useState(false);
   const nav = useNavigate();
+  const { role } = useRole();
 
   useEffect(() => {
     (async () => {
@@ -103,7 +120,7 @@ export default function NewClaim() {
     (async () => {
       const { data } = await supabase
         .from("vendors")
-        .select("id, name, pay_amount")
+        .select("id, name, pay_amount, fee_auto, fee_heavy_duty, fee_photos_scope, default_insurance_company")
         .eq("active", true)
         .order("name");
       setFirms(data || []);
@@ -206,7 +223,7 @@ export default function NewClaim() {
 
   return (
     <div>
-      <NavBar role="admin" />
+      <NavBar role={role || "admin"} />
       <PageHeader
         label="New Claim"
         title="Create Claim"
@@ -216,8 +233,163 @@ export default function NewClaim() {
 
       <div className="new-claim__wrap">
 
-        {/* CLAIM INFORMATION */}
+        {/* ASSIGNMENT & FIRM — First section */}
         <div className="new-claim__section new-claim__section--accent">
+          <div className="new-claim__section-header">
+            <div className="new-claim__section-title">Assignment & Firm</div>
+            <div className="new-claim__section-line" />
+          </div>
+          <div className="new-claim__section-body">
+            <div className="new-claim__grid-2">
+              <Field label="Firm">
+                <div className="field__select-wrap">
+                  <select
+                    className="field__select"
+                    value={form.firm || ""}
+                    onChange={(e) => {
+                      const selectedFirmName = e.target.value || undefined;
+                      const selectedFirm = firms.find((f) => f.name === selectedFirmName);
+                      const claimType = form.claim_type || "auto";
+                      const fee = getFeeForType(selectedFirm, claimType);
+                      setForm({
+                        ...form,
+                        firm: selectedFirmName,
+                        pay_amount: fee,
+                        insurance_company: selectedFirm?.default_insurance_company || form.insurance_company,
+                      });
+                    }}
+                  >
+                    <option value="">No Firm</option>
+                    {firms.map((firm) => (
+                      <option key={firm.id} value={firm.name}>
+                        {firm.name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="field__select-arrow">&#x25BE;</div>
+                </div>
+              </Field>
+              <Field label="Claim Type">
+                <div className="field__select-wrap">
+                  <select
+                    className="field__select"
+                    value={form.claim_type || "auto"}
+                    onChange={(e) => {
+                      const claimType = e.target.value as ClaimType;
+                      const selectedFirm = firms.find((f) => f.name === form.firm);
+                      const fee = getFeeForType(selectedFirm, claimType);
+                      setForm({
+                        ...form,
+                        claim_type: claimType,
+                        pay_amount: fee ?? form.pay_amount,
+                      });
+                    }}
+                  >
+                    <option value="auto">Auto</option>
+                    <option value="heavy_duty">Heavy Duty</option>
+                    <option value="photos_scope">Photos / Scope Only</option>
+                  </select>
+                  <div className="field__select-arrow">&#x25BE;</div>
+                </div>
+              </Field>
+            </div>
+            <Field label="Assignment">
+              <div className="field__select-wrap">
+                <select
+                  className="field__select"
+                  value={form.assigned_to || ""}
+                  onChange={(e) => setForm({ ...form, assigned_to: e.target.value || null })}
+                >
+                  <option value="">Unassigned</option>
+                  {users?.map((u) => (
+                    <option key={u.user_id} value={u.user_id}>
+                      {u.full_name || u.user_id} ({u.role})
+                    </option>
+                  ))}
+                </select>
+                <div className="field__select-arrow">&#x25BE;</div>
+              </div>
+            </Field>
+            <div className="new-claim__grid-2">
+              <Field label="Pay Amount">
+                <input
+                  className="field__input"
+                  type="number"
+                  step="0.01"
+                  placeholder="$0.00"
+                  value={form.pay_amount || ""}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      pay_amount: e.target.value ? parseFloat(e.target.value) : null,
+                    })
+                  }
+                />
+              </Field>
+              <Field label="Mileage Add-on" optional>
+                <input
+                  className="field__input"
+                  type="number"
+                  step="0.01"
+                  placeholder="$0.00"
+                  value={form.mileage_add || ""}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      mileage_add: e.target.value ? parseFloat(e.target.value) : null,
+                    })
+                  }
+                />
+              </Field>
+            </div>
+            {form.claim_type === "photos_scope" && (
+              <Field label="Photographer Payout" optional>
+                <input
+                  className="field__input"
+                  type="number"
+                  step="0.01"
+                  placeholder="$0.00"
+                  value={form.photographer_payout || ""}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      photographer_payout: e.target.value ? parseFloat(e.target.value) : null,
+                    })
+                  }
+                />
+              </Field>
+            )}
+
+            {/* Fee Summary */}
+            {form.pay_amount != null && (
+              <div className="new-claim__fee-summary">
+                <div className="new-claim__fee-row">
+                  <span>Base Fee</span>
+                  <span>${(form.pay_amount || 0).toFixed(2)}</span>
+                </div>
+                {(form.mileage_add ?? 0) > 0 && (
+                  <div className="new-claim__fee-row">
+                    <span>Mileage</span>
+                    <span>+ ${(form.mileage_add || 0).toFixed(2)}</span>
+                  </div>
+                )}
+                {(form.photographer_payout ?? 0) > 0 && (
+                  <div className="new-claim__fee-row">
+                    <span>Photographer</span>
+                    <span>- ${(form.photographer_payout || 0).toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="new-claim__fee-total">
+                  <span>File Total</span>
+                  <span>${((form.pay_amount || 0) + (form.mileage_add || 0) - (form.photographer_payout || 0)).toFixed(2)}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* CLAIM INFORMATION */}
+        <div className="new-claim__section">
           <div className="new-claim__section-header">
             <div className="new-claim__section-title">Claim Information</div>
             <div className="new-claim__section-line" />
@@ -440,10 +612,10 @@ export default function NewClaim() {
           </div>
         </div>
 
-        {/* SCHEDULING & ASSIGNMENT */}
+        {/* SCHEDULING */}
         <div className="new-claim__section">
           <div className="new-claim__section-header">
-            <div className="new-claim__section-title">Scheduling & Assignment</div>
+            <div className="new-claim__section-title">Scheduling</div>
             <div className="new-claim__section-line" />
           </div>
           <div className="new-claim__section-body">
@@ -500,65 +672,6 @@ export default function NewClaim() {
                 Warning: End date is on {formatHolidayName(endHoliday)} (Federal Holiday)
               </div>
             )}
-            <div className="new-claim__grid-2">
-              <Field label="Firm">
-                <div className="field__select-wrap">
-                  <select
-                    className="field__select"
-                    value={form.firm || ""}
-                    onChange={(e) => {
-                      const selectedFirmName = e.target.value || undefined;
-                      const selectedFirm = firms.find((f) => f.name === selectedFirmName);
-                      setForm({
-                        ...form,
-                        firm: selectedFirmName,
-                        pay_amount: selectedFirm?.pay_amount || null,
-                      });
-                    }}
-                  >
-                    <option value="">No Firm</option>
-                    {firms.map((firm) => (
-                      <option key={firm.id} value={firm.name}>
-                        {firm.name}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="field__select-arrow">&#x25BE;</div>
-                </div>
-              </Field>
-              <Field label="Pay Amount">
-                <input
-                  className="field__input"
-                  type="number"
-                  step="0.01"
-                  placeholder="$0.00"
-                  value={form.pay_amount || ""}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      pay_amount: e.target.value ? parseFloat(e.target.value) : null,
-                    })
-                  }
-                />
-              </Field>
-            </div>
-            <Field label="Assignment">
-              <div className="field__select-wrap">
-                <select
-                  className="field__select"
-                  value={form.assigned_to || ""}
-                  onChange={(e) => setForm({ ...form, assigned_to: e.target.value || null })}
-                >
-                  <option value="">Unassigned</option>
-                  {users?.map((u) => (
-                    <option key={u.user_id} value={u.user_id}>
-                      {u.full_name || u.user_id} ({u.role})
-                    </option>
-                  ))}
-                </select>
-                <div className="field__select-arrow">&#x25BE;</div>
-              </div>
-            </Field>
           </div>
         </div>
       </div>

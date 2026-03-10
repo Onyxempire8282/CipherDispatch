@@ -55,15 +55,34 @@
   margin-top: 4px;
 }
 
-.dashboard__stat-delta {
-  font-family: var(--font-mono);
-  font-size: 10px;
+.dashboard__stat-num--warn {
   color: var(--amber);
-  margin-top: 2px;
 }
 
-.dashboard__stat-delta--warn {
+.dashboard__stat-num--danger {
   color: var(--status-canceled);
+}
+
+/* ── SLA alert strip ── */
+
+.dashboard__sla-strip {
+  display: flex;
+  gap: 3px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.dashboard__sla-alert {
+  flex: 1;
+  min-width: 200px;
+  padding: 10px 16px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: #ef4444;
+  text-transform: uppercase;
 }
 
 /* ── Operations label ── */
@@ -161,6 +180,22 @@
   font-size: 16px;
 }
 
+.dashboard__op-icon--mono {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--amber);
+}
+
+.dashboard__op-card--cta {
+  border-left-color: var(--amber);
+}
+
+.dashboard__op-card--cta .dashboard__op-icon--mono {
+  background: var(--amber-dim);
+  border-color: var(--amber-line);
+}
+
 .dashboard__op-name {
   font-family: var(--font-heading);
   font-size: 22px;
@@ -241,6 +276,13 @@
   display: grid;
   place-items: center;
   flex-shrink: 0;
+}
+
+.dashboard__link-icon--mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--amber);
 }
 
 .dashboard__link-name {

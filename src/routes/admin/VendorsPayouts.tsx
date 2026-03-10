@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import {
   initializeSupabaseAuthz,
@@ -18,6 +19,7 @@ import {
 } from "../../utils/payoutForecasting";
 import { normalizeFirmNameForConfig, calculateExpectedPayout } from "../../utils/firmFeeConfig";
 import { NavBar } from "../../components/NavBar";
+import { useRole } from "../../hooks/useRole";
 import PageHeader from "../../components/ui/PageHeader";
 import Field from "../../components/ui/Field";
 import {
@@ -67,6 +69,8 @@ function formatScheduleLabel(type?: string): string {
 /* ─── Component ─── */
 
 export default function VendorsPayouts() {
+  const nav = useNavigate();
+  const { role } = useRole();
   const [tab, setTab] = useState<TabMode>("vendors");
 
   /* ── Vendor state ── */
@@ -402,7 +406,7 @@ export default function VendorsPayouts() {
   /* ── Render ── */
   return (
     <div className="vp">
-      <NavBar role="admin" />
+      <NavBar role={role || "admin"} />
       <PageHeader
         label="Command Center"
         title="Vendors & Payouts"
@@ -530,6 +534,12 @@ export default function VendorsPayouts() {
                       </div>
                     )}
                   </div>
+                  <button
+                    className="vendor-card__profile-btn"
+                    onClick={() => nav(`/admin/vendors/${v.id}`)}
+                  >
+                    VIEW PROFILE
+                  </button>
                 </div>
               ))}
             </div>

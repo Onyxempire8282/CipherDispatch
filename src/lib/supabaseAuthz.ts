@@ -5,9 +5,11 @@
 
 import { SupabaseClient } from "@supabase/supabase-js";
 
+export type AppRole = "admin" | "dispatch" | "writer" | "appraiser";
+
 export interface UserProfile {
   user_id: string;
-  role: "admin" | "appraiser";
+  role: AppRole;
   full_name: string;
 }
 
@@ -27,7 +29,11 @@ export class SupabaseAuthz {
   }
 
   get isAdmin(): boolean {
-    return this.initialized && this.userProfile?.role === "admin";
+    return this.initialized && (this.userProfile?.role === "admin" || this.userProfile?.role === "dispatch");
+  }
+
+  get role(): AppRole | null {
+    return this.userProfile?.role ?? null;
   }
 
   get isInitialized(): boolean {
@@ -112,9 +118,11 @@ export class SupabaseAuthz {
     // Always exclude archived claims from UI queries
     let query = baseQuery.is("archived_at", null);
 
-    if (this.isAdmin) {
-      // Admins can see all active claims
-      console.log("Admin access: returning active claims only");
+    const role = this.userProfile?.role;
+
+    if (role === "admin" || role === "dispatch" || role === "writer") {
+      // Admin, dispatch, and writer can see all active claims
+      console.log(`${role} access: returning active claims only`);
       return query;
     } else {
       // Appraisers can only see active claims assigned to them

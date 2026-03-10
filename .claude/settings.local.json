@@ -49,7 +49,9 @@
       "Bash(npx tsx:*)",
       "Bash(dir:*)",
       "Bash(findstr:*)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(npx vite:*)",
+      "WebFetch(domain:aviwltfqlunxxvkajpyt.supabase.co)"
     ]
   }
 }

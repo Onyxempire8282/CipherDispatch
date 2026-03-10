@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
+import { useNavigate } from "react-router-dom";
 import { NavBar } from "../NavBar";
+import { useRole } from "../../hooks/useRole";
 import "./contractor-management.css";
 
 const US_STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
@@ -12,6 +14,8 @@ export default function ContractorManagement() {
   const [showInvite, setShowInvite]   = useState(false);
   const [saving, setSaving]           = useState(false);
   const [selected, setSelected]       = useState<any | null>(null);
+  const nav = useNavigate();
+  const { role } = useRole();
 
   // Invite form state
   const [form, setForm] = useState({
@@ -112,7 +116,7 @@ export default function ContractorManagement() {
 
   return (
     <div className="ctm">
-      <NavBar role="admin" />
+      <NavBar role={role || "admin"} />
       {/* Header */}
       <div className="ctm__header">
         <div>
@@ -153,7 +157,7 @@ export default function ContractorManagement() {
             <div
               key={c.user_id}
               className={`ctm__card ${!c.available ? "ctm__card--offline" : ""}`}
-              onClick={() => setSelected(c)}
+              onClick={() => nav(`/admin/contractors/${c.user_id}`)}
             >
               <div className="ctm__card-top">
                 <div className="ctm__avatar">{(c.full_name || "?")[0]}</div>

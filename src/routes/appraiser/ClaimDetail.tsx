@@ -9,6 +9,7 @@ import { calculateExpectedPayout } from "../../utils/firmFeeConfig";
 import { getPayPeriod, FirmSchedule } from "../../utils/payoutForecasting";
 import { normalizeFirmNameForConfig } from "../../utils/firmFeeConfig";
 import { useIsMobile } from "../../hooks/useIsMobile";
+import { useRole } from "../../hooks/useRole";
 import MobileClaimDetail from "../../components/claims/MobileClaimDetail";
 import { NavBar } from "../../components/NavBar";
 import JSZip from "jszip";
@@ -359,7 +360,7 @@ export default function ClaimDetail() {
     if (!id) return;
 
     const confirmDelete = confirm(
-      `⚠️ WARNING: Are you sure you want to PERMANENTLY DELETE this claim?\n\nClaim #${claim.claim_number}\nCustomer: ${claim.customer_name}\n\nThis action CANNOT be undone and will delete:\n- The claim record\n- All associated photos\n- All related data\n\nType "DELETE" in the next dialog to confirm.`
+      `WARNING: Are you sure you want to PERMANENTLY DELETE this claim?\n\nClaim #${claim.claim_number}\nCustomer: ${claim.customer_name}\n\nThis action CANNOT be undone and will delete:\n- The claim record\n- All associated photos\n- All related data\n\nType "DELETE" in the next dialog to confirm.`
     );
 
     if (!confirmDelete) return;
@@ -525,7 +526,7 @@ export default function ClaimDetail() {
   // Calculate auth info for mobile view
   const authz = getSupabaseAuthz();
   const userInfo = authz?.getCurrentUser();
-  const isAdmin = userInfo?.role === "admin";
+  const isAdmin = userInfo?.role === "admin" || userInfo?.role === "dispatch";
   const fromCalendar = searchParams.get("from") === "calendar";
   const backLink = (isAdmin ? "/admin/claims" : "/my-claims") + (fromCalendar ? "?view=calendar" : "");
 
@@ -731,13 +732,13 @@ export default function ClaimDetail() {
               to={`/appraiser/claim/${id}/photos`}
               className="detail__btn detail__btn--photo-capture"
             >
-              📷 Guided Photo Capture
+              Guided Photo Capture
             </Link>
 
             {(() => {
               const authz = getSupabaseAuthz();
               const userInfo = authz?.getCurrentUser();
-              const isAdmin = userInfo?.role === "admin";
+              const isAdmin = userInfo?.role === "admin" || userInfo?.role === "dispatch";
               const isArchived = claim.status === 'CANCELED';
 
               return isAdmin ? (
@@ -747,14 +748,14 @@ export default function ClaimDetail() {
                       className="detail__btn--disabled"
                       title="Editing is disabled for archived claims"
                     >
-                      🔒 Archived - Edit Disabled
+                      Archived - Edit Disabled
                     </div>
                   ) : (
                     <button
                       onClick={startEditing}
                       className="detail__btn detail__btn--edit"
                     >
-                      ✏️ Edit Claim
+                      Edit Claim
                     </button>
                   )
                 ) : (
@@ -763,13 +764,13 @@ export default function ClaimDetail() {
                       onClick={saveEdits}
                       className="detail__btn detail__btn--save"
                     >
-                      ✅ Save Changes
+                      Save Changes
                     </button>
                     <button
                       onClick={cancelEdits}
                       className="detail__btn detail__btn--cancel"
                     >
-                      ❌ Cancel
+                      Cancel
                     </button>
                   </>
                 )
@@ -778,7 +779,7 @@ export default function ClaimDetail() {
             {(() => {
               const authz = getSupabaseAuthz();
               const userInfo = authz?.getCurrentUser();
-              const isAdmin = userInfo?.role === "admin";
+              const isAdmin = userInfo?.role === "admin" || userInfo?.role === "dispatch";
               const fromCalendar = searchParams.get("from") === "calendar";
 
               let backLink = isAdmin ? "/admin/claims" : "/my-claims";
@@ -810,11 +811,11 @@ export default function ClaimDetail() {
           {(() => {
             const authz = getSupabaseAuthz();
             const userInfo = authz?.getCurrentUser();
-            const isAdmin = userInfo?.role === "admin";
+            const isAdmin = userInfo?.role === "admin" || userInfo?.role === "dispatch";
 
             return isAdmin ? (
               <div className="detail__section">
-                <h4 className="detail__section-title">💰 Payment Information</h4>
+                <h4 className="detail__section-title">Payment Information</h4>
                 <div className="detail__field">
                   <div className="detail__label">Pay Amount</div>
                   {isEditing ? (
@@ -864,7 +865,7 @@ export default function ClaimDetail() {
                   <>
                     <div className="detail__payout-divider">
                       <h5 className="detail__payout-heading">
-                        💳 Payout Tracking
+                        Payout Tracking
                       </h5>
 
                       {/* Expected Payout Date */}
@@ -924,7 +925,7 @@ export default function ClaimDetail() {
                             }
                           }}
                         >
-                          ✓ Mark as Paid Today
+                          Mark as Paid Today
                         </button>
                       )}
                     </div>
@@ -936,7 +937,7 @@ export default function ClaimDetail() {
 
           {/* Firm Information */}
           <div className="detail__section">
-            <h4 className="detail__section-title">🏢 Firm</h4>
+            <h4 className="detail__section-title">Firm</h4>
             <div className="detail__field">
               <div className="detail__label">Vendor</div>
               {isEditing ? (
@@ -966,7 +967,7 @@ export default function ClaimDetail() {
 
           {/* Customer Information */}
           <div className="detail__section">
-            <h4 className="detail__section-title">👤 Customer Information</h4>
+            <h4 className="detail__section-title">Customer Information</h4>
             <div className="detail__field">
               <div className="detail__label">Name</div>
               {isEditing ? (
@@ -995,7 +996,7 @@ export default function ClaimDetail() {
                   href={`tel:${claim.customer_phone}`}
                   className="detail__link"
                 >
-                  📞 {claim.customer_phone}
+                  {claim.customer_phone}
                 </a>
               ) : (
                 <div className="detail__value detail__value--muted">No phone</div>
@@ -1016,7 +1017,7 @@ export default function ClaimDetail() {
                   href={`mailto:${claim.email}`}
                   className="detail__link"
                 >
-                  ✉️ {claim.email}
+                  {claim.email}
                 </a>
               ) : (
                 <div className="detail__value detail__value--muted">No email</div>
@@ -1026,7 +1027,7 @@ export default function ClaimDetail() {
 
           {/* Vehicle Information */}
           <div className="detail__section">
-            <h4 className="detail__section-title">🚗 Vehicle Information</h4>
+            <h4 className="detail__section-title">Vehicle Information</h4>
             <div className="detail__field">
               <div className="detail__label">VIN</div>
               {isEditing ? (
@@ -1134,7 +1135,7 @@ export default function ClaimDetail() {
         {/* Accident Description */}
         {(claim.notes || isEditing) && (
           <div className="detail__section detail__section--mb">
-            <h4 className="detail__section-title">📋 Accident Description</h4>
+            <h4 className="detail__section-title">Accident Description</h4>
             {isEditing ? (
               <textarea
                 className="detail__textarea"
@@ -1154,7 +1155,7 @@ export default function ClaimDetail() {
         <div className="detail__grid">
           {/* Appointment */}
           <div className="detail__section">
-            <h4 className="detail__section-title">📅 Appointment</h4>
+            <h4 className="detail__section-title">Appointment</h4>
             <div className="detail__field--lg">
               <div className="detail__label">Start Date & Time</div>
               {isEditing ? (
@@ -1207,7 +1208,7 @@ export default function ClaimDetail() {
 
           {/* Assignment */}
           <div className="detail__section">
-            <h4 className="detail__section-title">👥 Assignment</h4>
+            <h4 className="detail__section-title">Assignment</h4>
             <div className="detail__label">Assigned Appraiser</div>
             {isEditing ? (
               <select
@@ -1271,10 +1272,10 @@ export default function ClaimDetail() {
               </select>
             ) : (
               <div className="detail__value">
-                {claim.location_type === 'body_shop' ? '🔧 Body Shop'
-                 : claim.location_type === 'dealership' ? '🚗 Dealership'
-                 : claim.location_type === 'other' ? '📍 Other'
-                 : '🏠 Customer Address'}
+                {claim.location_type === 'body_shop' ? 'Body Shop'
+                 : claim.location_type === 'dealership' ? 'Dealership'
+                 : claim.location_type === 'other' ? 'Other'
+                 : 'Customer Address'}
               </div>
             )}
           </div>
@@ -1283,7 +1284,7 @@ export default function ClaimDetail() {
         {/* Supplement Actions — Admin only, original claims only */}
         {isAdmin && !claim.is_supplement && (
           <div className="detail__section">
-            <h4 className="detail__section-title">📎 Supplements</h4>
+            <h4 className="detail__section-title">Supplements</h4>
             <SupplementHistory claimId={id!} />
             <Link
               to={`/admin/claims/${id}/supplement`}
@@ -1297,7 +1298,7 @@ export default function ClaimDetail() {
         {/* Supplement badge — show on supplement claims */}
         {claim.is_supplement && claim.original_claim_id && (
           <div className="detail__section">
-            <h4 className="detail__section-title">📎 Supplement Info</h4>
+            <h4 className="detail__section-title">Supplement Info</h4>
             <div className="detail__field">
               <div className="detail__label">Type</div>
               <div className="detail__value detail__value--amber">
@@ -1312,7 +1313,7 @@ export default function ClaimDetail() {
               <div className="detail__field">
                 <div className="detail__label">Vehicle Moved</div>
                 <div className="detail__value detail__value--amber">
-                  📍 Yes — new location on file
+                  Yes — new location on file
                 </div>
               </div>
             )}
@@ -1328,7 +1329,7 @@ export default function ClaimDetail() {
         {/* Scheduling Links — Admin Only */}
         {isAdmin && claim.status === 'SCHEDULED' && claim.location_type !== 'body_shop' && (
           <div className="detail__section">
-            <h4 className="detail__section-title">🔗 Customer Confirmation</h4>
+            <h4 className="detail__section-title">Customer Confirmation</h4>
 
             {claim.appt_confirmed ? (
               <div className="detail__value detail__value--green">✓ Customer confirmed appointment</div>
@@ -1347,7 +1348,7 @@ export default function ClaimDetail() {
                     alert('Link copied to clipboard');
                   }}
                 >
-                  📋 Copy Link
+                  Copy Link
                 </button>
               </div>
             ) : (
@@ -1360,7 +1361,7 @@ export default function ClaimDetail() {
                   else await load();
                 }}
               >
-                🔗 Generate Confirmation Link
+                Generate Confirmation Link
               </button>
             )}
           </div>
@@ -1368,17 +1369,12 @@ export default function ClaimDetail() {
 
         {/* Status & Actions */}
         <div className="detail__section">
-          <h4 className="detail__section-title">⚡ Status & Actions</h4>
+          <h4 className="detail__section-title">Status & Actions</h4>
 
           <div className="detail__field">
             <div className="detail__label">Current Status</div>
             <div className={`detail__status-badge ${statusClass}`}>
-              {claim.status === "COMPLETED" && "✅"}
-              {claim.status === "IN_PROGRESS" && "🔧"}
-              {claim.status === "SCHEDULED" && "📅"}
-              {claim.status === "CANCELED" && "❌"}
-              {!claim.status && "📋"}
-              {" "}{claim.status || "NOT_STARTED"}
+              {claim.status || "NOT_STARTED"}
             </div>
           </div>
 
@@ -1429,90 +1425,22 @@ export default function ClaimDetail() {
           {isAdmin && (
             <div className="detail__status-actions">
               <div className="detail__label">Update Status</div>
-              <select
-                className="detail__status-select"
-                onChange={async (e) => {
-                  const value = e.target.value;
-                  if (value === "DELETE") {
-                    deleteClaim();
-                  } else if (value === "CANCELED") {
-                    if (confirm("Cancel this claim? This will mark it as CANCELED and remove it from active claims.")) {
-                      update({ status: "CANCELED" });
-                    }
-                  } else if (value === "WRITING") {
-                    update({
-                      status: "WRITING",
-                      writing_started_at: new Date().toISOString()
-                    });
-                  } else if (value === "COMPLETED") {
-                    // Calculate expected payout date when marking as COMPLETED
-                    const now = new Date();
-                    const year = now.getFullYear();
-                    const month = String(now.getMonth() + 1).padStart(2, '0');
-                    const day = String(now.getDate()).padStart(2, '0');
-                    const completionDate = `${year}-${month}-${day}T00:00:00Z`;
-                    const completedMonth = `${year}-${month}`;
-
-                    let expectedPayoutDate = null;
-                    if (claim.firm) {
-                      try {
-                        const payPeriod = getPayPeriod(claim.firm, now, firmSchedules[normalizeFirmNameForConfig(claim.firm)]);
-                        const payYear = payPeriod.payoutDate.getFullYear();
-                        const payMonth = String(payPeriod.payoutDate.getMonth() + 1).padStart(2, '0');
-                        const payDay = String(payPeriod.payoutDate.getDate()).padStart(2, '0');
-                        expectedPayoutDate = `${payYear}-${payMonth}-${payDay}T00:00:00Z`;
-                      } catch (err) {
-                        console.warn("Could not calculate expected payout date:", err);
-                      }
-                    }
-
-                    await update({
-                      status: "COMPLETED",
-                      writing_completed_at: claim.status === 'WRITING' ? new Date().toISOString() : undefined,
-                      completion_date: completionDate,
-                      completed_month: completedMonth,
-                      expected_payout_date: expectedPayoutDate,
-                      payout_status: "unpaid"
-                    });
-
-                    // Pre-wired for n8n Workflow 4
-                    supabase.functions.invoke("notify-status-change", {
-                      body: {
-                        claim_id: id,
-                        new_status: "COMPLETED",
-                        claim_number: claim.claim_number,
-                        customer_name: claim.customer_name,
-                        firm: claim.firm,
-                        file_total: claim.file_total,
-                        pay_amount: claim.pay_amount,
-                      }
-                    }).catch(() => {});
-                  } else if (value) {
-                    update({ status: value });
-                  }
-                  e.target.value = ""; // Reset dropdown
-                }}
-              >
-                <option value="">Choose an action...</option>
-                <option value="SCHEDULED">📅 Mark as Scheduled</option>
-                <option value="IN_PROGRESS">🔧 In Progress</option>
-                <option value="WRITING">✍️ Send to Writer</option>
-                <option value="COMPLETED">✅ Mark as Complete</option>
-                <option value="CANCELED">❌ Cancel Claim</option>
-                <option value="DELETE">
-                  🗑️ Permanently Delete Claim
-                </option>
-              </select>
-              <p className="detail__status-hint">
-                ⚠️ Permanent delete cannot be undone. All photos and data will be lost.
-              </p>
+              <div className="detail__status-buttons">
+                <button className="btn btn--ghost btn--sm" onClick={() => handleStatusChange("SCHEDULED")}>Mark Scheduled</button>
+                <button className="btn btn--ghost btn--sm" onClick={() => handleStatusChange("IN_PROGRESS")}>In Progress</button>
+                <button className="btn btn--ghost btn--sm" onClick={() => handleStatusChange("WRITING")}>Send to Writer</button>
+                <button className="btn btn--primary btn--sm" onClick={() => handleStatusChange("COMPLETED")}>Mark Complete</button>
+                <button className="btn btn--danger btn--sm" onClick={() => handleStatusChange("CANCELED")}>Cancel Claim</button>
+                <button className="btn btn--danger btn--sm" onClick={() => handleStatusChange("DELETE")}>Delete Claim</button>
+              </div>
+              <p className="detail__status-hint">Permanent delete cannot be undone. All photos and data will be lost.</p>
             </div>
           )}
         </div>
 
         {/* Location & Map */}
         <div className="detail__section">
-          <h4 className="detail__section-title">📍 Location</h4>
+          <h4 className="detail__section-title">Location</h4>
 
           {isEditing ? (
             <div className="detail__field--lg">
@@ -1613,20 +1541,20 @@ export default function ClaimDetail() {
             className="detail__btn detail__btn--maps"
             onClick={openInMaps}
           >
-            🗺️ Open in Google Maps
+            Open in Google Maps
           </button>
         </div>
 
         {/* Photos Section */}
         <div className="detail__section">
-          <h4 className="detail__section-title">📸 Photos ({photos.length})</h4>
+          <h4 className="detail__section-title">Photos ({photos.length})</h4>
 
           <div className="detail__photos-actions">
             <label
               htmlFor="photo-upload"
               className="detail__photo-label detail__photo-label--camera"
             >
-              📷 Take Photo
+              Take Photo
             </label>
             <input
               id="photo-upload"
@@ -1642,7 +1570,7 @@ export default function ClaimDetail() {
               htmlFor="photo-gallery"
               className="detail__photo-label detail__photo-label--gallery"
             >
-              🖼️ Choose from Gallery
+              Choose from Gallery
             </label>
             <input
               id="photo-gallery"
@@ -1658,13 +1586,13 @@ export default function ClaimDetail() {
                 onClick={downloadAllPhotos}
                 className="detail__photo-btn-download"
               >
-                📦 Download All Photos
+                Download All Photos
               </button>
             )}
           </div>
 
           <p className="detail__photo-tip">
-            💡 Tip: Photos are automatically compressed and optimized for storage
+            Tip: Photos are automatically compressed and optimized for storage
           </p>
 
           <div className="detail__photo-grid">
@@ -1696,7 +1624,7 @@ export default function ClaimDetail() {
                     onClick={(e) => e.stopPropagation()}
                     className="detail__photo-download"
                   >
-                    ⬇️ Download
+                    Download
                   </a>
                 </div>
               );
@@ -1826,7 +1754,7 @@ export default function ClaimDetail() {
                 download={`claim-${claim?.claim_number}-photo-${photos[lightboxIndex].id}.jpg`}
                 className="detail__lightbox-download"
               >
-                ⬇️ Download
+                Download
               </a>
 
               <button
@@ -1836,7 +1764,7 @@ export default function ClaimDetail() {
                   deletePhoto(photos[lightboxIndex]);
                 }}
               >
-                🗑️ Delete
+                Delete
               </button>
             </div>
           </div>

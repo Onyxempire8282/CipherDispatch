@@ -1,0 +1,266 @@
+/**
+ * Contractor Detail Page Styles
+ *
+ * BEM block: .cd
+ */
+
+.cd__loading {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-hi);
+  font-size: 18px;
+}
+
+.cd__wrap {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 40px 80px;
+}
+
+.cd__back {
+  margin-bottom: 20px;
+  display: inline-block;
+}
+
+/* -- Sections -- */
+
+.cd__section {
+  background: var(--steel);
+  border: 1px solid var(--rivet);
+  border-left: 3px solid var(--rivet);
+  margin-bottom: 16px;
+}
+
+.cd__section--accent {
+  border-left-color: var(--amber);
+}
+
+.cd__section-header {
+  padding: 12px 20px;
+  background: var(--steel-mid);
+  border-bottom: 1px solid var(--rivet);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cd__section-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.cd__section-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--amber-line), transparent);
+}
+
+.cd__section-body {
+  padding: 20px;
+}
+
+/* -- Info grid -- */
+
+.cd__info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.cd__info-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.cd__info-value {
+  font-size: 14px;
+  color: var(--text-hi);
+}
+
+.cd__coverage {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rivet);
+}
+
+.cd__coverage-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.cd__coverage-tag {
+  padding: 3px 10px;
+  background: var(--steel-mid);
+  border: 1px solid var(--rivet);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--text-hi);
+}
+
+/* -- Score grid -- */
+
+.cd__score-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+}
+
+.cd__score-cell {
+  padding: 16px;
+  background: var(--plate);
+  border: 1px solid var(--rivet);
+  text-align: center;
+}
+
+.cd__score-num {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  color: var(--white);
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.cd__score-num--amber {
+  color: var(--amber);
+}
+
+.cd__score-num--green {
+  color: var(--status-completed);
+}
+
+.cd__score-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+/* -- Claims list -- */
+
+.cd__claims-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cd__claim-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--plate);
+  border: 1px solid var(--rivet);
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.15s;
+}
+
+.cd__claim-row:hover {
+  background: var(--steel-mid);
+  border-color: var(--amber-line);
+}
+
+.cd__claim-num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--amber);
+  min-width: 100px;
+}
+
+.cd__claim-name {
+  font-size: 13px;
+  color: var(--text-hi);
+  flex: 1;
+}
+
+.cd__claim-firm {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.cd__claim-status {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text);
+  padding: 2px 8px;
+  background: var(--steel-mid);
+  border: 1px solid var(--rivet);
+}
+
+.cd__claim-loc {
+  font-size: 12px;
+  color: var(--text-sub);
+  min-width: 100px;
+  text-align: right;
+}
+
+.cd__claim-pay {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--amber);
+  min-width: 80px;
+  text-align: right;
+}
+
+.cd__empty {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  padding: 16px 0;
+}
+
+/* -- Responsive -- */
+
+@media (max-width: 768px) {
+  .cd__wrap {
+    padding: 16px 16px 80px;
+  }
+
+  .cd__info-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .cd__score-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .cd__claim-row {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .cd__claim-loc,
+  .cd__claim-firm {
+    min-width: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .cd__info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cd__score-grid {
+    grid-template-columns: 1fr;
+  }
+}
