@@ -228,7 +228,7 @@ export default function AdminClaims() {
     try {
       const { error } = await supabase
         .from("claims_v")
-        .update({ status: "COMPLETED", completed_at: new Date().toISOString() })
+        .update({ status: "COMPLETED" })
         .eq("id", claimId);
       if (error) throw error;
       setConfirmingCompleteId(null);
