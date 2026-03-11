@@ -71,9 +71,9 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
     })();
   }, []);
 
-  const activeClaims = claims.filter(c => c.status !== "COMPLETED" && c.status !== "CANCELED");
-  const scheduledClaims = activeClaims.filter(c => c.appointment_start);
-  const unscheduledClaims = activeClaims.filter(c => !c.appointment_start);
+  const visibleClaims = isAdmin ? claims : claims.filter(c => c.status !== "COMPLETED" && c.status !== "CANCELED");
+  const scheduledClaims = visibleClaims.filter(c => c.appointment_start);
+  const unscheduledClaims = visibleClaims.filter(c => !c.appointment_start);
 
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
