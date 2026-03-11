@@ -240,7 +240,7 @@ export default function NewClaim() {
       console.log("FOLLOW-UP UPDATE claim_number:", form.claim_number);
 
       const { error: updateError, data: updateData, count: updateCount } = await supabase
-        .from("claims_v")
+        .from("claims")
         .update(extraFields)
         .eq("claim_number", form.claim_number)
         .select();
