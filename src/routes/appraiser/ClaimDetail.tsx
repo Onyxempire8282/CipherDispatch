@@ -208,11 +208,38 @@ export default function ClaimDetail() {
     await load();
   };
 
-  const handlePhotoInputChange = async (e: any) => {
-    const files: FileList = e.target.files;
-    if (!files || files.length === 0) return;
-    await handlePhotoUpload(files);
-    // Reset the input so the same files can be selected again if needed
+  const handleSupplementalUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length || !id) return;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const photoId = `supplemental_${Date.now()}_${i}`;
+      const storagePath = `claim/${id}/${photoId}.jpg`;
+
+      try {
+        const { error } = await supabaseCD.storage
+          .from('claim-photos')
+          .upload(storagePath, file, { upsert: true });
+
+        if (!error) {
+          await supabaseCD
+            .from('claim_photos')
+            .insert({
+              claim_id: id,
+              storage_path: storagePath,
+              photo_type: 'supplemental',
+              order_index: 999,
+              required: false,
+              inspection_type: 'supplemental'
+            });
+        }
+      } catch (err) {
+        console.error('Supplemental upload error:', err);
+      }
+    }
+
+    await load();
     e.target.value = "";
   };
 
@@ -1668,36 +1695,21 @@ export default function ClaimDetail() {
           <h4 className="detail__section-title">Photos ({photos.length})</h4>
 
           <div className="detail__photos-actions">
-            <label
-              htmlFor="photo-upload"
-              className="detail__photo-label detail__photo-label--camera"
-            >
-              Take Photo
-            </label>
-            <input
-              id="photo-upload"
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handlePhotoInputChange}
-              className="detail__file-input"
-              multiple
-            />
-
-            <label
-              htmlFor="photo-gallery"
-              className="detail__photo-label detail__photo-label--gallery"
-            >
-              Choose from Gallery
-            </label>
-            <input
-              id="photo-gallery"
-              type="file"
-              accept="image/*"
-              onChange={handlePhotoInputChange}
-              className="detail__file-input"
-              multiple
-            />
+            <div className="detail__photo-supplemental">
+              <label className="detail__photo-supplemental-label">
+                ADD SUPPLEMENTAL PHOTOS
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleSupplementalUpload}
+                  className="detail__file-input"
+                />
+              </label>
+              <div className="detail__photo-supplemental-hint">
+                For additional photos outside the guided sequence
+              </div>
+            </div>
 
             {photos.length > 0 && (
               <button
@@ -1708,10 +1720,6 @@ export default function ClaimDetail() {
               </button>
             )}
           </div>
-
-          <p className="detail__photo-tip">
-            Tip: Photos are automatically compressed and optimized for storage
-          </p>
 
           <div className="detail__photo-grid">
             {photos.map((p, index) => {
