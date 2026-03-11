@@ -12,6 +12,7 @@ export interface Claim {
   appointment_start?: string | null;
   file_total?: number | null;
   pay_amount?: number | null;
+  state?: string | null;
   status: string;
 }
 

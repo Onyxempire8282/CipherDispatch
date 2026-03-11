@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { getFirmColor, FIRM_COLORS } from '../../constants/firmColors';
 import { getSupabaseAuthz } from '../../lib/supabaseAuthz';
 import { isHoliday, formatHolidayName } from '../../utils/holidays';
+import { getTimezoneForState } from '../../utils/stateTimezone';
 import Field from '../ui/Field';
 import './monthly-calendar.css';
 
@@ -24,6 +25,7 @@ interface Claim {
   vehicle_make?: string;
   vehicle_model?: string;
   city?: string;
+  state?: string;
   pay_amount?: number | null;
   file_total?: number | null;
   profiles?: { full_name?: string } | null;
@@ -224,7 +226,7 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
           {visibleClaims.map(claim => {
             const firmColor = getFirmColor(claim.firm);
             const time = claim.appointment_start
-              ? new Date(claim.appointment_start).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+              ? new Date(claim.appointment_start).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: getTimezoneForState(claim.state) })
               : '';
             return (
               <div
@@ -364,7 +366,7 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
                   {claim.appointment_start && (
                     <div className="cal__modal-claim-time">
                       {new Date(claim.appointment_start).toLocaleTimeString('en-US', {
-                        hour: 'numeric', minute: '2-digit', hour12: true
+                        hour: 'numeric', minute: '2-digit', hour12: true, timeZone: getTimezoneForState(claim.state),
                       })}
                     </div>
                   )}

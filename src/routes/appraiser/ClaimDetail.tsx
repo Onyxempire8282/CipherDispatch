@@ -15,6 +15,7 @@ import MobileClaimDetail from "../../components/claims/MobileClaimDetail";
 import { NavBar } from "../../components/NavBar";
 import JSZip from "jszip";
 import { getPhotoUrlWithFallback } from "../../utils/uploadManager";
+import { getTimezoneForState } from "../../utils/stateTimezone";
 import "./claim-detail.css";
 
 function SupplementHistory({ claimId }: { claimId: string }) {
@@ -1297,7 +1298,7 @@ export default function ClaimDetail() {
                     day: 'numeric',
                     hour: 'numeric',
                     minute: '2-digit',
-                    timeZone: 'America/Chicago',
+                    timeZone: getTimezoneForState(claim.state),
                   })}
                 </div>
               ) : (
@@ -1322,7 +1323,7 @@ export default function ClaimDetail() {
                     day: 'numeric',
                     hour: 'numeric',
                     minute: '2-digit',
-                    timeZone: 'America/Chicago',
+                    timeZone: getTimezoneForState(claim.state),
                   })}
                 </div>
               ) : (

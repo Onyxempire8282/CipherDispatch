@@ -11,6 +11,7 @@ import MobileClaimsList from "../../components/claims/MobileClaimsList";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import { NavBar } from "../../components/NavBar";
 import PageHeader from "../../components/ui/PageHeader";
+import { getTimezoneForState } from "../../utils/stateTimezone";
 import "./my-claims.css";
 
 type Claim = {
@@ -420,6 +421,7 @@ export default function MyClaims() {
               year: "numeric",
               hour: "numeric",
               minute: "2-digit",
+              timeZone: getTimezoneForState(r.state),
             })}
           </div>
         ) : (

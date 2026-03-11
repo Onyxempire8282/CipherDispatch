@@ -13,6 +13,7 @@ import { NavBar } from "../../components/NavBar";
 import { useRole } from "../../hooks/useRole";
 import PageHeader from "../../components/ui/PageHeader";
 import { useIsMobile } from "../../hooks/useIsMobile";
+import { getTimezoneForState } from "../../utils/stateTimezone";
 import "./claims.css";
 
 type Claim = {
@@ -537,6 +538,7 @@ export default function AdminClaims() {
                               {new Date(r.appointment_start).toLocaleDateString("en-US", {
                                 weekday: "short", month: "short", day: "numeric",
                                 year: "numeric", hour: "numeric", minute: "2-digit",
+                                timeZone: getTimezoneForState(r.state),
                               })}
                             </div>
                           ) : (

@@ -6,6 +6,7 @@
 import { useState } from 'react';
 import { PayoutForecast, Claim, FirmSchedule } from '../utils/payoutForecasting';
 import { calculateExpectedPayout } from '../utils/firmFeeConfig';
+import { getTimezoneForState } from '../utils/stateTimezone';
 
 interface ClaimDetail extends Claim {
   claim_number?: string;
@@ -260,7 +261,7 @@ export function PayoutDetailModal({
                       {claim.completion_date
                         ? new Date(claim.completion_date).toLocaleDateString()
                         : claim.appointment_start
-                        ? new Date(claim.appointment_start).toLocaleDateString()
+                        ? new Date(claim.appointment_start).toLocaleDateString('en-US', { timeZone: getTimezoneForState(claim.state) })
                         : 'N/A'}
                     </span>
                   </div>

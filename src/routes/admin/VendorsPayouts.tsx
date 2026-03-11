@@ -6,6 +6,7 @@ import {
   getSupabaseAuthz,
 } from "../../lib/supabaseAuthz";
 import { PayCycleType } from "../../utils/payoutCalculations";
+import { getTimezoneForState } from "../../utils/stateTimezone";
 import {
   forecastPayouts,
   getWeeklyView,
@@ -1010,7 +1011,7 @@ export default function VendorsPayouts() {
                             {c.completion_date
                               ? new Date(c.completion_date).toLocaleDateString()
                               : c.appointment_start
-                              ? new Date(c.appointment_start).toLocaleDateString()
+                              ? new Date(c.appointment_start).toLocaleDateString('en-US', { timeZone: getTimezoneForState(c.state) })
                               : "—"}
                           </td>
                           <td>

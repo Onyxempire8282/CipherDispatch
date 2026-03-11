@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getTimezoneForState } from "../_shared/stateTimezone.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -84,7 +85,7 @@ serve(async (req) => {
           year: "numeric",
           hour: "numeric",
           minute: "2-digit",
-          timeZone: "America/Chicago",
+          timeZone: getTimezoneForState(claim.state),
         })
       : "Not yet scheduled";
 
