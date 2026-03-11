@@ -368,7 +368,7 @@ export default function ClaimDetail() {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
-                "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+                "Authorization": `Bearer ${import.meta.env.VITE_CD_SUPABASE_ANON_KEY}`,
               },
               body: JSON.stringify({
                 claim_id: id,
