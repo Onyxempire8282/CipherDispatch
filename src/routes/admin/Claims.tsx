@@ -420,9 +420,9 @@ export default function AdminClaims() {
         {/* Content area */}
         {showCalendar && !showArchived ? (
           isMobile ? (
-            <MobileAgendaView claims={rows} onClaimUpdate={load} />
+            <MobileAgendaView claims={allClaims} onClaimUpdate={load} />
           ) : (
-            <MonthlyCalendar claims={rows} onClaimUpdate={load} />
+            <MonthlyCalendar claims={allClaims} onClaimUpdate={load} />
           )
         ) : rows.length === 0 ? (
           <div className="claims__empty">No claims found matching your filters.</div>
