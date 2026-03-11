@@ -611,10 +611,6 @@ export default function ClaimDetail() {
       }).catch(() => {});
       return;
     }
-    if (status === "SCHEDULED" && !claim.appointment_start) {
-      alert("Cannot set status to SCHEDULED without an appointment date.");
-      return;
-    }
     update({ status });
   };
 
