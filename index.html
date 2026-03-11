@@ -8,23 +8,21 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Cipher Dispatch</title>
+    <link rel="manifest" href="/CipherDispatch/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Cipher Dispatch">
+    <link rel="apple-touch-icon" href="/CipherDispatch/icons/icon-192.png">
+    <meta name="theme-color" content="#0e0f11">
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <script>
-      // Unregister any leftover service workers from old PWA build
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(registrations) {
-          registrations.forEach(function(registration) {
-            registration.unregister();
-          });
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/CipherDispatch/sw.js')
+            .catch(err => console.log('SW registration failed:', err));
         });
-        // Clear all caches left by old service worker
-        if ('caches' in window) {
-          caches.keys().then(function(names) {
-            names.forEach(function(name) { caches.delete(name); });
-          });
-        }
       }
 
       // GitHub Pages SPA redirect handler - restore path from 404.html redirect

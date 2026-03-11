@@ -40,6 +40,8 @@ export default function PhotoCapture() {
   const [showLabelPrompt, setShowLabelPrompt] = useState(false);
   const [isLandscape, setIsLandscape] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
+  const [permissionDenied, setPermissionDenied] = useState(false);
+  const [landscapeNudge, setLandscapeNudge] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -149,6 +151,8 @@ export default function PhotoCapture() {
     try {
       setVideoReady(false);
       setIsLandscape(false);
+      setLandscapeNudge(true);
+      setTimeout(() => setLandscapeNudge(false), 4000);
 
       // STEP 1: Render the video element first
       setCameraActive(true);
@@ -202,8 +206,15 @@ export default function PhotoCapture() {
               checkVideoOrientation();
             }
           }, 500);
-        } catch (err) {
+        } catch (err: any) {
           console.error("Camera stream error:", err);
+          setCameraActive(false);
+
+          if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+            setPermissionDenied(true);
+          } else {
+            alert('Failed to access camera. Please check permissions in your iPhone Settings \u2192 Safari \u2192 Camera.');
+          }
         }
       });
     } catch (error) {
@@ -318,6 +329,45 @@ export default function PhotoCapture() {
     // Could add logic to delete from storage/DB if needed
   };
 
+  const handleFallbackUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const activeSlots = getActiveSlots(state);
+    const currentSlot = activeSlots[currentSlotIndex];
+    if (!currentSlot) return;
+
+    const url = URL.createObjectURL(file);
+    const photoId = crypto.randomUUID();
+
+    const photo: CapturedPhoto = {
+      id: photoId,
+      slot_id: currentSlot.id,
+      blob: file,
+      url,
+      uploaded: false,
+    };
+
+    setState((prev) => {
+      const newPhotos = new Map(prev.captured_photos);
+      const existing = newPhotos.get(currentSlot.id) || [];
+      newPhotos.set(currentSlot.id, [...existing, photo]);
+      return { ...prev, captured_photos: newPhotos };
+    });
+
+    uploadManager.addPhoto(currentSlot.id, file);
+
+    setTimeout(() => {
+      const nextIndex = currentSlotIndex + 1;
+      if (nextIndex < activeSlots.length) {
+        setCurrentSlotIndex(nextIndex);
+      }
+    }, 300);
+
+    // Reset input so the same file can be re-selected
+    e.target.value = '';
+  };
+
   const completeInspection = async () => {
     if (!canCompleteInspection(state)) {
       alert("Please complete all required photo slots before finishing.");
@@ -411,6 +461,46 @@ export default function PhotoCapture() {
           >
             No - No Label
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Permission denied screen
+  if (permissionDenied) {
+    return (
+      <div className="capture">
+        <div className="capture__inner capture__inner--narrow">
+          <div className="capture__permission-denied">
+            <div className="capture__permission-title">CAMERA ACCESS REQUIRED</div>
+            <div className="capture__permission-body">
+              Go to iPhone Settings &rarr; Safari &rarr; Camera &rarr; Allow
+            </div>
+            <label className="capture__fallback-upload">
+              UPLOAD FROM PHOTOS INSTEAD
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleFallbackUpload}
+              />
+            </label>
+            <button
+              onClick={() => {
+                setPermissionDenied(false);
+                startCamera();
+              }}
+              className="capture__type-btn"
+            >
+              Try Camera Again
+            </button>
+            <button
+              onClick={() => navigate(`/appraiser/claim/${claimId}`)}
+              className="capture__back-btn"
+            >
+              &larr; Back to Claim
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -620,12 +710,10 @@ export default function PhotoCapture() {
             ) : null;
           })()}
 
-          {/* Orientation Warning Overlay */}
-          {videoReady && !isLandscape && (
-            <div className="capture__orientation-warn">
-              ⚠️ LANDSCAPE MODE REQUIRED
-              <br />
-              Rotate your device to landscape
+          {/* Orientation Nudge Banner */}
+          {videoReady && !isLandscape && landscapeNudge && (
+            <div className="capture__orientation-nudge" onClick={() => setLandscapeNudge(false)}>
+              LANDSCAPE RECOMMENDED FOR BEST RESULTS
             </div>
           )}
 
@@ -640,8 +728,8 @@ export default function PhotoCapture() {
           {/* Circular Shutter Button - Bottom Right */}
           <button
             onClick={capturePhoto}
-            disabled={!videoReady || !isLandscape}
-            className={`capture__shutter-btn${!videoReady || !isLandscape ? " capture__shutter-btn--disabled" : ""}`}
+            disabled={!videoReady}
+            className={`capture__shutter-btn${!videoReady ? " capture__shutter-btn--disabled" : ""}`}
           >
             📷
           </button>

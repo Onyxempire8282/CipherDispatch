@@ -1,0 +1,25 @@
+{
+  "name": "Cipher Dispatch",
+  "short_name": "Cipher Dispatch",
+  "description": "Claims dispatch and photo capture for field appraisers",
+  "start_url": "/CipherDispatch/",
+  "scope": "/CipherDispatch/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0e0f11",
+  "theme_color": "#0e0f11",
+  "icons": [
+    {
+      "src": "/CipherDispatch/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/CipherDispatch/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
