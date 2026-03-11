@@ -155,7 +155,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "dispatch@cipherdispatch.com",
+        from: "dispatch@claimcipherhq.com",
         to: [appraiserEmail],
         subject: `New Assignment — #${claim.claim_number}`,
         html: htmlBody,
