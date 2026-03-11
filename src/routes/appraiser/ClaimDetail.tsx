@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
+import { supabaseCD } from "../../lib/supabaseCD";
 import imageCompression from "browser-image-compression";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { getSupabaseAuthz } from "../../lib/supabaseAuthz";
@@ -185,7 +186,7 @@ export default function ClaimDetail() {
           useWebWorker: true,
         });
         const path = `claim/${id}/${crypto.randomUUID()}.jpg`;
-        const { error: upErr } = await supabase.storage
+        const { error: upErr } = await supabaseCD.storage
           .from("claim-photos")
           .upload(path, compressed, { contentType: "image/jpeg" });
         if (upErr) {
@@ -465,7 +466,7 @@ export default function ClaimDetail() {
 
     // Delete photos from storage
     for (const photo of photos) {
-      await supabase.storage.from("claim-photos").remove([photo.storage_path]);
+      await supabaseCD.storage.from("claim-photos").remove([photo.storage_path]);
     }
 
     // Delete photo records
@@ -486,7 +487,7 @@ export default function ClaimDetail() {
     if (!confirm(`Delete this photo? This cannot be undone.`)) return;
 
     // Delete from storage
-    const { error: storageError } = await supabase.storage
+    const { error: storageError } = await supabaseCD.storage
       .from("claim-photos")
       .remove([photo.storage_path]);
 

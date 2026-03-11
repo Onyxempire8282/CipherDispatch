@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { supabaseCD } from '../lib/supabaseCD';
 import { UploadTask, InspectionState } from '../types/photoCapture';
 import { PHOTO_SLOTS } from '../config/photoSlots';
 import imageCompression from 'browser-image-compression';
@@ -86,7 +87,7 @@ export class UploadManager {
 
       // Upload to storage
       const path = `claim/${claimId}/${task.photoId}.jpg`;
-      const { error: storageError } = await supabase.storage
+      const { error: storageError } = await supabaseCD.storage
         .from('claim-photos')
         .upload(path, compressed, { contentType: 'image/jpeg' });
 
