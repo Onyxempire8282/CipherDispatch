@@ -6,7 +6,8 @@ import imageCompression from 'browser-image-compression';
 export function getPhotoUrlWithFallback(storagePath: string): string {
   if (!storagePath) return '';
   if (storagePath.startsWith('http')) return storagePath;
-  return `https://aviwltfqlunxxvkajpyt.supabase.co/storage/v1/object/public/claim-photos/${storagePath}`;
+  const storageBase = import.meta.env.VITE_CD_SUPABASE_STORAGE_URL || 'https://qrouuoycvxxxutkxkxpp.supabase.co/storage/v1';
+  return `${storageBase}/object/public/claim-photos/${storagePath}`;
 }
 
 export function buildPhotoPath(firm: string, claimNumber: string, photoType: string, sequence: number): string {

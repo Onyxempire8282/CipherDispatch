@@ -355,8 +355,13 @@ export default function ClaimDetail() {
             .eq("user_id", user?.id)
             .single();
 
+          console.log("NOTIFY: attempting to call edge function", {
+            claim_id: id,
+            appraiser_id: editAssignedTo,
+          });
+
           await fetch(
-            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-appraiser-assigned`,
+            `${import.meta.env.VITE_CD_SUPABASE_FUNCTIONS_URL}/notify-appraiser-assigned`,
             {
               method: "POST",
               headers: {
@@ -370,8 +375,10 @@ export default function ClaimDetail() {
               }),
             }
           );
+
+          console.log("NOTIFY: edge function fetch completed");
         } catch (err) {
-          console.warn("Assignment notification failed:", err);
+          console.error("NOTIFY: edge function failed", err);
         }
       })();
     }

@@ -263,7 +263,7 @@ export default function NewClaim() {
 
             if (created?.id) {
               await fetch(
-                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-appraiser-assigned`,
+                `${import.meta.env.VITE_CD_SUPABASE_FUNCTIONS_URL}/notify-appraiser-assigned`,
                 {
                   method: "POST",
                   headers: {
