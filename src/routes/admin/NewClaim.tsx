@@ -244,6 +244,46 @@ export default function NewClaim() {
         console.warn("Follow-up update failed:", updateError.message);
       }
 
+      // Send assignment notification if appraiser was assigned
+      if (form.assigned_to) {
+        (async () => {
+          try {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("full_name")
+              .eq("user_id", user.id)
+              .single();
+
+            // Look up the created claim ID by claim_number
+            const { data: created } = await supabase
+              .from("claims_v")
+              .select("id")
+              .eq("claim_number", form.claim_number)
+              .single();
+
+            if (created?.id) {
+              await fetch(
+                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-appraiser-assigned`,
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+                  },
+                  body: JSON.stringify({
+                    claim_id: created.id,
+                    appraiser_id: form.assigned_to,
+                    assigned_by_name: profile?.full_name || "Dispatch",
+                  }),
+                }
+              );
+            }
+          } catch (err) {
+            console.warn("Assignment notification failed:", err);
+          }
+        })();
+      }
+
       alert("Claim saved successfully!");
       nav("/claims");
     }

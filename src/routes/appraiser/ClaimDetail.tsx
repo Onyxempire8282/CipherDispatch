@@ -113,6 +113,33 @@ export default function ClaimDetail() {
     setPhotos(ph.data || []);
   };
 
+  // Mark claim as viewed by appraiser on mount
+  useEffect(() => {
+    (async () => {
+      if (!id) return;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      // Only mark if this claim is assigned to the current user and not yet viewed
+      const { data: claimData } = await supabase
+        .from("claims_v")
+        .select("assigned_to, viewed_by_appraiser_at")
+        .eq("id", id)
+        .single();
+      if (
+        claimData &&
+        claimData.assigned_to === user.id &&
+        !claimData.viewed_by_appraiser_at
+      ) {
+        supabase
+          .from("claims_v")
+          .update({ viewed_by_appraiser_at: new Date().toISOString() })
+          .eq("id", id)
+          .eq("assigned_to", user.id)
+          .then(() => {});
+      }
+    })();
+  }, [id]);
+
   useEffect(() => {
     load();
     // Load users for assignment dropdown
@@ -309,8 +336,45 @@ export default function ClaimDetail() {
       patch.appointment_end = localDate.toISOString();
     }
 
+    // Check if assigned_to changed to a new appraiser
+    const assignmentChanged =
+      editAssignedTo &&
+      editAssignedTo !== claim?.assigned_to;
+
     await update(patch);
     setIsEditing(false);
+
+    // Send assignment notification email silently
+    if (assignmentChanged) {
+      (async () => {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("full_name")
+            .eq("user_id", user?.id)
+            .single();
+
+          await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-appraiser-assigned`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+              },
+              body: JSON.stringify({
+                claim_id: id,
+                appraiser_id: editAssignedTo,
+                assigned_by_name: profile?.full_name || "Dispatch",
+              }),
+            }
+          );
+        } catch (err) {
+          console.warn("Assignment notification failed:", err);
+        }
+      })();
+    }
   };
 
   const cancelEdits = () => {

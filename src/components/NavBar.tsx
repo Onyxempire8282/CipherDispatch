@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import type { AppRole } from "../lib/supabaseAuthz";
@@ -36,24 +36,24 @@ const APPRAISER_TABS = [
 ];
 
 const ADMIN_BOTTOM_NAV = [
-  { label: "Claims", icon: "◫", path: "/claims" },
-  { label: "Firms", icon: "⊹", path: "/vendors" },
-  { label: "Team", icon: "⊡", path: "/contractors" },
-  { label: "KPI", icon: "⊟", path: "/kpi" },
+  { label: "Claims", icon: "\u25EB", path: "/claims" },
+  { label: "Firms", icon: "\u22B9", path: "/vendors" },
+  { label: "Team", icon: "\u22A1", path: "/contractors" },
+  { label: "KPI", icon: "\u229F", path: "/kpi" },
 ];
 
 const DISPATCH_BOTTOM_NAV = [
-  { label: "Claims", icon: "◫", path: "/claims" },
-  { label: "Team", icon: "⊡", path: "/contractors" },
+  { label: "Claims", icon: "\u25EB", path: "/claims" },
+  { label: "Team", icon: "\u22A1", path: "/contractors" },
 ];
 
 const WRITER_BOTTOM_NAV = [
-  { label: "Claims", icon: "◫", path: "/claims" },
+  { label: "Claims", icon: "\u25EB", path: "/claims" },
 ];
 
 const APPRAISER_BOTTOM_NAV = [
-  { label: "Claims", icon: "◫", path: "/my-claims" },
-  { label: "Today", icon: "⊹", path: "/my-routes" },
+  { label: "Claims", icon: "\u25EB", path: "/my-claims" },
+  { label: "Today", icon: "\u22B9", path: "/my-routes" },
 ];
 
 const ROLE_LABEL: Record<AppRole, string> = {
@@ -67,6 +67,8 @@ export const NavBar: React.FC<NavBarProps> = ({ role, userName }) => {
   const nav = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
+  const [unviewedCount, setUnviewedCount] = useState(0);
+
   const tabMap: Record<AppRole, typeof ADMIN_TABS> = {
     admin: ADMIN_TABS,
     dispatch: DISPATCH_TABS,
@@ -82,6 +84,29 @@ export const NavBar: React.FC<NavBarProps> = ({ role, userName }) => {
   const tabs = tabMap[role];
   const bottomTabs = bottomMap[role];
 
+  // Unviewed claim count for appraisers
+  useEffect(() => {
+    if (role !== "appraiser") return;
+
+    const getUnviewedCount = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { count } = await supabase
+        .from("claims_v")
+        .select("id", { count: "exact", head: true })
+        .eq("assigned_to", user.id)
+        .is("viewed_by_appraiser_at", null)
+        .not("status", "in", '("COMPLETED","CANCELED")');
+
+      setUnviewedCount(count ?? 0);
+    };
+
+    getUnviewedCount();
+    const interval = setInterval(getUnviewedCount, 60000);
+    return () => clearInterval(interval);
+  }, [role]);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     nav("/login");
@@ -89,27 +114,31 @@ export const NavBar: React.FC<NavBarProps> = ({ role, userName }) => {
 
   const isActiveTab = (tabPath: string): boolean => {
     const p = location.pathname;
-    // Calendar tab matches both /calendar and legacy /admin/claims?view=calendar
     if (tabPath === "/calendar") {
       return p === "/calendar" || (p === "/admin/claims" && location.search.includes("view=calendar"));
     }
-    // Claims tab: match /claims or /admin/claims but NOT when calendar view is active
     if (tabPath === "/claims") {
       return (p === "/claims" || p === "/admin/claims") && !location.search.includes("view=");
     }
-    // Vendors tab: match /vendors or legacy paths
     if (tabPath === "/vendors") {
       return p === "/vendors" || p === "/admin/vendors-payouts" || p === "/admin/vendors" || p === "/admin/payouts";
     }
-    // Contractors tab
     if (tabPath === "/contractors") {
       return p === "/contractors" || p === "/admin/contractors";
     }
-    // KPI tab
     if (tabPath === "/kpi") {
       return p === "/kpi" || p === "/admin/kpi";
     }
     return p === tabPath;
+  };
+
+  const renderBadge = (tabPath: string) => {
+    if (role !== "appraiser" || tabPath !== "/my-claims" || unviewedCount <= 0) return null;
+    return (
+      <span className="nav__unviewed-badge">
+        {unviewedCount > 9 ? "9+" : unviewedCount}
+      </span>
+    );
   };
 
   return (
@@ -131,9 +160,10 @@ export const NavBar: React.FC<NavBarProps> = ({ role, userName }) => {
           <Link
             key={tab.path}
             to={tab.path}
-            className={`nav__tab${isActiveTab(tab.path) ? " nav__tab--active" : ""}`}
+            className={`nav__tab${isActiveTab(tab.path) ? " nav__tab--active" : ""}${tab.path === "/my-claims" && role === "appraiser" ? " nav__tab--has-badge" : ""}`}
           >
             {tab.label}
+            {renderBadge(tab.path)}
           </Link>
         ))}
       </div>
@@ -163,6 +193,7 @@ export const NavBar: React.FC<NavBarProps> = ({ role, userName }) => {
             onClick={() => setMenuOpen(false)}
           >
             {tab.label}
+            {renderBadge(tab.path)}
           </Link>
         ))}
         <button
@@ -188,6 +219,7 @@ export const NavBar: React.FC<NavBarProps> = ({ role, userName }) => {
         >
           <span className="bottom-nav__icon">{item.icon}</span>
           <span className="bottom-nav__label">{item.label}</span>
+          {renderBadge(item.path)}
         </Link>
       ))}
     </div>

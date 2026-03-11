@@ -121,6 +121,27 @@
   border-bottom-color: var(--amber);
 }
 
+.nav__tab--has-badge {
+  position: relative;
+}
+
+.nav__unviewed-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--amber);
+  color: var(--plate);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 0 4px;
+}
+
 /* ── Right section ── */
 
 .nav__right {
