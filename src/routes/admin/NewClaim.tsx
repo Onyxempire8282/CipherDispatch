@@ -236,10 +236,16 @@ export default function NewClaim() {
         state: form.state || null,
       };
 
-      const { error: updateError } = await supabase
+      console.log("FOLLOW-UP UPDATE extraFields:", JSON.stringify(extraFields, null, 2));
+      console.log("FOLLOW-UP UPDATE claim_number:", form.claim_number);
+
+      const { error: updateError, data: updateData, count: updateCount } = await supabase
         .from("claims_v")
         .update(extraFields)
-        .eq("claim_number", form.claim_number);
+        .eq("claim_number", form.claim_number)
+        .select();
+
+      console.log("FOLLOW-UP UPDATE result:", { error: updateError, data: updateData, count: updateCount });
 
       if (updateError) {
         console.warn("Follow-up update failed:", updateError.message);
