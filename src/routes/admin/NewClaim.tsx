@@ -225,6 +225,7 @@ export default function NewClaim() {
         claim_type: form.claim_type || "auto",
         mileage_add: form.mileage_add || null,
         photographer_payout: form.photographer_payout || null,
+        appointment_start: form.appointment_start || null,
         appointment_end: form.appointment_end || null,
         assigned_to: form.assigned_to || null,
         pay_amount: form.pay_amount ?? null,
