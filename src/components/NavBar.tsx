@@ -31,8 +31,7 @@ const WRITER_TABS = [
 const APPRAISER_TABS = [
   { label: "My Claims", path: "/my-claims" },
   { label: "Calendar", path: "/my-claims?view=calendar" },
-  { label: "My Routes", path: "/my-routes" },
-  { label: "Scorecard", path: "/appraiser/scorecard" },
+  { label: "Today's Run", path: "/my-routes" },
 ];
 
 const ADMIN_BOTTOM_NAV = [
@@ -53,8 +52,7 @@ const WRITER_BOTTOM_NAV = [
 
 const APPRAISER_BOTTOM_NAV = [
   { label: "Claims", icon: "◫", path: "/my-claims" },
-  { label: "Routes", icon: "⊹", path: "/my-routes" },
-  { label: "Score", icon: "⊟", path: "/appraiser/scorecard" },
+  { label: "Today", icon: "⊹", path: "/my-routes" },
 ];
 
 const ROLE_LABEL: Record<AppRole, string> = {

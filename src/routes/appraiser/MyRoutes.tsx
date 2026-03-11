@@ -1,250 +1,340 @@
 /**
- * My Routes Page
+ * Today's Run Page
  *
- * Displays user's routes and allows closing active routes.
- * Closing a route snapshots existing mileage data to mileage_logs.
- *
- * This is the UI trigger for the mileage logging system.
+ * Daily agenda view showing all claims scheduled for today,
+ * with inline status actions (start inspection, mark complete).
  */
 
-import { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabase';
-import { closeRoute } from '../../utils/routeOperations';
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { supabase } from "../../lib/supabase";
 import { NavBar } from "../../components/NavBar";
-import PageHeader from "../../components/ui/PageHeader";
-import "./my-routes.css";
+import "./today-run.css";
 
-interface Route {
+interface TodayClaim {
   id: string;
-  date: string;
-  status: 'draft' | 'active' | 'closed';
-  total_miles: number | null;
-  start_address: string | null;
-  end_address: string | null;
-  created_at: string;
+  claim_number: string;
+  customer_name: string;
+  status: string;
+  appointment_start: string;
+  appointment_end?: string;
+  address_line1?: string;
+  city?: string;
+  state?: string;
+  zip?: string | null;
+  vehicle_year?: number;
+  vehicle_make?: string;
+  vehicle_model?: string;
+  firm?: string;
+  pay_amount?: number | null;
+}
+
+function formatTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
+function getDuration(start: string, end?: string): string | null {
+  if (!end) return null;
+  const diff = new Date(end).getTime() - new Date(start).getTime();
+  if (diff <= 0) return null;
+  const mins = Math.round(diff / (1000 * 60));
+  if (mins >= 60) {
+    const hrs = Math.floor(mins / 60);
+    const rem = mins % 60;
+    return rem > 0 ? `${hrs}H ${rem}M` : `${hrs}H`;
+  }
+  return `${mins} MIN`;
+}
+
+function buildMapsUrl(claim: TodayClaim): string {
+  const parts = [claim.address_line1, claim.city, claim.state, claim.zip]
+    .filter(Boolean)
+    .join(", ");
+  return `https://maps.google.com/?q=${encodeURIComponent(parts)}`;
+}
+
+function getCardModifier(status: string): string {
+  switch (status) {
+    case "IN_PROGRESS":
+      return "today-run__card--in-progress";
+    case "COMPLETED":
+      return "today-run__card--completed";
+    default:
+      return "today-run__card--scheduled";
+  }
 }
 
 export default function MyRoutes() {
-  const [routes, setRoutes] = useState<Route[]>([]);
+  const [claims, setClaims] = useState<TodayClaim[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
-  const [closingRouteId, setClosingRouteId] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    loadUserAndRoutes();
+    loadTodaysClaims();
   }, []);
 
-  const loadUserAndRoutes = async () => {
+  const loadTodaysClaims = async () => {
     try {
       setLoading(true);
-      setError(null);
 
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setError('Not authenticated');
-        setLoading(false);
-        return;
-      }
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
       setUserId(user.id);
 
-      // Fetch user's routes
-      const { data, error: fetchError } = await supabase
-        .from('routes')
-        .select('id, date, status, total_miles, start_address, end_address, created_at')
-        .eq('user_id', user.id)
-        .order('date', { ascending: false });
+      const now = new Date();
+      const todayStart = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate()
+      ).toISOString();
+      const todayEnd = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() + 1
+      ).toISOString();
 
-      if (fetchError) {
-        throw fetchError;
-      }
+      const { data } = await supabase
+        .from("claims_v")
+        .select(
+          "id, claim_number, customer_name, status, appointment_start, appointment_end, address_line1, city, state, zip, vehicle_year, vehicle_make, vehicle_model, firm, pay_amount"
+        )
+        .eq("assigned_to", user.id)
+        .gte("appointment_start", todayStart)
+        .lt("appointment_start", todayEnd)
+        .not("status", "eq", "CANCELED")
+        .order("appointment_start", { ascending: true });
 
-      setRoutes(data ?? []);
-    } catch (err: any) {
-      console.error('Error loading routes:', err);
-      setError(err.message);
+      setClaims((data as TodayClaim[]) || []);
+    } catch (err) {
+      console.error("Error loading today's claims:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCloseRoute = async (routeId: string) => {
-    if (!userId) return;
-
-    try {
-      setClosingRouteId(routeId);
-      setError(null);
-      setSuccessMessage(null);
-
-      const result = await closeRoute(routeId, userId);
-
-      // Update local state
-      setRoutes(prev =>
-        prev.map(r =>
-          r.id === routeId ? { ...r, status: 'closed' as const } : r
+  const handleStartInspection = async (claimId: string) => {
+    const { error } = await supabase
+      .from("claims_v")
+      .update({ status: "IN_PROGRESS" })
+      .eq("id", claimId);
+    if (error) {
+      alert(`Error: ${error.message}`);
+    } else {
+      setClaims((prev) =>
+        prev.map((c) =>
+          c.id === claimId ? { ...c, status: "IN_PROGRESS" } : c
         )
       );
-
-      setSuccessMessage(
-        `Route closed successfully. ${result.totalMiles} miles logged for ${result.claimCount} claims.`
-      );
-
-      // Clear success message after 5 seconds
-      setTimeout(() => setSuccessMessage(null), 5000);
-    } catch (err: any) {
-      console.error('Error closing route:', err);
-      setError(err.message);
-    } finally {
-      setClosingRouteId(null);
     }
   };
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr + 'T00:00:00');
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
+  const handleMarkComplete = async (claimId: string) => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const completionDate = `${year}-${month}-${day}T00:00:00Z`;
+    const completedMonth = `${year}-${month}`;
+
+    const { error } = await supabase
+      .from("claims_v")
+      .update({
+        status: "COMPLETED",
+        completion_date: completionDate,
+        completed_month: completedMonth,
+        payout_status: "unpaid",
+      })
+      .eq("id", claimId);
+
+    if (error) {
+      alert(`Error: ${error.message}`);
+    } else {
+      setClaims((prev) =>
+        prev.map((c) =>
+          c.id === claimId ? { ...c, status: "COMPLETED" } : c
+        )
+      );
+
+      supabase.functions
+        .invoke("notify-status-change", {
+          body: { claim_id: claimId, new_status: "COMPLETED" },
+        })
+        .catch(() => {});
+    }
   };
 
-  const getStatusBadge = (status: string) => {
-    const modifier = status === 'active' || status === 'closed' || status === 'draft'
-      ? status
-      : 'draft';
-    return (
-      <span className={`routes__badge routes__badge--${modifier}`}>
-        {status}
-      </span>
-    );
-  };
+  // Compute header stats
+  const totalStops = claims.length;
+  const completedCount = claims.filter((c) => c.status === "COMPLETED").length;
+  const now = new Date();
+  const nextClaim = claims.find(
+    (c) =>
+      c.status !== "COMPLETED" && new Date(c.appointment_start).getTime() >= now.getTime() - 30 * 60 * 1000
+  );
+  const nextStopLabel = nextClaim
+    ? formatTime(nextClaim.appointment_start)
+    : completedCount === totalStops && totalStops > 0
+      ? "ALL DONE"
+      : "---";
+
+  const todayFormatted = now.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
 
   if (loading) {
     return (
-      <div className="routes">
+      <div className="today-run__page">
         <NavBar role="appraiser" />
-        <PageHeader label="Appraiser" title="My Routes" />
-        <div className="routes__loading">
-          Loading routes...
+        <div className="today-run__content">
+          <div className="today-run__header">
+            <div className="today-run__eyebrow">CIPHER DISPATCH</div>
+            <div className="today-run__title">TODAY'S RUN</div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="routes">
+    <div className="today-run__page">
       <NavBar role="appraiser" />
-      <PageHeader label="Appraiser" title="My Routes" />
-      <div className="routes__container">
-        {/* Summary Hint */}
-        {routes.length > 0 && (
-          <div className="routes__summary">
-            {(() => {
-              const active = routes.filter(r => r.status === 'active');
-              const closable = active.filter(r => r.total_miles != null);
-              const closed = routes.filter(r => r.status === 'closed');
+      <div className="today-run__content">
+        {/* Header */}
+        <div className="today-run__header">
+          <div className="today-run__eyebrow">CIPHER DISPATCH</div>
+          <div className="today-run__title">TODAY'S RUN</div>
+          <div className="today-run__date">{todayFormatted}</div>
+        </div>
 
-              if (closable.length > 0) {
-                return (
-                  <span>
-                    <span className="routes__summary-count">{closable.length}</span>
-                    {' '}route{closable.length !== 1 ? 's' : ''} ready to close
-                    {closed.length > 0 && (
-                      <span> · <span className="routes__summary-closed">{closed.length}</span> already logged</span>
-                    )}
-                  </span>
-                );
-              } else if (active.length > 0) {
-                return (
-                  <span>
-                    {active.length} active route{active.length !== 1 ? 's' : ''} awaiting mileage data from route optimization
-                  </span>
-                );
-              } else if (closed.length > 0) {
-                return (
-                  <span>
-                    All routes closed · <span className="routes__summary-closed">{closed.length}</span> mileage log{closed.length !== 1 ? 's' : ''} recorded
-                  </span>
-                );
-              }
-              return null;
-            })()}
+        {/* Stat Strip */}
+        <div className="today-run__stat-strip">
+          <div className="today-run__stat-tile">
+            <div className="today-run__stat-label">STOPS TODAY</div>
+            <div className="today-run__stat-value">{totalStops}</div>
           </div>
-        )}
-
-        {/* Success Message */}
-        {successMessage && (
-          <div className="routes__success">
-            {successMessage}
+          <div className="today-run__stat-tile">
+            <div className="today-run__stat-label">NEXT STOP</div>
+            <div className="today-run__stat-value">{nextStopLabel}</div>
           </div>
-        )}
-
-        {/* Error Message */}
-        {error && (
-          <div className="routes__error">
-            {error}
+          <div className="today-run__stat-tile">
+            <div className="today-run__stat-label">COMPLETED</div>
+            <div className="today-run__stat-value">
+              {completedCount} / {totalStops}
+            </div>
           </div>
-        )}
+        </div>
 
-        {/* Routes List */}
-        {routes.length === 0 ? (
-          <div className="routes__empty">
-            No routes found. Routes are created during route optimization.
+        {/* Claim Cards */}
+        {claims.length === 0 ? (
+          <div className="today-run__empty">
+            <div className="today-run__empty-title">
+              NO STOPS SCHEDULED FOR TODAY
+            </div>
+            <div className="today-run__empty-sub">
+              Check with dispatch if you are expecting assignments.
+            </div>
           </div>
         ) : (
-          <div className="routes__list">
-            {routes.map((route) => (
-              <div key={route.id} className="routes__card">
-                <div className="routes__card-header">
-                  <div>
-                    <div className="routes__card-date">
-                      {formatDate(route.date)}
+          <div className="today-run__list">
+            {claims.map((claim) => {
+              const duration = getDuration(
+                claim.appointment_start,
+                claim.appointment_end
+              );
+              const vehicle = [
+                claim.vehicle_year,
+                claim.vehicle_make,
+                claim.vehicle_model,
+              ]
+                .filter(Boolean)
+                .join(" ");
+
+              return (
+                <div
+                  key={claim.id}
+                  className={`today-run__card ${getCardModifier(claim.status)}`}
+                >
+                  {/* Time */}
+                  <div className="today-run__time-block">
+                    <div className="today-run__time-value">
+                      {formatTime(claim.appointment_start)}
                     </div>
-                    {getStatusBadge(route.status)}
+                    {duration && (
+                      <div className="today-run__time-duration">{duration}</div>
+                    )}
                   </div>
-                  <div className="routes__card-miles">
-                    {route.total_miles != null ? (
-                      <span className="routes__card-miles-value">
-                        {route.total_miles.toFixed(1)} mi
-                      </span>
-                    ) : (
-                      <span>No mileage data</span>
+
+                  {/* Info */}
+                  <div className="today-run__info">
+                    <div className="today-run__claim-number">
+                      #{claim.claim_number}
+                    </div>
+                    <div className="today-run__customer">
+                      {claim.customer_name}
+                    </div>
+                    <div className="today-run__address">
+                      {[claim.address_line1, claim.city, claim.state]
+                        .filter(Boolean)
+                        .join(", ")}
+                    </div>
+                    {vehicle && (
+                      <div className="today-run__vehicle">{vehicle}</div>
+                    )}
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="today-run__actions">
+                    <a
+                      href={buildMapsUrl(claim)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="today-run__action-btn"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      OPEN IN MAPS
+                    </a>
+                    <Link
+                      to={`/claim/${claim.id}`}
+                      className="today-run__action-btn"
+                    >
+                      VIEW CLAIM
+                    </Link>
+                  </div>
+
+                  {/* Status action */}
+                  <div className="today-run__status-action">
+                    {claim.status === "SCHEDULED" && (
+                      <button
+                        className="today-run__status-btn today-run__status-btn--start"
+                        onClick={() => handleStartInspection(claim.id)}
+                      >
+                        START INSPECTION
+                      </button>
+                    )}
+                    {claim.status === "IN_PROGRESS" && (
+                      <button
+                        className="today-run__status-btn today-run__status-btn--complete"
+                        onClick={() => handleMarkComplete(claim.id)}
+                      >
+                        MARK COMPLETE
+                      </button>
+                    )}
+                    {claim.status === "COMPLETED" && (
+                      <div className="today-run__status-badge">COMPLETED</div>
                     )}
                   </div>
                 </div>
-
-                {(route.start_address || route.end_address) && (
-                  <div className="routes__addresses">
-                    {route.start_address && <div>From: {route.start_address}</div>}
-                    {route.end_address && <div>To: {route.end_address}</div>}
-                  </div>
-                )}
-
-                {/* Close Route Button - only for active routes */}
-                {route.status === 'active' && (
-                  <button
-                    className={`routes__close-btn${closingRouteId === route.id ? ' routes__close-btn--closing' : ''}${route.total_miles == null ? ' routes__close-btn--no-miles' : ''}`}
-                    onClick={() => handleCloseRoute(route.id)}
-                    disabled={closingRouteId === route.id || route.total_miles == null}
-                  >
-                    {closingRouteId === route.id
-                      ? 'Closing Route...'
-                      : route.total_miles == null
-                      ? 'Complete route optimization first'
-                      : 'Close Route & Log Mileage'}
-                  </button>
-                )}
-
-                {route.status === 'closed' && (
-                  <div className="routes__closed-banner">
-                    Mileage logged
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

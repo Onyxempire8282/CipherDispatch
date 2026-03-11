@@ -1,0 +1,233 @@
+/* Appraiser Dashboard – BEM block: .app-dash */
+
+.app-dash {
+  min-height: 100vh;
+  background: var(--plate);
+}
+
+.app-dash__content {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 40px 60px;
+}
+
+/* ── Page Header ── */
+
+.app-dash__header {
+  padding: 32px 0 28px;
+}
+
+.app-dash__eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 6px;
+}
+
+.app-dash__greeting {
+  font-family: var(--font-heading);
+  font-size: 36px;
+  letter-spacing: 0.04em;
+  color: var(--white);
+}
+
+/* ── Section labels ── */
+
+.app-dash__section-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 14px;
+  padding-top: 28px;
+}
+
+/* ── Today's Run Preview ── */
+
+.app-dash__run-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.app-dash__run-card {
+  display: flex;
+  align-items: center;
+  background: var(--steel);
+  border: 1px solid var(--rivet);
+  border-left: 3px solid var(--amber);
+  padding: 14px 16px;
+  gap: 16px;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.app-dash__run-card:hover {
+  background: var(--steel-mid);
+}
+
+.app-dash__run-time {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  color: var(--amber);
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+.app-dash__run-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.app-dash__run-name {
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: 15px;
+  color: var(--text-hi);
+}
+
+.app-dash__run-address {
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.app-dash__run-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  background: var(--steel-mid);
+  border: 1px solid var(--rivet);
+  color: var(--text);
+  flex-shrink: 0;
+}
+
+.app-dash__run-link {
+  display: inline-block;
+  margin-top: 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--amber);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.app-dash__run-link:hover {
+  color: var(--white);
+}
+
+.app-dash__run-empty {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  padding: 20px 0 4px;
+}
+
+/* ── Scorecard Stats ── */
+
+.app-dash__stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.app-dash__stat {
+  background: var(--steel);
+  border: 1px solid var(--rivet);
+  border-top: 2px solid var(--amber);
+  padding: 18px 16px;
+}
+
+.app-dash__stat-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.app-dash__stat-value {
+  font-family: var(--font-heading);
+  font-size: 30px;
+  letter-spacing: 0.02em;
+  color: var(--amber);
+}
+
+/* ── Quick Access ── */
+
+.app-dash__quick {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.app-dash__quick-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--steel);
+  border: 1px solid var(--rivet);
+  border-top: 2px solid var(--amber);
+  padding: 20px;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.app-dash__quick-card:hover {
+  background: var(--steel-mid);
+}
+
+.app-dash__quick-badge {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--amber);
+  background: var(--amber-dim);
+  border: 1px solid var(--amber-line);
+  padding: 6px 10px;
+  flex-shrink: 0;
+}
+
+.app-dash__quick-label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-hi);
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 768px) {
+  .app-dash__content {
+    padding: 0 16px 80px;
+  }
+
+  .app-dash__greeting {
+    font-size: 28px;
+  }
+
+  .app-dash__stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .app-dash__quick {
+    grid-template-columns: 1fr;
+  }
+
+  .app-dash__run-time {
+    min-width: 60px;
+    font-size: 16px;
+  }
+}

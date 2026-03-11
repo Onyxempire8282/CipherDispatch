@@ -1,0 +1,324 @@
+/* Today's Run – BEM block: .today-run */
+
+.today-run__page {
+  min-height: 100vh;
+  background: var(--plate);
+}
+
+.today-run__content {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 40px 60px;
+}
+
+/* ── Header ── */
+
+.today-run__header {
+  padding: 32px 0 24px;
+}
+
+.today-run__eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 6px;
+}
+
+.today-run__title {
+  font-family: var(--font-heading);
+  font-size: 32px;
+  letter-spacing: 0.04em;
+  color: var(--white);
+}
+
+.today-run__date {
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: 14px;
+  color: var(--text-sub);
+  margin-top: 4px;
+}
+
+/* ── Stat Strip ── */
+
+.today-run__stat-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.today-run__stat-tile {
+  background: var(--steel);
+  border: 1px solid var(--rivet);
+  border-top: 2px solid var(--amber);
+  padding: 14px 16px;
+}
+
+.today-run__stat-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.today-run__stat-value {
+  font-family: var(--font-heading);
+  font-size: 24px;
+  letter-spacing: 0.02em;
+  color: var(--amber);
+}
+
+/* ── Claim List ── */
+
+.today-run__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── Claim Card ── */
+
+.today-run__card {
+  background: var(--steel);
+  border: 1px solid var(--rivet);
+  border-left: 3px solid var(--amber);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+}
+
+.today-run__card--scheduled {
+  border-left-color: var(--amber);
+}
+
+.today-run__card--in-progress {
+  border-left-color: #4a9eff;
+}
+
+.today-run__card--completed {
+  border-left-color: #22c55e;
+  opacity: 0.6;
+}
+
+/* Time block */
+.today-run__time-block {
+  width: 80px;
+  flex-shrink: 0;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 20px;
+}
+
+.today-run__time-value {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  color: var(--amber);
+  text-align: center;
+  line-height: 1.1;
+}
+
+.today-run__time-duration {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* Info block */
+.today-run__info {
+  flex: 1;
+  min-width: 0;
+  padding: 16px 0;
+}
+
+.today-run__claim-number {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--amber);
+  margin-bottom: 4px;
+}
+
+.today-run__customer {
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: 16px;
+  color: var(--text-hi);
+  margin-bottom: 2px;
+}
+
+.today-run__address {
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+.today-run__vehicle {
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Action buttons */
+.today-run__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 16px 16px 0;
+  justify-content: flex-start;
+  flex-shrink: 0;
+}
+
+.today-run__action-btn {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 8px 14px;
+  background: transparent;
+  border: 1px solid var(--amber-line);
+  color: var(--amber);
+  cursor: pointer;
+  text-decoration: none;
+  text-align: center;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.today-run__action-btn:hover {
+  background: var(--amber-dim);
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
+/* Status action (full width bottom of card) */
+.today-run__status-action {
+  width: 100%;
+  padding: 0 16px 16px;
+}
+
+.today-run__status-btn {
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 12px 28px;
+  border: none;
+  cursor: pointer;
+  transition: filter 0.15s;
+}
+
+.today-run__status-btn--start {
+  background: var(--amber);
+  color: var(--plate);
+}
+
+.today-run__status-btn--start:hover {
+  filter: brightness(1.1);
+}
+
+.today-run__status-btn--complete {
+  background: var(--amber);
+  color: var(--plate);
+}
+
+.today-run__status-btn--complete:hover {
+  filter: brightness(1.1);
+}
+
+.today-run__status-badge {
+  width: 100%;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 10px 0;
+  color: #22c55e;
+}
+
+/* ── Empty state ── */
+
+.today-run__empty {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.today-run__empty-title {
+  font-family: var(--font-heading);
+  font-size: 24px;
+  letter-spacing: 0.04em;
+  color: var(--white);
+  margin-bottom: 8px;
+}
+
+.today-run__empty-sub {
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 768px) {
+  .today-run__content {
+    padding: 0 16px 80px;
+  }
+
+  .today-run__title {
+    font-size: 26px;
+  }
+
+  .today-run__stat-strip {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .today-run__stat-tile {
+    padding: 10px 12px;
+  }
+
+  .today-run__stat-value {
+    font-size: 20px;
+  }
+
+  .today-run__card {
+    flex-direction: column;
+  }
+
+  .today-run__time-block {
+    width: 100%;
+    flex-direction: row;
+    gap: 10px;
+    padding: 12px 16px;
+    align-items: center;
+    border-bottom: 1px solid var(--rivet);
+  }
+
+  .today-run__info {
+    padding: 12px 16px;
+  }
+
+  .today-run__actions {
+    flex-direction: row;
+    padding: 0 16px 12px;
+  }
+
+  .today-run__action-btn {
+    flex: 1;
+  }
+}

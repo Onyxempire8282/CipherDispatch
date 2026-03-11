@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import { useNavigate, Link } from "react-router-dom";
 import { NavBar } from "../components/NavBar";
 import PageHeader from "../components/ui/PageHeader";
+import AppraiserDashboard from "./appraiser/Dashboard";
 import type { AppRole } from "../lib/supabaseAuthz";
 import "./app.css";
 
@@ -252,48 +253,7 @@ export default function App() {
           </div>
         </>
       ) : (
-        <>
-          <PageHeader
-            label="Cipher Dispatch"
-            title="My Dashboard"
-            sub="Claims assigned to you"
-          />
-
-          <div className="dashboard__main">
-            <div className="dashboard__ops-label">Quick Access</div>
-            <div className="dashboard__link-grid">
-              <Link to="/my-claims" className="dashboard__link-card">
-                <div className="dashboard__link-icon dashboard__link-icon--mono">CL</div>
-                <div>
-                  <div className="dashboard__link-name">My Claims</div>
-                  <div className="dashboard__link-desc">
-                    View claims assigned to you and manage appraisals
-                  </div>
-                </div>
-              </Link>
-
-              <Link to="/my-claims?view=calendar" className="dashboard__link-card">
-                <div className="dashboard__link-icon dashboard__link-icon--mono">CA</div>
-                <div>
-                  <div className="dashboard__link-name">Calendar View</div>
-                  <div className="dashboard__link-desc">
-                    View and schedule your claims on a monthly calendar
-                  </div>
-                </div>
-              </Link>
-
-              <Link to="/my-routes" className="dashboard__link-card">
-                <div className="dashboard__link-icon dashboard__link-icon--mono">RT</div>
-                <div>
-                  <div className="dashboard__link-name">My Routes</div>
-                  <div className="dashboard__link-desc">
-                    View routes and log mileage for tax records
-                  </div>
-                </div>
-              </Link>
-            </div>
-          </div>
-        </>
+        <AppraiserDashboard />
       )}
     </div>
   );
