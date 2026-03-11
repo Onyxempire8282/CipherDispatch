@@ -360,8 +360,9 @@ export default function ClaimDetail() {
             claim_id: id,
             appraiser_id: editAssignedTo,
           });
+          console.log('NOTIFY FETCH URL:', import.meta.env.VITE_CD_SUPABASE_FUNCTIONS_URL);
 
-          await fetch(
+          const resp = await fetch(
             `${import.meta.env.VITE_CD_SUPABASE_FUNCTIONS_URL}/notify-appraiser-assigned`,
             {
               method: "POST",
@@ -377,9 +378,11 @@ export default function ClaimDetail() {
             }
           );
 
-          console.log("NOTIFY: edge function fetch completed");
+          console.log("NOTIFY: edge function response status:", resp.status);
+          const respBody = await resp.text();
+          console.log("NOTIFY: edge function response body:", respBody);
         } catch (err) {
-          console.error("NOTIFY: edge function failed", err);
+          console.error("NOTIFY FETCH ERROR:", err);
         }
       })();
     }

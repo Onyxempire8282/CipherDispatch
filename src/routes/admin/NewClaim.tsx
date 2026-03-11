@@ -261,8 +261,9 @@ export default function NewClaim() {
               .eq("claim_number", form.claim_number)
               .single();
 
+            console.log('NOTIFY FETCH URL:', import.meta.env.VITE_CD_SUPABASE_FUNCTIONS_URL);
             if (created?.id) {
-              await fetch(
+              const resp = await fetch(
                 `${import.meta.env.VITE_CD_SUPABASE_FUNCTIONS_URL}/notify-appraiser-assigned`,
                 {
                   method: "POST",
@@ -277,9 +278,14 @@ export default function NewClaim() {
                   }),
                 }
               );
+              console.log("NOTIFY: edge function response status:", resp.status);
+              const respBody = await resp.text();
+              console.log("NOTIFY: edge function response body:", respBody);
+            } else {
+              console.warn("NOTIFY: could not find created claim ID for", form.claim_number);
             }
           } catch (err) {
-            console.warn("Assignment notification failed:", err);
+            console.error("NOTIFY FETCH ERROR:", err);
           }
         })();
       }
