@@ -634,6 +634,33 @@ export default function ClaimDetail() {
     }
     if (status === "CANCELED") {
       if (confirm("Cancel this claim? This will mark it as CANCELED and remove it from active claims.")) {
+        // Send cancellation notification before updating status
+        const cancelFunctionsUrl = import.meta.env.VITE_CD_SUPABASE_FUNCTIONS_URL;
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("full_name")
+            .eq("user_id", user?.id)
+            .single();
+          const resp = await fetch(
+            `${cancelFunctionsUrl}/notify-claim-cancelled`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${import.meta.env.VITE_CD_SUPABASE_ANON_KEY}`,
+              },
+              body: JSON.stringify({
+                claim_id: id,
+                cancelled_by_name: profile?.full_name || "Dispatch",
+              }),
+            }
+          );
+          console.log("CANCEL NOTIFY status:", resp.status);
+        } catch (err) {
+          console.error("CANCEL NOTIFY error:", err);
+        }
         update({ status: "CANCELED" });
       }
       return;
