@@ -43,16 +43,15 @@
 .nav__mark {
   width: 42px;
   height: 42px;
-  border-radius: 50%;
-  border: 1px solid var(--rivet);
-  background: var(--steel-mid);
   display: grid;
   place-items: center;
-  font-family: var(--font-heading);
-  font-size: 14px;
-  color: var(--amber);
-  box-shadow: 0 0 10px var(--amber-glow);
   flex-shrink: 0;
+}
+
+.nav__logo {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
 }
 
 .nav__brand {

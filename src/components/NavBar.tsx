@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import type { AppRole } from "../lib/supabaseAuthz";
+import logo from "../assets/logo.png";
 import "./navbar.css";
 
 interface NavBarProps {
@@ -115,7 +116,9 @@ export const NavBar: React.FC<NavBarProps> = ({ role, userName }) => {
   <>
     <nav className="nav">
       <div className="nav__left">
-        <Link to="/" className="nav__mark">CD</Link>
+        <Link to="/" className="nav__mark">
+          <img src={logo} alt="Cipher Dispatch" className="nav__logo" />
+        </Link>
         <Link to="/" className="nav__brand">
           <div className="nav__brand-name">
             <span>CIPHER</span>DISPATCH
