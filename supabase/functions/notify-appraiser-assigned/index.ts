@@ -84,6 +84,7 @@ serve(async (req) => {
           year: "numeric",
           hour: "numeric",
           minute: "2-digit",
+          timeZone: "America/Chicago",
         })
       : "Not yet scheduled";
 
