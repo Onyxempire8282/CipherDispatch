@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
-import { NavBar } from "../../components/NavBar";
 import "./appraiser-dashboard.css";
 
 interface TodayClaim {
@@ -203,7 +202,6 @@ export default function AppraiserDashboard() {
   if (loading) {
     return (
       <div className="app-dash">
-        <NavBar role="appraiser" />
         <div className="app-dash__content">
           <div className="app-dash__header">
             <div className="app-dash__eyebrow">CIPHER DISPATCH</div>
@@ -216,7 +214,6 @@ export default function AppraiserDashboard() {
 
   return (
     <div className="app-dash">
-      <NavBar role="appraiser" />
       <div className="app-dash__content">
         {/* Section 1: Header */}
         <div className="app-dash__header">
