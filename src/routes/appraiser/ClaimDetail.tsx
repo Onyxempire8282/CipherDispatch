@@ -123,7 +123,7 @@ export default function ClaimDetail() {
       // Only mark if this claim is assigned to the current user and not yet viewed
       const { data: claimData } = await supabase
         .from("claims_v")
-        .select("assigned_to, viewed_by_appraiser_at")
+        .select("*")
         .eq("id", id)
         .single();
       if (
