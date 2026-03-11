@@ -314,6 +314,27 @@ export default function ClaimDetail() {
   };
 
   const cancelEdits = () => {
+    setEditCustomerName(claim?.customer_name || "");
+    setEditPhone(claim?.customer_phone || "");
+    setEditEmail(claim?.email || "");
+    setEditVehicleYear(claim?.vehicle_year?.toString() || "");
+    setEditVehicleMake(claim?.vehicle_make || "");
+    setEditVehicleModel(claim?.vehicle_model || "");
+    setEditVin(claim?.vin || "");
+    setEditDateOfLoss(claim?.date_of_loss || "");
+    setEditInsuranceCompany(claim?.insurance_company || "");
+    setEditNotes(claim?.notes || "");
+    setEditAddressLine1(claim?.address_line1 || "");
+    setEditAddressLine2(claim?.address_line2 || "");
+    setEditCity(claim?.city || "");
+    setEditState(claim?.state || "");
+    setEditZip(claim?.zip ? String(claim.zip).replace('.0', '') : "");
+    setEditAppointmentStart("");
+    setEditAppointmentEnd("");
+    setEditAssignedTo(claim?.assigned_to || "");
+    setEditPayAmount(claim?.pay_amount?.toString() || "");
+    setEditFileTotal(claim?.file_total?.toString() || "");
+    setEditFirmName(claim?.firm || "");
     setIsEditing(false);
   };
 
@@ -353,7 +374,7 @@ export default function ClaimDetail() {
       body: { claim_id: id, new_status: "COMPLETED", claim_number: claim.claim_number }
     }).catch(() => {});
 
-    navigate("/appraiser/claims");
+    nav("/my-claims");
   };
 
   const deleteClaim = async () => {
@@ -386,7 +407,7 @@ export default function ClaimDetail() {
       alert(`Error deleting claim: ${error.message}`);
     } else {
       alert("Claim permanently deleted.");
-      nav("/admin/claims");
+      nav("/claims");
     }
   };
 
@@ -588,6 +609,10 @@ export default function ClaimDetail() {
           pay_amount: claim.pay_amount,
         }
       }).catch(() => {});
+      return;
+    }
+    if (status === "SCHEDULED" && !claim.appointment_start) {
+      alert("Cannot set status to SCHEDULED without an appointment date.");
       return;
     }
     update({ status });

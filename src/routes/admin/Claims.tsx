@@ -96,6 +96,7 @@ export default function AdminClaims() {
   const [searchQuery, setSearchQuery] = useState("");
   const [draggingClaimId, setDraggingClaimId] = useState<string | null>(null);
   const [confirmingCompleteId, setConfirmingCompleteId] = useState<string | null>(null);
+  const [profileMap, setProfileMap] = useState<Record<string, string>>({});
 
   const isMobile = useIsMobile();
   const { role } = useRole();
@@ -110,33 +111,15 @@ export default function AdminClaims() {
     }
   };
 
-  const loadTabCounts = useCallback(async () => {
-    const authz = getSupabaseAuthz();
-    if (!authz?.isInitialized) return;
-
-    const baseQuery = () => {
-      let q = supabase.from("claims_v").select("id", { count: "exact", head: true });
-      q = authz.scopedClaimsQuery(q);
-      q = q.gte("created_at", "2025-12-01T00:00:00.000Z");
-      q = q.is("archived_at", null);
-      return q;
-    };
-
-    const [allActive, needsSched, inProg, completed] = await Promise.all([
-      baseQuery().not("status", "in", '("COMPLETED","CANCELED")'),
-      baseQuery()
-        .not("status", "in", '("COMPLETED","CANCELED")')
-        .or("assigned_to.is.null,appointment_start.is.null"),
-      baseQuery().in("status", ["SCHEDULED", "IN_PROGRESS", "WRITING"]),
-      baseQuery().eq("status", "COMPLETED"),
-    ]);
-
-    setTabCounts({
-      all_active: allActive.count ?? 0,
-      needs_scheduling: needsSched.count ?? 0,
-      in_progress: inProg.count ?? 0,
-      completed: completed.count ?? 0,
-    });
+  const loadProfiles = useCallback(async () => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("user_id, full_name");
+    if (data) {
+      const map: Record<string, string> = {};
+      data.forEach((p: any) => { if (p.user_id && p.full_name) map[p.user_id] = p.full_name; });
+      setProfileMap(map);
+    }
   }, []);
 
   const load = useCallback(async () => {
@@ -160,25 +143,6 @@ export default function AdminClaims() {
       query = query.gte("created_at", "2025-12-01T00:00:00.000Z");
       query = query.is("archived_at", null);
 
-      // Server-side filter by active tab (skip when calendar is showing)
-      if (!isCalendarRoute) {
-        switch (activeTab) {
-          case "all_active":
-            query = query.not("status", "in", '("COMPLETED","CANCELED")');
-            break;
-          case "needs_scheduling":
-            query = query.not("status", "in", '("COMPLETED","CANCELED")');
-            query = query.or("assigned_to.is.null,appointment_start.is.null");
-            break;
-          case "in_progress":
-            query = query.in("status", ["SCHEDULED", "IN_PROGRESS", "WRITING"]);
-            break;
-          case "completed":
-            query = query.eq("status", "COMPLETED");
-            break;
-        }
-      }
-
       const { data, error: queryError } = await query;
 
       if (queryError) {
@@ -193,26 +157,46 @@ export default function AdminClaims() {
 
       const claims = (data as Claim[]) || [];
       setAllClaims(claims);
-      applyFilters(claims);
-      loadTabCounts();
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, [authzInitialized, activeTab, loadTabCounts]);
+  }, [authzInitialized]);
 
-  const applyFilters = (claims: Claim[]) => {
+  const applyFilters = useCallback((claims: Claim[], tab: PipelineTab, status: ClaimStatus, search: string) => {
     let filtered = [...claims];
-    if (selectedStatus !== "ALL" && activeTab !== "completed") {
-      if (selectedStatus === "UNASSIGNED") {
+
+    // Tab filtering
+    switch (tab) {
+      case "all_active":
+        filtered = filtered.filter(c => c.status !== "COMPLETED" && c.status !== "CANCELED");
+        break;
+      case "needs_scheduling":
+        filtered = filtered.filter(c =>
+          c.status !== "COMPLETED" && c.status !== "CANCELED" && !c.appointment_start
+        );
+        break;
+      case "in_progress":
+        filtered = filtered.filter(c => ["SCHEDULED", "IN_PROGRESS", "WRITING"].includes(c.status));
+        break;
+      case "completed":
+        filtered = filtered.filter(c => c.status === "COMPLETED");
+        break;
+    }
+
+    // Status pill filtering
+    if (status !== "ALL" && tab !== "completed") {
+      if (status === "UNASSIGNED") {
         filtered = filtered.filter(claim => !claim.assigned_to);
       } else {
-        filtered = filtered.filter(claim => claim.status === selectedStatus);
+        filtered = filtered.filter(claim => claim.status === status);
       }
     }
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
+
+    // Search filtering
+    if (search.trim()) {
+      const q = search.toLowerCase();
       filtered = filtered.filter(claim =>
         (claim.claim_number || "").toLowerCase().includes(q) ||
         (claim.customer_name || "").toLowerCase().includes(q) ||
@@ -221,8 +205,9 @@ export default function AdminClaims() {
         (claim.city || "").toLowerCase().includes(q)
       );
     }
+
     setRows(filtered);
-  };
+  }, []);
 
   const handleQuickComplete = async (claimId: string) => {
     try {
@@ -266,7 +251,7 @@ export default function AdminClaims() {
 
   const handleDragEnd = () => { setDraggingClaimId(null); };
 
-  useEffect(() => { initializeAuth(); }, []);
+  useEffect(() => { initializeAuth(); loadProfiles(); }, []);
 
   // Sync calendar view with route changes
   useEffect(() => { setShowCalendar(isCalendarRoute); }, [isCalendarRoute]);
@@ -283,11 +268,19 @@ export default function AdminClaims() {
         return () => { supabase.removeChannel(ch); };
       }
     }
-  }, [showArchived, authzInitialized, activeTab]);
+  }, [showArchived, authzInitialized]);
 
+  // Compute tab counts client-side from allClaims
   useEffect(() => {
-    if (allClaims.length > 0) applyFilters(allClaims);
-  }, [selectedStatus, searchQuery, allClaims]);
+    const active = allClaims.filter(c => c.status !== "COMPLETED" && c.status !== "CANCELED");
+    setTabCounts({
+      all_active: active.length,
+      needs_scheduling: active.filter(c => !c.appointment_start).length,
+      in_progress: allClaims.filter(c => ["SCHEDULED", "IN_PROGRESS", "WRITING"].includes(c.status)).length,
+      completed: allClaims.filter(c => c.status === "COMPLETED").length,
+    });
+    applyFilters(allClaims, activeTab, selectedStatus, searchQuery);
+  }, [allClaims, activeTab, selectedStatus, searchQuery, applyFilters]);
 
   if (loading) {
     return <div className="claims__loading">Loading claims...</div>;
@@ -567,7 +560,7 @@ export default function AdminClaims() {
                         <div className="claims__card-section">
                           <div className="claims__card-section-label">Assigned</div>
                           <div className="claims__card-section-value">
-                            {r.profiles?.full_name || (r.assigned_to ? "Unknown User" : "Unassigned")}
+                            {r.assigned_to ? (profileMap[r.assigned_to] || "Unknown User") : "Unassigned"}
                           </div>
                         </div>
 

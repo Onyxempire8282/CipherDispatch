@@ -36,7 +36,6 @@ type Claim = {
   firm?: string;
   pay_amount?: number | null;
   status?: string;
-  location_type?: string;
   claim_type?: ClaimType;
   mileage_add?: number | null;
   photographer_payout?: number | null;
@@ -144,6 +143,9 @@ export default function NewClaim() {
     if (!form.claim_number) return alert("Please enter a Claim Number");
     if (!form.customer_name) return alert("Please enter a Customer Name");
     if (!form.address_line1) return alert("Please enter an Address");
+    if (form.status === "SCHEDULED" && !form.appointment_start) {
+      return alert("Scheduled claims must have an appointment start date.");
+    }
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return alert("You must be logged in to create a claim");
@@ -211,8 +213,39 @@ export default function NewClaim() {
         alert(`Error: ${error.message}`);
       }
     } else {
+      // Follow-up UPDATE to persist fields not supported by the RPC
+      const computedStatus = form.appointment_start ? "SCHEDULED" : (form.status || "IN_PROGRESS");
+      const fileTotal = (form.pay_amount || 0) + (form.mileage_add || 0) - (form.photographer_payout || 0);
+
+      const extraFields: Record<string, any> = {
+        status: computedStatus,
+        email: form.email || null,
+        insurance_company: form.insurance_company || null,
+        date_of_loss: form.date_of_loss || null,
+        claim_type: form.claim_type || "auto",
+        mileage_add: form.mileage_add || null,
+        photographer_payout: form.photographer_payout || null,
+        appointment_end: form.appointment_end || null,
+        assigned_to: form.assigned_to || null,
+        pay_amount: form.pay_amount ?? null,
+        file_total: fileTotal || null,
+        address_line1: form.address_line1 || null,
+        address_line2: form.address_line2 || null,
+        city: form.city || null,
+        state: form.state || null,
+      };
+
+      const { error: updateError } = await supabase
+        .from("claims_v")
+        .update(extraFields)
+        .eq("claim_number", form.claim_number);
+
+      if (updateError) {
+        console.warn("Follow-up update failed:", updateError.message);
+      }
+
       alert("Claim saved successfully!");
-      nav("/admin/claims");
+      nav("/claims");
     }
   };
 
@@ -568,21 +601,6 @@ export default function NewClaim() {
                 />
               </Field>
             </div>
-            <Field label="Location Type">
-              <div className="field__select-wrap">
-                <select
-                  className="field__select"
-                  value={form.location_type || "customer_address"}
-                  onChange={(e) => setForm({ ...form, location_type: e.target.value })}
-                >
-                  <option value="customer_address">Customer Address</option>
-                  <option value="body_shop">Body Shop</option>
-                  <option value="dealership">Dealership</option>
-                  <option value="other">Other</option>
-                </select>
-                <div className="field__select-arrow">&#x25BE;</div>
-              </div>
-            </Field>
             <button
               className="new-claim__map-btn"
               onClick={previewMap}
