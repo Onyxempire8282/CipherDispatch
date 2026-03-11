@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
+import { supabaseCD } from "../../lib/supabaseCD";
 import {
   InspectionState,
   InspectionType,
@@ -64,7 +65,7 @@ export default function PhotoCapture() {
   // Check if inspection already started
   useEffect(() => {
     const checkExisting = async () => {
-      const { data } = await supabase
+      const { data } = await supabaseCD
         .from("claim_photos")
         .select("inspection_type")
         .eq("claim_id", claimId)

@@ -97,7 +97,7 @@ export class UploadManager {
       const slot = PHOTO_SLOTS.find(s => s.id === task.slotId);
       if (!slot) throw new Error('Slot not found');
 
-      const { error: dbError } = await supabase
+      const { error: dbError } = await supabaseCD
         .from('claim_photos')
         .insert({
           id: task.photoId,

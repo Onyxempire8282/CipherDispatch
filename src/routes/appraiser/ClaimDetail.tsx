@@ -107,7 +107,7 @@ export default function ClaimDetail() {
       .eq("id", id)
       .single();
     setClaim(data);
-    const ph = await supabase
+    const ph = await supabaseCD
       .from("claim_photos")
       .select("*")
       .eq("claim_id", id)
@@ -194,7 +194,7 @@ export default function ClaimDetail() {
           alert(`Error uploading ${file.name}: ${upErr.message}`);
           continue;
         }
-        const { error: insErr } = await supabase
+        const { error: insErr } = await supabaseCD
           .from("claim_photos")
           .insert({ claim_id: id, storage_path: path });
         if (insErr) {
@@ -474,7 +474,7 @@ export default function ClaimDetail() {
     }
 
     // Delete photo records
-    await supabase.from("claim_photos").delete().eq("claim_id", id);
+    await supabaseCD.from("claim_photos").delete().eq("claim_id", id);
 
     // Delete claim
     const { error } = await supabase.from("claims_v").delete().eq("id", id);
@@ -501,7 +501,7 @@ export default function ClaimDetail() {
     }
 
     // Delete from database
-    const { error: dbError } = await supabase
+    const { error: dbError } = await supabaseCD
       .from("claim_photos")
       .delete()
       .eq("id", photo.id);
