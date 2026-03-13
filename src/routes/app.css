@@ -15,6 +15,41 @@
 
 /* ── Stat strip ── */
 
+/* ---- Pending gate ---- */
+.pending-gate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--plate);
+  padding: 24px;
+}
+
+.pending-gate__box {
+  background: var(--steel);
+  border: 1px solid var(--rivet);
+  border-top: 2px solid var(--amber);
+  padding: 48px 40px;
+  max-width: 480px;
+  text-align: center;
+}
+
+.pending-gate__heading {
+  font-family: var(--font-heading);
+  font-size: 32px;
+  color: var(--white);
+  margin: 0 0 16px;
+}
+
+.pending-gate__body {
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text);
+  margin: 0 0 32px;
+}
+
 .dashboard__main {
   padding: 24px 40px 80px;
   max-width: 1200px;

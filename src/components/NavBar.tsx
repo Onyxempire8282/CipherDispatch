@@ -61,6 +61,7 @@ const ROLE_LABEL: Record<AppRole, string> = {
   dispatch: "Dispatch",
   writer: "Writer",
   appraiser: "Field",
+  pending: "Pending",
 };
 
 export const NavBar: React.FC<NavBarProps> = ({ role, userName }) => {
@@ -74,12 +75,14 @@ export const NavBar: React.FC<NavBarProps> = ({ role, userName }) => {
     dispatch: DISPATCH_TABS,
     writer: WRITER_TABS,
     appraiser: APPRAISER_TABS,
+    pending: [],
   };
   const bottomMap: Record<AppRole, typeof ADMIN_BOTTOM_NAV> = {
     admin: ADMIN_BOTTOM_NAV,
     dispatch: DISPATCH_BOTTOM_NAV,
     writer: WRITER_BOTTOM_NAV,
     appraiser: APPRAISER_BOTTOM_NAV,
+    pending: [],
   };
   const tabs = tabMap[role];
   const bottomTabs = bottomMap[role];

@@ -5,7 +5,7 @@
 
 import { SupabaseClient } from "@supabase/supabase-js";
 
-export type AppRole = "admin" | "dispatch" | "writer" | "appraiser";
+export type AppRole = "admin" | "dispatch" | "writer" | "appraiser" | "pending";
 
 export interface UserProfile {
   user_id: string;

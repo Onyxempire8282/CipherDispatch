@@ -92,6 +92,27 @@ export default function App() {
 
   if (!p) return null;
 
+  if (p.role === "pending") {
+    return (
+      <div className="pending-gate">
+        <div className="pending-gate__box">
+          <h1 className="pending-gate__heading">Account Pending</h1>
+          <p className="pending-gate__body">
+            Your account is pending activation. Once your subscription is
+            confirmed you will receive access. Contact admin@flav8r.net with
+            questions.
+          </p>
+          <button
+            className="btn btn--primary"
+            onClick={() => supabase.auth.signOut().then(() => nav("/login"))}
+          >
+            Sign Out
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const dateStr = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     month: "short",
