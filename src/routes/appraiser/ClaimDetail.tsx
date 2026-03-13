@@ -85,6 +85,7 @@ export default function ClaimDetail() {
   const [editDateOfLoss, setEditDateOfLoss] = useState("");
   const [editInsuranceCompany, setEditInsuranceCompany] = useState("");
   const [editNotes, setEditNotes] = useState("");
+  const [editPublicNotes, setEditPublicNotes] = useState("");
   const [editAddressLine1, setEditAddressLine1] = useState("");
   const [editAddressLine2, setEditAddressLine2] = useState("");
   const [editCity, setEditCity] = useState("");
@@ -261,6 +262,7 @@ export default function ClaimDetail() {
     setEditDateOfLoss(claim?.date_of_loss || "");
     setEditInsuranceCompany(claim?.insurance_company || "");
     setEditNotes(claim?.notes || "");
+    setEditPublicNotes(claim?.public_notes || "");
     setEditAddressLine1(claim?.address_line1 || "");
     setEditAddressLine2(claim?.address_line2 || "");
     setEditCity(claim?.city || "");
@@ -311,6 +313,7 @@ export default function ClaimDetail() {
       date_of_loss: editDateOfLoss || null,
       insurance_company: editInsuranceCompany || null,
       notes: editNotes,
+      public_notes: editPublicNotes || null,
       address_line1: editAddressLine1,
       address_line2: editAddressLine2,
       city: editCity,
@@ -427,6 +430,7 @@ export default function ClaimDetail() {
     setEditDateOfLoss(claim?.date_of_loss || "");
     setEditInsuranceCompany(claim?.insurance_company || "");
     setEditNotes(claim?.notes || "");
+    setEditPublicNotes(claim?.public_notes || "");
     setEditAddressLine1(claim?.address_line1 || "");
     setEditAddressLine2(claim?.address_line2 || "");
     setEditCity(claim?.city || "");
@@ -1297,6 +1301,26 @@ export default function ClaimDetail() {
             ) : (
               <div className="detail__notes-box">
                 {claim.notes || <span className="detail__value--muted">No description provided</span>}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Client-Visible Notes */}
+        {(claim.public_notes || isEditing) && (
+          <div className="detail__section detail__section--mb">
+            <h4 className="detail__section-title">Client-Visible Notes</h4>
+            <p className="detail__section-sub">These notes are visible to carriers and TPAs tracking this claim.</p>
+            {isEditing ? (
+              <textarea
+                className="detail__textarea"
+                value={editPublicNotes}
+                onChange={(e) => setEditPublicNotes(e.target.value)}
+                placeholder="Enter client-visible notes..."
+              />
+            ) : (
+              <div className="detail__notes-box">
+                {claim.public_notes || <span className="detail__value--muted">No client notes</span>}
               </div>
             )}
           </div>

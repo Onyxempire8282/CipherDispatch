@@ -355,6 +355,14 @@
   border: 1px solid var(--rivet);
 }
 
+.detail__section-sub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  margin: 0 0 12px;
+}
+
 /* ---- Notes box ---- */
 .detail__notes-box {
   white-space: pre-wrap;

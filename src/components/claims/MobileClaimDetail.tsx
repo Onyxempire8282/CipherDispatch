@@ -397,6 +397,13 @@ export default function MobileClaimDetail({
           </CollapsibleSection>
         )}
 
+        {/* Client-Visible Notes */}
+        {claim.public_notes && (
+          <CollapsibleSection title="Client Notes" icon="📋" defaultOpen={false}>
+            <div className="mobile-detail__notes">{claim.public_notes}</div>
+          </CollapsibleSection>
+        )}
+
         {/* Photos Section - EXPANDED only if photos exist, visible to all */}
         <CollapsibleSection title={`Photos (${photos.length})`} icon="📸" defaultOpen={hasPhotos}>
           {photos.length === 0 ? (
