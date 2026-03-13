@@ -1607,6 +1607,47 @@ export default function ClaimDetail() {
           )}
         </div>
 
+        {/* Cycle Time */}
+        {claim.created_at && (
+          <div className="detail__section">
+            <h4 className="detail__section-title">Cycle Time</h4>
+            <div className="cycle-bar">
+              {([
+                { label: "Assignment", hrs: claim.cycle_assignment_hrs, target: 4 },
+                { label: "Inspection", hrs: claim.cycle_inspection_hrs, target: 48 },
+                { label: "Appraisal",  hrs: claim.cycle_appraisal_hrs,  target: 72 },
+                { label: "Total",      hrs: claim.cycle_total_hrs,      target: 124 },
+              ] as const).map((phase) => {
+                const pct = phase.hrs != null ? (phase.hrs / phase.target) * 100 : 0;
+                const color = phase.hrs == null ? "var(--text-dim)"
+                  : pct > 100 ? "#e87a72"
+                  : pct >= 75  ? "#e8952a"
+                  : "#6fc86f";
+                return (
+                  <div className="cycle-bar__phase" key={phase.label}>
+                    <div className="cycle-bar__row">
+                      <span className="cycle-bar__label">{phase.label}</span>
+                      <span className="cycle-bar__value" style={{ color }}>
+                        {phase.hrs != null ? `${phase.hrs.toFixed(1)} hrs` : "Pending"}
+                      </span>
+                    </div>
+                    <div className="cycle-bar__track">
+                      <div
+                        className="cycle-bar__fill"
+                        style={{
+                          width: `${Math.min(pct, 100)}%`,
+                          background: color,
+                        }}
+                      />
+                    </div>
+                    <span className="cycle-bar__target">target: {phase.target}hrs</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Location & Map */}
         <div className="detail__section">
           <h4 className="detail__section-title">Location</h4>

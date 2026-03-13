@@ -370,6 +370,12 @@
   color: var(--amber);
 }
 
+.claims__badge--at-risk {
+  background: rgba(232, 122, 114, 0.15);
+  border: 1px solid rgba(232, 122, 114, 0.4);
+  color: #e87a72;
+}
+
 .claims__card-section {
   padding: 8px 0;
   border-top: 1px solid var(--rivet);

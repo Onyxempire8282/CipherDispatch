@@ -42,6 +42,9 @@ type Claim = {
   file_total?: number | null;
   pipeline_stage?: string;
   claim_type?: string;
+  at_risk_unassigned?: boolean;
+  at_risk_inspection?: boolean;
+  at_risk_appraisal?: boolean;
   profiles?: {
     full_name?: string;
   } | null;
@@ -521,6 +524,11 @@ export default function AdminClaims() {
                             {r.notes && (
                               <span className="claims__badge claims__badge--note" title={r.notes.substring(0, 100)}>
                                 Note
+                              </span>
+                            )}
+                            {(r.at_risk_unassigned || r.at_risk_inspection || r.at_risk_appraisal) && (
+                              <span className="claims__badge claims__badge--at-risk">
+                                AT RISK
                               </span>
                             )}
                           </div>

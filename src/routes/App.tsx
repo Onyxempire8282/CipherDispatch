@@ -39,8 +39,7 @@ export default function App() {
         .gte("appointment_start", todayStart)
         .lt("appointment_start", todayEnd),
       baseQuery()
-        .is("assigned_to", null)
-        .lt("created_at", h24ago),
+        .or("at_risk_unassigned.eq.true,at_risk_inspection.eq.true,at_risk_appraisal.eq.true"),
       baseQuery()
         .or("assigned_to.is.null,appointment_start.is.null"),
     ]);
