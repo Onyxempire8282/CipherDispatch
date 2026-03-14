@@ -40,7 +40,7 @@ serve(async (req) => {
     const { data: claim, error: claimError } = await supabase
       .from("claims")
       .select(
-        "claim_number, customer_name, address_line1, city, state, zip, appointment_start, vehicle_year, vehicle_make, vehicle_model"
+        "claim_number, customer_name, address_line1, city, state, zip, appointment_start, vehicle_year, vehicle_make, vehicle_model, firm_id"
       )
       .eq("id", claim_id)
       .single();

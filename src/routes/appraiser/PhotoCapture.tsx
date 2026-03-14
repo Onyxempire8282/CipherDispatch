@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { supabase } from "../../lib/supabase";
+import { supabase, getCurrentFirmId } from "../../lib/supabase";
 import { supabaseCD } from "../../lib/supabaseCD";
 import {
   InspectionState,
@@ -48,10 +48,11 @@ export default function PhotoCapture() {
   const streamRef = useRef<MediaStream | null>(null);
   const orientationHandlerRef = useRef<(() => void) | null>(null);
 
-  // Store claim ID and inspection type globally for upload manager
+  // Store claim ID, inspection type, and firm ID globally for upload manager
   useEffect(() => {
     (window as any).__current_claim_id = claimId;
     (window as any).__inspection_type = state.inspection_type;
+    getCurrentFirmId().then(fid => { (window as any).__current_firm_id = fid; });
   }, [claimId, state.inspection_type]);
 
   // Poll upload status

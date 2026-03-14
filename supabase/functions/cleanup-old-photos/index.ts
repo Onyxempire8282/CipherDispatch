@@ -1,11 +1,11 @@
 // Supabase Edge Function: cleanup-old-photos
-// Deletes photos older than 14 days from storage and database
+// Deletes photos per-firm retention policy from storage and database
 // Designed to run daily via cron
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 
-const RETENTION_DAYS = 14;
+const DEFAULT_RETENTION_DAYS = 14;
 const BUCKET_NAME = "claim-photos";
 
 interface PhotoRecord {
@@ -13,6 +13,7 @@ interface PhotoRecord {
   claim_id: string;
   storage_path: string;
   created_at: string;
+  firm_id: string | null;
 }
 
 interface CleanupResult {
@@ -44,7 +45,7 @@ serve(async (req) => {
       });
     }
 
-    // Initialize Supabase client with service role key for elevated permissions
+    // Initialize CD Supabase client (claim_photos + storage)
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
@@ -53,140 +54,135 @@ serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+
+    // Initialize HQ Supabase client (firms table)
+    const hqUrl = Deno.env.get("HQ_SUPABASE_URL")!;
+    const hqKey = Deno.env.get("HQ_SERVICE_ROLE_KEY")!;
+    const hqSupabase = createClient(hqUrl, hqKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
     });
 
     console.log(`Starting photo cleanup job at ${new Date().toISOString()}`);
-    console.log(`Retention period: ${RETENTION_DAYS} days`);
 
-    // Calculate cutoff date (14 days ago)
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - RETENTION_DAYS);
-    const cutoffISO = cutoffDate.toISOString();
-
-    console.log(`Cutoff date: ${cutoffISO}`);
-
-    // Query for photos older than retention period
-    const { data: oldPhotos, error: queryError } = await supabase
+    // Get all distinct firm_ids from claim_photos
+    const { data: firmRows } = await supabase
       .from("claim_photos")
-      .select("id, claim_id, storage_path, created_at")
-      .lt("created_at", cutoffISO)
-      .order("created_at", { ascending: true });
+      .select("firm_id");
 
-    if (queryError) {
-      console.error("Database query error:", queryError);
-      throw new Error(`Failed to query old photos: ${queryError.message}`);
+    const firmIds = [...new Set((firmRows || []).map((r: any) => r.firm_id))];
+    console.log(`Found ${firmIds.length} distinct firm_ids (including null)`);
+
+    // Build retention map: firm_id -> days
+    const retentionMap = new Map<string | null, number>();
+    retentionMap.set(null, DEFAULT_RETENTION_DAYS);
+
+    for (const fid of firmIds) {
+      if (!fid) continue;
+      const { data: firm } = await hqSupabase
+        .from("firms")
+        .select("photo_retention_days")
+        .eq("id", fid)
+        .single();
+      retentionMap.set(fid, firm?.photo_retention_days ?? DEFAULT_RETENTION_DAYS);
     }
 
-    if (!oldPhotos || oldPhotos.length === 0) {
-      console.log("No photos found for deletion");
-      return new Response(
-        JSON.stringify({
-          message: "No photos to delete",
-          cutoffDate: cutoffISO,
-          processed: 0,
-        }),
-        {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    console.log(`Found ${oldPhotos.length} photos to delete`);
-
-    // Process deletions
     const result: CleanupResult = {
-      totalProcessed: oldPhotos.length,
+      totalProcessed: 0,
       successfullyDeleted: 0,
       failedDeletions: 0,
       errors: [],
     };
 
-    for (const photo of oldPhotos as PhotoRecord[]) {
-      try {
-        console.log(`Processing photo ID ${photo.id}: ${photo.storage_path}`);
+    // Process each firm (including null)
+    for (const [fid, retentionDays] of retentionMap) {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
+      const cutoffISO = cutoffDate.toISOString();
 
-        // Step 1: Delete from storage
-        const { error: storageError } = await supabase.storage
-          .from(BUCKET_NAME)
-          .remove([photo.storage_path]);
+      console.log(`Processing firm_id=${fid}, retention=${retentionDays}d, cutoff=${cutoffISO}`);
 
-        if (storageError) {
-          // Check if error is "object not found" - this is OK (idempotent)
-          const isNotFoundError =
-            storageError.message?.includes("not found") ||
-            storageError.message?.includes("does not exist");
+      let query = supabase
+        .from("claim_photos")
+        .select("id, claim_id, storage_path, created_at, firm_id")
+        .lt("created_at", cutoffISO)
+        .order("created_at", { ascending: true });
 
-          if (isNotFoundError) {
-            console.log(
-              `Photo ${photo.id} not found in storage (already deleted), removing DB record`
-            );
-          } else {
-            // Real storage error - log it but continue
-            console.error(
-              `Storage deletion failed for photo ${photo.id}:`,
-              storageError
-            );
-            result.errors.push({
-              photo_id: photo.id,
-              error: `Storage error: ${storageError.message}`,
-            });
-            result.failedDeletions++;
-            continue; // Skip database deletion if storage deletion failed
+      if (fid === null) {
+        query = query.is("firm_id", null);
+      } else {
+        query = query.eq("firm_id", fid);
+      }
+
+      const { data: oldPhotos, error: queryError } = await query;
+
+      if (queryError) {
+        console.error(`Query error for firm ${fid}:`, queryError);
+        continue;
+      }
+
+      if (!oldPhotos || oldPhotos.length === 0) continue;
+
+      console.log(`Found ${oldPhotos.length} photos to delete for firm ${fid}`);
+      result.totalProcessed += oldPhotos.length;
+
+      for (const photo of oldPhotos as PhotoRecord[]) {
+        try {
+          // Delete from storage using storage_path directly
+          const { error: storageError } = await supabase.storage
+            .from(BUCKET_NAME)
+            .remove([photo.storage_path]);
+
+          if (storageError) {
+            const isNotFoundError =
+              storageError.message?.includes("not found") ||
+              storageError.message?.includes("does not exist");
+
+            if (isNotFoundError) {
+              console.log(`Photo ${photo.id} not found in storage, removing DB record`);
+            } else {
+              console.error(`Storage deletion failed for photo ${photo.id}:`, storageError);
+              result.errors.push({ photo_id: photo.id, error: `Storage error: ${storageError.message}` });
+              result.failedDeletions++;
+              continue;
+            }
           }
-        }
 
-        // Step 2: Delete from database (only if storage deletion succeeded or file not found)
-        const { error: dbError } = await supabase
-          .from("claim_photos")
-          .delete()
-          .eq("id", photo.id);
+          // Delete from database
+          const { error: dbError } = await supabase
+            .from("claim_photos")
+            .delete()
+            .eq("id", photo.id);
 
-        if (dbError) {
-          console.error(
-            `Database deletion failed for photo ${photo.id}:`,
-            dbError
-          );
+          if (dbError) {
+            console.error(`Database deletion failed for photo ${photo.id}:`, dbError);
+            result.errors.push({ photo_id: photo.id, error: `Database error: ${dbError.message}` });
+            result.failedDeletions++;
+            continue;
+          }
+
+          result.successfullyDeleted++;
+        } catch (error) {
+          console.error(`Unexpected error processing photo ${photo.id}:`, error);
           result.errors.push({
             photo_id: photo.id,
-            error: `Database error: ${dbError.message}`,
+            error: error instanceof Error ? error.message : String(error),
           });
           result.failedDeletions++;
-          continue;
         }
-
-        console.log(`Successfully deleted photo ID ${photo.id}`);
-        result.successfullyDeleted++;
-      } catch (error) {
-        console.error(`Unexpected error processing photo ${photo.id}:`, error);
-        result.errors.push({
-          photo_id: photo.id,
-          error: error instanceof Error ? error.message : String(error),
-        });
-        result.failedDeletions++;
       }
     }
 
-    console.log(`Cleanup job completed`);
-    console.log(`Successfully deleted: ${result.successfullyDeleted}`);
-    console.log(`Failed deletions: ${result.failedDeletions}`);
+    console.log(`Cleanup completed: ${result.successfullyDeleted} deleted, ${result.failedDeletions} failed`);
 
-    // Return comprehensive result
     return new Response(
       JSON.stringify({
         message: "Cleanup completed",
-        cutoffDate: cutoffISO,
         ...result,
         timestamp: new Date().toISOString(),
       }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      }
+      { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
     console.error("Fatal error in cleanup function:", error);
@@ -196,10 +192,7 @@ serve(async (req) => {
         message: error instanceof Error ? error.message : String(error),
         timestamp: new Date().toISOString(),
       }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 });

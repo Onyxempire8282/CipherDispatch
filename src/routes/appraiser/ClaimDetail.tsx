@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
-import { supabase } from "../../lib/supabase";
+import { supabase, getCurrentFirmId } from "../../lib/supabase";
 import { supabaseCD } from "../../lib/supabaseCD";
 import imageCompression from "browser-image-compression";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
@@ -101,19 +101,24 @@ export default function ClaimDetail() {
   const [editLocationTypeValue, setEditLocationTypeValue] = useState("customer_address");
   const [firms, setFirms] = useState<any[]>([]);
   const [firmSchedules, setFirmSchedules] = useState<Record<string, FirmSchedule>>({});
+  const [firmId, setFirmId] = useState<string | null>(null);
+  const [packageLoading, setPackageLoading] = useState(false);
+  const [packageError, setPackageError] = useState('');
 
   const load = async () => {
-    const { data } = await supabaseCD
+    let claimQuery = supabaseCD
       .from('claims')
       .select("*")
-      .eq("id", id)
-      .single();
+      .eq("id", id);
+    if (firmId) claimQuery = claimQuery.eq("firm_id", firmId);
+    const { data } = await claimQuery.single();
     setClaim(data);
-    const ph = await supabaseCD
+    let photoQuery = supabaseCD
       .from("claim_photos")
       .select("*")
-      .eq("claim_id", id)
-      .order("created_at", { ascending: false });
+      .eq("claim_id", id);
+    if (firmId) photoQuery = photoQuery.eq("firm_id", firmId);
+    const ph = await photoQuery.order("created_at", { ascending: false });
     setPhotos(ph.data || []);
   };
 
@@ -145,6 +150,10 @@ export default function ClaimDetail() {
   }, [id]);
 
   useEffect(() => {
+    getCurrentFirmId().then(setFirmId);
+  }, []);
+
+  useEffect(() => {
     load();
     // Load users for assignment dropdown
     (async () => {
@@ -174,7 +183,7 @@ export default function ClaimDetail() {
       }
       setFirmSchedules(schedules);
     })();
-  }, [id]);
+  }, [id, firmId]);
 
   const handlePhotoUpload = async (files: FileList) => {
     if (!files || files.length === 0 || !id) return;
@@ -590,6 +599,22 @@ export default function ClaimDetail() {
       alert(`Error creating zip file: ${error.message}`);
     }
   };
+
+  async function handleDownloadPackage() {
+    setPackageLoading(true);
+    setPackageError('');
+    try {
+      const { data, error } = await supabaseCD.functions.invoke('generate-claim-package', {
+        body: { claim_id: claim.id, firm_id: firmId }
+      });
+      if (error || !data?.signed_url) throw error ?? new Error('No URL returned');
+      window.open(data.signed_url, '_blank');
+    } catch (err) {
+      setPackageError('Package generation failed. Try again.');
+    } finally {
+      setPackageLoading(false);
+    }
+  }
 
   // Photo viewer helper functions
   const resetViewerState = () => {
@@ -1819,6 +1844,16 @@ export default function ClaimDetail() {
               >
                 Download All Photos
               </button>
+            )}
+            <button
+              onClick={handleDownloadPackage}
+              className="detail__photo-btn-download"
+              disabled={packageLoading}
+            >
+              {packageLoading ? "Generating..." : "Download Claim Package"}
+            </button>
+            {packageError && (
+              <div className="detail__photo-error">{packageError}</div>
             )}
           </div>
 

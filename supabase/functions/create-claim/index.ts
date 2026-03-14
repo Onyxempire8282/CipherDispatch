@@ -201,6 +201,17 @@ serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const { data: { user } } = await supabase.auth.getUser(token);
 
+    // Resolve firm_id: from body or from caller's profile
+    let firmId = (body as any).firm_id ?? null;
+    if (!firmId && user?.id) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('firm_id')
+        .eq('id', user.id)
+        .single();
+      firmId = profile?.firm_id ?? null;
+    }
+
     // Build claim data - soft-required fields allowed as null
     const claimData = {
       // Hard-required fields (validated above)
@@ -217,6 +228,7 @@ serve(async (req) => {
       // Auto-set fields
       claim_status: "new_claim",
       owner_id: user?.id || null,
+      firm_id: firmId,
     };
 
     // Insert new claim

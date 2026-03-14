@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { supabase } from "../../lib/supabase";
+import { supabase, getCurrentFirmId } from "../../lib/supabase";
 import { supabaseCD } from "../../lib/supabaseCD";
 import { Link, useSearchParams, useLocation } from "react-router-dom";
 import {
@@ -107,6 +107,7 @@ export default function AdminClaims() {
   const [bulkAppraiser, setBulkAppraiser] = useState("");
   const [bulkLoading, setBulkLoading] = useState(false);
   const [appraisers, setAppraisers] = useState<{ user_id: string; full_name: string }[]>([]);
+  const [firmId, setFirmId] = useState<string | null>(null);
 
   const isMobile = useIsMobile();
   const { role } = useRole();
@@ -150,6 +151,7 @@ export default function AdminClaims() {
         .order("created_at", { ascending: false });
 
       query = authz.scopedClaimsQuery(query);
+      if (firmId) query = query.eq("firm_id", firmId);
       query = query.gte("created_at", "2025-12-01T00:00:00.000Z");
       query = query.is("archived_at", null);
 
@@ -172,7 +174,7 @@ export default function AdminClaims() {
     } finally {
       setLoading(false);
     }
-  }, [authzInitialized]);
+  }, [authzInitialized, firmId]);
 
   const applyFilters = useCallback((claims: Claim[], tab: PipelineTab, status: ClaimStatus, search: string) => {
     let filtered = [...claims];
@@ -319,6 +321,7 @@ export default function AdminClaims() {
   useEffect(() => {
     initializeAuth();
     loadProfiles();
+    getCurrentFirmId().then(setFirmId);
     (async () => {
       const { data } = await supabaseCD.from("profiles").select("user_id, full_name").eq("role", "appraiser").order("full_name");
       if (data) setAppraisers(data);

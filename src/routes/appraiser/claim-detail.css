@@ -689,6 +689,21 @@
   transform: translateY(-1px);
 }
 
+.detail__photo-btn-download:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
+}
+
+.detail__photo-error {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--status-canceled, #ef4444);
+  letter-spacing: 0.06em;
+  padding: 6px 0;
+}
+
 .detail__photo-tip {
   font-family: var(--font-body);
   font-weight: 300;

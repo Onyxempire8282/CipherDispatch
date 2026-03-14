@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "../../lib/supabase";
+import { supabase, getCurrentFirmId } from "../../lib/supabase";
 import { supabaseCD } from "../../lib/supabaseCD";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { Link, useNavigate } from "react-router-dom";
@@ -151,6 +151,7 @@ export default function NewClaim() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return alert("You must be logged in to create a claim");
 
+    const firmId = await getCurrentFirmId();
     const inspectionAddress = [form.address_line1, form.city, form.state].filter(Boolean).join(", ");
 
     const claimPayload = {
@@ -176,7 +177,7 @@ export default function NewClaim() {
     if (override) {
       const { error } = await supabaseCD
         .from("claims")
-        .update(claimPayload)
+        .update({ ...claimPayload, firm_id: firmId })
         .eq("claim_number", form.claim_number);
       if (error) {
         alert(`Error updating claim: ${error.message}`);
@@ -201,7 +202,8 @@ export default function NewClaim() {
       p_inspection_address: claimPayload.inspection_address,
       p_zip: claimPayload.zip,
       p_scheduled_at: claimPayload.scheduled_at,
-      p_notes: claimPayload.notes
+      p_notes: claimPayload.notes,
+      p_firm_id: firmId
     });
 
     if (error) {

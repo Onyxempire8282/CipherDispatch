@@ -1,8 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 serve(async (req) => {
   const payload = await req.json();
-  const { new_status } = payload;
+  const { new_status, claim_id } = payload;
 
   const N8N_WEBHOOK_URL = Deno.env.get("N8N_WEBHOOK_URL");
   const N8N_API_KEY = Deno.env.get("N8N_API_KEY");
@@ -31,6 +32,20 @@ serve(async (req) => {
     );
   }
 
+  // Fetch firm_id from claim record if not already in payload
+  let firmId = payload.firm_id ?? null;
+  if (!firmId && claim_id) {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, serviceKey);
+    const { data: claim } = await supabase
+      .from("claims")
+      .select("firm_id")
+      .eq("id", claim_id)
+      .single();
+    firmId = claim?.firm_id ?? null;
+  }
+
   await fetch(N8N_WEBHOOK_URL, {
     method: "POST",
     headers: {
@@ -41,6 +56,7 @@ serve(async (req) => {
       event_type,
       timestamp: new Date().toISOString(),
       ...payload,
+      firm_id: firmId,
     }),
   });
 

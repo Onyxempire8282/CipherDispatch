@@ -69,9 +69,10 @@ export class UploadManager {
     try {
       task.status = 'uploading';
 
-      // Get claim_id and inspection_type from somewhere accessible
+      // Get claim_id, inspection_type, and firm_id from somewhere accessible
       const claimId = (window as any).__current_claim_id;
       const inspectionType = (window as any).__inspection_type;
+      const firmId = (window as any).__current_firm_id;
 
       if (!claimId) {
         throw new Error('No claim ID available');
@@ -86,7 +87,9 @@ export class UploadManager {
       });
 
       // Upload to storage
-      const path = `claim/${claimId}/${task.photoId}.jpg`;
+      const path = firmId
+        ? `firm/${firmId}/claim/${claimId}/${task.photoId}.jpg`
+        : `claim/${claimId}/${task.photoId}.jpg`;
       const { error: storageError } = await supabaseCD.storage
         .from('claim-photos')
         .upload(path, compressed, { contentType: 'image/jpeg' });
@@ -102,6 +105,7 @@ export class UploadManager {
         .insert({
           id: task.photoId,
           claim_id: claimId,
+          firm_id: firmId || null,
           storage_path: path,
           photo_type: slot.photo_type,
           order_index: slot.order_index,
