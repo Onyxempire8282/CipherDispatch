@@ -7,6 +7,8 @@ import { useRole } from "../../hooks/useRole";
 import PageHeader from "../../components/ui/PageHeader";
 import "./contractor-detail.css";
 
+const US_STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
+
 export default function ContractorDetail() {
   const { id } = useParams();
   const { role } = useRole();
@@ -14,33 +16,104 @@ export default function ContractorDetail() {
   const [openClaims, setOpenClaims] = useState<any[]>([]);
   const [allClaims, setAllClaims] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showEdit, setShowEdit] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editForm, setEditForm] = useState({
+    first_name: "", last_name: "", phone: "", role: "appraiser",
+    pay_rate: "", rating: "", license_number: "",
+    coverage_states: [] as string[], coverage_cities: "",
+    notes: "", onboard_status: "pending",
+  });
 
-  useEffect(() => {
+  const loadContractor = async () => {
     if (!id) return;
-    (async () => {
-      const ninetyDaysAgo = new Date();
-      ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
-      const [profileRes, openRes, allRes] = await Promise.all([
-        supabaseCD.from("profiles").select("*").eq("user_id", id).single(),
-        supabaseCD.from('claims')
-          .select("id, claim_number, customer_name, firm, status, appointment_start, city, state")
-          .eq("assigned_to", id)
-          .is("archived_at", null)
-          .not("status", "in", '("COMPLETED","CANCELED")'),
-        supabaseCD.from('claims')
-          .select("id, claim_number, customer_name, firm, status, created_at, completion_date, pay_amount")
-          .eq("assigned_to", id)
-          .is("archived_at", null)
-          .gte("created_at", ninetyDaysAgo.toISOString()),
-      ]);
+    const [profileRes, openRes, allRes] = await Promise.all([
+      supabaseCD.from("profiles").select("*").eq("user_id", id).single(),
+      supabaseCD.from('claims')
+        .select("id, claim_number, customer_name, firm, status, appointment_start, city, state")
+        .eq("assigned_to", id)
+        .is("archived_at", null)
+        .not("status", "in", '("COMPLETED","CANCELED")'),
+      supabaseCD.from('claims')
+        .select("id, claim_number, customer_name, firm, status, created_at, completion_date, pay_amount")
+        .eq("assigned_to", id)
+        .is("archived_at", null)
+        .gte("created_at", ninetyDaysAgo.toISOString()),
+    ]);
 
-      setContractor(profileRes.data);
-      setOpenClaims(openRes.data || []);
-      setAllClaims(allRes.data || []);
-      setLoading(false);
-    })();
-  }, [id]);
+    setContractor(profileRes.data);
+    setOpenClaims(openRes.data || []);
+    setAllClaims(allRes.data || []);
+    setLoading(false);
+  };
+
+  const openEditModal = () => {
+    if (!contractor) return;
+    setEditForm({
+      first_name: contractor.first_name || "",
+      last_name: contractor.last_name || "",
+      phone: contractor.phone || "",
+      role: contractor.role || "appraiser",
+      pay_rate: contractor.pay_rate?.toString() || "",
+      rating: contractor.rating?.toString() || "",
+      license_number: contractor.license_number || "",
+      coverage_states: contractor.coverage_states || [],
+      coverage_cities: (contractor.coverage_cities || []).join(", "),
+      notes: contractor.notes || "",
+      onboard_status: contractor.onboard_status || "pending",
+    });
+    setShowEdit(true);
+  };
+
+  const saveEdit = async () => {
+    if (!id) return;
+    setSaving(true);
+    try {
+      const fullName = `${editForm.first_name} ${editForm.last_name}`.trim();
+      const { error } = await supabaseCD.from("profiles").update({
+        first_name: editForm.first_name,
+        last_name: editForm.last_name,
+        full_name: fullName,
+        phone: editForm.phone,
+        role: editForm.role,
+        pay_rate: editForm.pay_rate ? parseFloat(editForm.pay_rate) : null,
+        rating: editForm.rating ? parseFloat(editForm.rating) : null,
+        license_number: editForm.license_number,
+        coverage_states: editForm.coverage_states,
+        coverage_cities: editForm.coverage_cities.split(",").map(s => s.trim()).filter(Boolean),
+        notes: editForm.notes,
+        onboard_status: editForm.onboard_status,
+      }).eq("user_id", id);
+      if (error) throw error;
+      setShowEdit(false);
+      await loadContractor();
+    } catch (e: any) {
+      alert(`Error: ${e.message}`);
+    }
+    setSaving(false);
+  };
+
+  const toggleEditState = (s: string) => {
+    setEditForm(f => ({
+      ...f,
+      coverage_states: f.coverage_states.includes(s)
+        ? f.coverage_states.filter(x => x !== s)
+        : [...f.coverage_states, s]
+    }));
+  };
+
+  const toggleAvailable = async () => {
+    if (!id || !contractor) return;
+    await supabaseCD.from("profiles")
+      .update({ available: !contractor.available })
+      .eq("user_id", id);
+    await loadContractor();
+  };
+
+  useEffect(() => { loadContractor(); }, [id]);
 
   if (loading) return <div className="cd__loading">Loading...</div>;
   if (!contractor) return <div className="cd__loading">Contractor not found</div>;
@@ -81,6 +154,7 @@ export default function ContractorDetail() {
           <div className="cd__section-header">
             <div className="cd__section-title">Profile</div>
             <div className="cd__section-line" />
+            <button className="cd__edit-btn" onClick={openEditModal}>EDIT PROFILE</button>
           </div>
           <div className="cd__section-body">
             <div className="cd__info-grid">
@@ -93,6 +167,10 @@ export default function ContractorDetail() {
                 <div className="cd__info-value">{contractor.email || "---"}</div>
               </div>
               <div className="cd__info-item">
+                <div className="cd__info-label">Phone</div>
+                <div className="cd__info-value">{contractor.phone || "---"}</div>
+              </div>
+              <div className="cd__info-item">
                 <div className="cd__info-label">Pay Rate</div>
                 <div className="cd__info-value">{contractor.pay_rate ? `$${contractor.pay_rate}` : "---"}</div>
               </div>
@@ -101,12 +179,25 @@ export default function ContractorDetail() {
                 <div className="cd__info-value">{contractor.rating ? contractor.rating.toFixed(1) : "---"}</div>
               </div>
               <div className="cd__info-item">
+                <div className="cd__info-label">License</div>
+                <div className="cd__info-value">{contractor.license_number || "---"}</div>
+              </div>
+              <div className="cd__info-item">
                 <div className="cd__info-label">Status</div>
-                <div className="cd__info-value">{contractor.available ? "Available" : "Offline"}</div>
+                <div className="cd__info-value">
+                  <button
+                    className={`cd__avail-toggle ${contractor.available ? "cd__avail-toggle--on" : "cd__avail-toggle--off"}`}
+                    onClick={toggleAvailable}
+                  >
+                    {contractor.available ? "● AVAILABLE" : "○ OFFLINE"}
+                  </button>
+                </div>
               </div>
               <div className="cd__info-item">
                 <div className="cd__info-label">Onboard</div>
-                <div className="cd__info-value">{contractor.onboard_status?.toUpperCase() || "---"}</div>
+                <div className={`cd__info-value cd__onboard-badge cd__onboard-badge--${contractor.onboard_status || "off"}`}>
+                  {contractor.onboard_status?.toUpperCase() || "---"}
+                </div>
               </div>
             </div>
             {contractor.coverage_states?.length > 0 && (
@@ -206,7 +297,120 @@ export default function ContractorDetail() {
             )}
           </div>
         </div>
+        {/* Notes */}
+        {contractor.notes && (
+          <div className="cd__section">
+            <div className="cd__section-header">
+              <div className="cd__section-title">Notes</div>
+              <div className="cd__section-line" />
+            </div>
+            <div className="cd__section-body">
+              <div className="cd__notes">{contractor.notes}</div>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Edit Modal */}
+      {showEdit && (
+        <div className="cd__overlay" onClick={() => setShowEdit(false)}>
+          <div className="cd__modal" onClick={e => e.stopPropagation()}>
+            <div className="cd__modal-hd">
+              <div className="cd__modal-eyebrow">CONTRACTOR</div>
+              <div className="cd__modal-title">EDIT PROFILE</div>
+              <button className="cd__modal-close" onClick={() => setShowEdit(false)}>×</button>
+            </div>
+            <div className="cd__modal-body">
+              <div className="cd__form-row">
+                <div className="cd__field">
+                  <label className="cd__field-label">FIRST NAME</label>
+                  <input className="cd__field-input" value={editForm.first_name}
+                    onChange={e => setEditForm(f => ({ ...f, first_name: e.target.value }))} />
+                </div>
+                <div className="cd__field">
+                  <label className="cd__field-label">LAST NAME</label>
+                  <input className="cd__field-input" value={editForm.last_name}
+                    onChange={e => setEditForm(f => ({ ...f, last_name: e.target.value }))} />
+                </div>
+              </div>
+              <div className="cd__form-row">
+                <div className="cd__field">
+                  <label className="cd__field-label">PHONE</label>
+                  <input className="cd__field-input" type="tel" value={editForm.phone}
+                    onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))} />
+                </div>
+                <div className="cd__field">
+                  <label className="cd__field-label">ROLE</label>
+                  <select className="cd__field-input cd__field-select" value={editForm.role}
+                    onChange={e => setEditForm(f => ({ ...f, role: e.target.value }))}>
+                    <option value="appraiser">Appraiser (Field)</option>
+                    <option value="writer">Writer (Estimate)</option>
+                    <option value="dispatch">Dispatch</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+              </div>
+              <div className="cd__form-row">
+                <div className="cd__field">
+                  <label className="cd__field-label">PAY RATE ($/CLAIM)</label>
+                  <input className="cd__field-input" type="number" value={editForm.pay_rate}
+                    onChange={e => setEditForm(f => ({ ...f, pay_rate: e.target.value }))} />
+                </div>
+                <div className="cd__field">
+                  <label className="cd__field-label">RATING (1.0 — 5.0)</label>
+                  <input className="cd__field-input" type="number" min="1" max="5" step="0.1"
+                    value={editForm.rating}
+                    onChange={e => setEditForm(f => ({ ...f, rating: e.target.value }))} />
+                </div>
+              </div>
+              <div className="cd__form-row">
+                <div className="cd__field">
+                  <label className="cd__field-label">LICENSE NUMBER</label>
+                  <input className="cd__field-input" value={editForm.license_number}
+                    onChange={e => setEditForm(f => ({ ...f, license_number: e.target.value }))} />
+                </div>
+                <div className="cd__field">
+                  <label className="cd__field-label">ONBOARD STATUS</label>
+                  <select className="cd__field-input cd__field-select" value={editForm.onboard_status}
+                    onChange={e => setEditForm(f => ({ ...f, onboard_status: e.target.value }))}>
+                    <option value="pending">Pending</option>
+                    <option value="active">Active</option>
+                  </select>
+                </div>
+              </div>
+              <div className="cd__field">
+                <label className="cd__field-label">COVERAGE CITIES (comma separated)</label>
+                <input className="cd__field-input" placeholder="Dallas, Houston, Austin"
+                  value={editForm.coverage_cities}
+                  onChange={e => setEditForm(f => ({ ...f, coverage_cities: e.target.value }))} />
+              </div>
+              <div className="cd__field">
+                <label className="cd__field-label">COVERAGE STATES</label>
+                <div className="cd__state-grid">
+                  {US_STATES.map(s => (
+                    <button key={s} type="button"
+                      className={`cd__state-btn ${editForm.coverage_states.includes(s) ? "cd__state-btn--sel" : ""}`}
+                      onClick={() => toggleEditState(s)}
+                    >{s}</button>
+                  ))}
+                </div>
+              </div>
+              <div className="cd__field">
+                <label className="cd__field-label">NOTES</label>
+                <textarea className="cd__field-input cd__field-textarea" value={editForm.notes}
+                  onChange={e => setEditForm(f => ({ ...f, notes: e.target.value }))}
+                  placeholder="Equipment, vehicle, experience notes..." />
+              </div>
+            </div>
+            <div className="cd__modal-ft">
+              <button className="cd__btn-cancel" onClick={() => setShowEdit(false)}>CANCEL</button>
+              <button className="cd__btn-save" disabled={saving} onClick={saveEdit}>
+                {saving ? "SAVING..." : "SAVE CHANGES"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
