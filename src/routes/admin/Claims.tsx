@@ -102,6 +102,11 @@ export default function AdminClaims() {
   const [draggingClaimId, setDraggingClaimId] = useState<string | null>(null);
   const [confirmingCompleteId, setConfirmingCompleteId] = useState<string | null>(null);
   const [profileMap, setProfileMap] = useState<Record<string, string>>({});
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkAction, setBulkAction] = useState<"assign" | "complete" | null>(null);
+  const [bulkAppraiser, setBulkAppraiser] = useState("");
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [appraisers, setAppraisers] = useState<{ user_id: string; full_name: string }[]>([]);
 
   const isMobile = useIsMobile();
   const { role } = useRole();
@@ -256,7 +261,69 @@ export default function AdminClaims() {
 
   const handleDragEnd = () => { setDraggingClaimId(null); };
 
-  useEffect(() => { initializeAuth(); loadProfiles(); }, []);
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === rows.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(rows.map(r => r.id)));
+  };
+
+  const handleBulkAssign = async () => {
+    if (!bulkAppraiser) return;
+    setBulkLoading(true);
+    try {
+      const { error } = await supabaseCD.from("claims").update({ assigned_to: bulkAppraiser }).in("id", Array.from(selectedIds));
+      if (error) throw error;
+      setBulkAction(null);
+      setBulkAppraiser("");
+      setSelectedIds(new Set());
+      load();
+    } catch (err: any) {
+      alert(`Error assigning claims: ${err.message}`);
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const handleBulkComplete = async () => {
+    setBulkLoading(true);
+    try {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      const { error } = await supabaseCD.from("claims").update({
+        status: "COMPLETED",
+        completion_date: `${year}-${month}-${day}T00:00:00Z`,
+        completed_month: `${year}-${month}`,
+        payout_status: "unpaid",
+      }).in("id", Array.from(selectedIds));
+      if (error) throw error;
+      setBulkAction(null);
+      setSelectedIds(new Set());
+      load();
+    } catch (err: any) {
+      alert(`Error completing claims: ${err.message}`);
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    initializeAuth();
+    loadProfiles();
+    (async () => {
+      const { data } = await supabaseCD.from("profiles").select("user_id, full_name").eq("role", "appraiser").order("full_name");
+      if (data) setAppraisers(data);
+    })();
+  }, []);
 
   // Sync calendar view with route changes
   useEffect(() => { setShowCalendar(isCalendarRoute); }, [isCalendarRoute]);
@@ -285,6 +352,7 @@ export default function AdminClaims() {
       completed: allClaims.filter(c => c.status === "COMPLETED").length,
     });
     applyFilters(allClaims, activeTab, selectedStatus, searchQuery);
+    setSelectedIds(new Set());
   }, [allClaims, activeTab, selectedStatus, searchQuery, applyFilters]);
 
   if (loading) {
@@ -406,6 +474,11 @@ export default function AdminClaims() {
             />
           </div>
           <div className="claims__toolbar-right">
+            {!showCalendar && !showArchived && activeTab !== "completed" && rows.length > 0 && (
+              <button className="btn btn--ghost btn--sm" onClick={toggleSelectAll}>
+                {selectedIds.size === rows.length ? "Deselect All" : "Select All"}
+              </button>
+            )}
             <button
               className={`btn btn--sm ${showCalendar ? "btn--primary" : "btn--ghost"}`}
               onClick={() => {
@@ -500,12 +573,18 @@ export default function AdminClaims() {
                       <Link
                         key={r.id}
                         to={`/claim/${r.id}`}
-                        className={`claims__card${draggingClaimId === r.id ? " claims__card--dragging" : ""}`}
+                        className={`claims__card${draggingClaimId === r.id ? " claims__card--dragging" : ""}${selectedIds.has(r.id) ? " claims__card--selected" : ""}`}
                         style={{ borderLeftColor: firmColor }}
                         draggable={true}
                         onDragStart={(e) => handleDragStart(e, r)}
                         onDragEnd={handleDragEnd}
                       >
+                        <div
+                          className="claims__card-select"
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleSelect(r.id); }}
+                        >
+                          <div className={`claims__checkbox${selectedIds.has(r.id) ? " claims__checkbox--checked" : ""}`} />
+                        </div>
                         <div className="claims__card-header">
                           <div className="claims__card-number">#{r.claim_number}</div>
                           <div className="claims__card-badges">
@@ -609,6 +688,78 @@ export default function AdminClaims() {
           </div>
         )}
       </div>
+
+      {/* Bulk action bar */}
+      {selectedIds.size > 0 && (
+        <div className="claims__bulk-bar">
+          <span className="claims__bulk-count">{selectedIds.size} selected</span>
+          <button className="btn btn--primary btn--sm" onClick={() => setBulkAction("assign")}>
+            Assign To
+          </button>
+          <button className="btn btn--ghost btn--sm" onClick={() => setBulkAction("complete")}>
+            Mark Complete
+          </button>
+          <button className="btn btn--danger btn--sm" onClick={() => setSelectedIds(new Set())}>
+            Clear
+          </button>
+        </div>
+      )}
+
+      {/* Bulk Assign modal */}
+      {bulkAction === "assign" && (
+        <div className="claims__modal-overlay" onClick={() => setBulkAction(null)}>
+          <div className="claims__modal" onClick={(e) => e.stopPropagation()}>
+            <div className="claims__modal-header">
+              <div>
+                <div className="claims__modal-eyebrow">Bulk Action</div>
+                <div className="claims__modal-title">Assign {selectedIds.size} Claims</div>
+              </div>
+              <button className="claims__modal-close" onClick={() => setBulkAction(null)}>&#x2715;</button>
+            </div>
+            <div className="claims__modal-body">
+              <label className="claims__modal-label">Select Appraiser</label>
+              <select className="claims__modal-select" value={bulkAppraiser} onChange={(e) => setBulkAppraiser(e.target.value)}>
+                <option value="">-- Select Appraiser --</option>
+                {appraisers.map(a => (
+                  <option key={a.user_id} value={a.user_id}>{a.full_name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="claims__modal-footer">
+              <button className="btn btn--ghost" onClick={() => setBulkAction(null)}>Cancel</button>
+              <button className="btn btn--primary" disabled={!bulkAppraiser || bulkLoading} onClick={handleBulkAssign}>
+                {bulkLoading ? "Assigning..." : "Assign All"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Complete modal */}
+      {bulkAction === "complete" && (
+        <div className="claims__modal-overlay" onClick={() => setBulkAction(null)}>
+          <div className="claims__modal" onClick={(e) => e.stopPropagation()}>
+            <div className="claims__modal-header">
+              <div>
+                <div className="claims__modal-eyebrow">Bulk Action</div>
+                <div className="claims__modal-title">Complete {selectedIds.size} Claims</div>
+              </div>
+              <button className="claims__modal-close" onClick={() => setBulkAction(null)}>&#x2715;</button>
+            </div>
+            <div className="claims__modal-body">
+              <p className="claims__modal-warn">
+                This will mark {selectedIds.size} claim{selectedIds.size > 1 ? "s" : ""} as COMPLETED with today's date. This action cannot be undone.
+              </p>
+            </div>
+            <div className="claims__modal-footer">
+              <button className="btn btn--ghost" onClick={() => setBulkAction(null)}>Cancel</button>
+              <button className="btn btn--primary" disabled={bulkLoading} onClick={handleBulkComplete}>
+                {bulkLoading ? "Completing..." : "Complete All"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
