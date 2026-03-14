@@ -83,6 +83,7 @@ export default function ContractorDetail() {
         rating: editForm.rating ? parseFloat(editForm.rating) : null,
         license_number: editForm.license_number,
         coverage_states: editForm.coverage_states,
+        coverage_cities: editForm.coverage_cities.split(",").map(s => s.trim()).filter(Boolean),
         notes: editForm.notes,
         onboard_status: editForm.onboard_status,
       }).eq("user_id", id);
