@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
+import { supabaseCD } from '../../lib/supabaseCD';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, Cell
@@ -42,13 +43,13 @@ export default function KPIDashboard() {
     thirteenMonthsAgo.setMonth(thirteenMonthsAgo.getMonth() - 13);
 
     const [claimsRes, profilesRes, slaRes] = await Promise.all([
-      supabase
+      supabaseCD
         .from('claims_v')
         .select("*")
         .gte('created_at', thirteenMonthsAgo.toISOString())
         .is('archived_at', null),
-      supabase.from('profiles').select('user_id, full_name, role'),
-      supabase.functions.invoke('sla-check').catch(() => ({ data: null })),
+      supabaseCD.from('profiles').select('user_id, full_name, role'),
+      supabaseCD.functions.invoke('sla-check').catch(() => ({ data: null })),
     ]);
 
     // Filter out supplements to avoid double-counting in metrics

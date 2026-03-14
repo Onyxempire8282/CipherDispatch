@@ -6,6 +6,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
+import { supabaseCD } from "../../lib/supabaseCD";
 import {
   forecastPayouts,
   getWeeklyView,
@@ -52,12 +53,12 @@ export default function PayoutDashboard() {
   const loadData = async () => {
     try {
       const [claimsRes, vendorsRes] = await Promise.all([
-        supabase
+        supabaseCD
           .from('claims_v')
           .select("*")
           .is('archived_at', null)
           .or('status.eq.COMPLETED,status.eq.SCHEDULED,status.eq.IN_PROGRESS'),
-        supabase
+        supabaseCD
           .from('vendors')
           .select('name, pay_schedule_type, pay_day, reference_date')
           .eq('active', true)
@@ -100,7 +101,7 @@ export default function PayoutDashboard() {
     setSelectedPayout(payout);
 
     try {
-      const { data: claimDetails, error } = await supabase
+      const { data: claimDetails, error } = await supabaseCD
         .from('claims_v')
         .select("*")
         .is('archived_at', null)
@@ -133,7 +134,7 @@ export default function PayoutDashboard() {
         updateData.pay_amount = newAmount;
       }
 
-      const { error } = await supabase
+      const { error } = await supabaseCD
         .from('claims')
         .update(updateData)
         .eq('id', claimId);
@@ -150,7 +151,7 @@ export default function PayoutDashboard() {
 
       // Re-fetch claims for this payout to ensure consistency
       if (selectedPayout) {
-        const { data: claimDetails } = await supabase
+        const { data: claimDetails } = await supabaseCD
           .from('claims_v')
           .select("*")
           .is('archived_at', null)
@@ -243,7 +244,7 @@ export default function PayoutDashboard() {
           onClose={() => setSelectedPayout(null)}
           onUpdateAmount={handleUpdateAmount}
           onUpdateReferenceDate={async (firmName, newDate) => {
-            await supabase
+            await supabaseCD
               .from('vendors')
               .update({ reference_date: newDate, reference_date_updated_at: new Date().toISOString() })
               .eq('name', firmName);

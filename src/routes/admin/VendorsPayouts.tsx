@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
+import { supabaseCD } from "../../lib/supabaseCD";
 import {
   initializeSupabaseAuthz,
   getSupabaseAuthz,
@@ -111,7 +112,7 @@ export default function VendorsPayouts() {
   useEffect(() => {
     (async () => {
       try {
-        await initializeSupabaseAuthz(supabase);
+        await initializeSupabaseAuthz(supabase, supabaseCD);
         setAuthzReady(true);
       } catch (err: any) {
         console.error("Auth init failed:", err);
@@ -125,7 +126,7 @@ export default function VendorsPayouts() {
     if (!authzReady) return;
     setVendorLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseCD
         .from("vendors")
         .select("*")
         .order("name", { ascending: true });
@@ -147,12 +148,12 @@ export default function VendorsPayouts() {
     setPayoutLoading(true);
     try {
       const [claimsRes, vendorsRes] = await Promise.all([
-        supabase
+        supabaseCD
           .from("claims_v")
           .select("*")
           .is("archived_at", null)
           .or("status.eq.COMPLETED,status.eq.SCHEDULED,status.eq.IN_PROGRESS"),
-        supabase
+        supabaseCD
           .from("vendors")
           .select("name, pay_schedule_type, pay_day, reference_date, color")
           .eq("active", true),
@@ -242,13 +243,13 @@ export default function VendorsPayouts() {
 
     try {
       if (editingVendor) {
-        const { error } = await supabase
+        const { error } = await supabaseCD
           .from("vendors")
           .update(payload)
           .eq("id", editingVendor.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("vendors").insert([payload]);
+        const { error } = await supabaseCD.from("vendors").insert([payload]);
         if (error) throw error;
       }
       closeModal();
@@ -261,7 +262,7 @@ export default function VendorsPayouts() {
 
   const toggleActive = async (v: Vendor) => {
     try {
-      const { error } = await supabase
+      const { error } = await supabaseCD
         .from("vendors")
         .update({ active: !v.active })
         .eq("id", v.id);
@@ -276,7 +277,7 @@ export default function VendorsPayouts() {
 
   const deleteVendor = async (id: string) => {
     try {
-      const { error } = await supabase.from("vendors").delete().eq("id", id);
+      const { error } = await supabaseCD.from("vendors").delete().eq("id", id);
       if (error) throw error;
       closeModal();
       await loadVendors();
@@ -292,7 +293,7 @@ export default function VendorsPayouts() {
     setEditingClaimId(null);
     setEditingRefDate(false);
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseCD
         .from("claims_v")
         .select("*")
         .is("archived_at", null)
@@ -314,7 +315,7 @@ export default function VendorsPayouts() {
         updateData.pay_amount = newAmount;
       }
 
-      const { error } = await supabase
+      const { error } = await supabaseCD
         .from("claims")
         .update(updateData)
         .eq("id", claimId);
@@ -326,7 +327,7 @@ export default function VendorsPayouts() {
       await loadPayouts();
 
       if (selectedPayout) {
-        const { data } = await supabase
+        const { data } = await supabaseCD
           .from("claims_v")
           .select("*")
           .is("archived_at", null)
@@ -350,7 +351,7 @@ export default function VendorsPayouts() {
   };
 
   const handleUpdateReferenceDate = async (firmName: string, date: string) => {
-    await supabase
+    await supabaseCD
       .from("vendors")
       .update({ reference_date: date, reference_date_updated_at: new Date().toISOString() })
       .eq("name", firmName);

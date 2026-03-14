@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
+import { supabaseCD } from "../../lib/supabaseCD";
 import {
   initializeSupabaseAuthz,
   getSupabaseAuthz,
@@ -38,7 +39,7 @@ export default function Vendors() {
   const initializeAuth = async () => {
     try {
       console.log("Initializing authorization for Vendors component...");
-      await initializeSupabaseAuthz(supabase);
+      await initializeSupabaseAuthz(supabase, supabaseCD);
       setAuthzInitialized(true);
       console.log("Authorization initialized successfully");
     } catch (err: any) {
@@ -67,7 +68,7 @@ export default function Vendors() {
       console.log(`Loading vendors for ${userInfo?.role}: ${userInfo?.fullName}`);
 
       // Check if vendors table exists, if not, we'll handle it gracefully
-      const { data, error: queryError } = await supabase
+      const { data, error: queryError } = await supabaseCD
         .from("vendors")
         .select("*")
         .order("name", { ascending: true });
@@ -154,7 +155,7 @@ export default function Vendors() {
 
       if (editingVendor) {
         // Update existing vendor
-        const { error } = await supabase
+        const { error } = await supabaseCD
           .from("vendors")
           .update(vendorData)
           .eq("id", editingVendor.id);
@@ -162,7 +163,7 @@ export default function Vendors() {
         if (error) throw error;
       } else {
         // Add new vendor
-        const { error } = await supabase
+        const { error } = await supabaseCD
           .from("vendors")
           .insert([vendorData]);
 
@@ -182,7 +183,7 @@ export default function Vendors() {
     }
 
     try {
-      const { error } = await supabase.from("vendors").delete().eq("id", id);
+      const { error } = await supabaseCD.from("vendors").delete().eq("id", id);
 
       if (error) throw error;
 

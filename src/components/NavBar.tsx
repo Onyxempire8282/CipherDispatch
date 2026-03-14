@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { supabaseCD } from "../lib/supabaseCD";
 import type { AppRole } from "../lib/supabaseAuthz";
 import logo from "../assets/logo.png";
 import "./navbar.css";
@@ -95,7 +96,7 @@ export const NavBar: React.FC<NavBarProps> = ({ role, userName }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { count } = await supabase
+      const { count } = await supabaseCD
         .from("claims_v")
         .select("id", { count: "exact", head: true })
         .eq("assigned_to", user.id)

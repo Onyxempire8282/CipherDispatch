@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { initializeSupabaseAuthz, getSupabaseAuthz } from '../../lib/supabaseAuthz';
 import { supabase } from '../../lib/supabase';
+import { supabaseCD } from '../../lib/supabaseCD';
 import LoadingSpinner from '../ui/LoadingSpinner';
 import Button from '../ui/Button';
 
@@ -30,7 +31,7 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
       // Initialize authz if needed
       const authz = getSupabaseAuthz();
       if (!authz?.isInitialized) {
-        await initializeSupabaseAuthz(supabase);
+        await initializeSupabaseAuthz(supabase, supabaseCD);
       }
 
       const currentAuthz = getSupabaseAuthz();

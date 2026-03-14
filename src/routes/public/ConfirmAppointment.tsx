@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
+import { supabaseCD } from "../../lib/supabaseCD";
 import "./confirm-appointment.css";
 
 type Stage = "loading" | "ready" | "confirmed" | "already" | "expired" | "error";
@@ -15,7 +16,7 @@ export default function ConfirmAppointment() {
   useEffect(() => {
     if (!token) { setStage("expired"); return; }
     (async () => {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseCD
         .from("claims_v")
         .select("*")
         .eq("confirm_token", token)
@@ -31,7 +32,7 @@ export default function ConfirmAppointment() {
 
   const confirm = async () => {
     setStage("loading");
-    const { error } = await supabase
+    const { error } = await supabaseCD
       .from("claims")
       .update({ appt_confirmed: true, appt_confirmed_at: new Date().toISOString() })
       .eq("confirm_token", token);
@@ -39,7 +40,7 @@ export default function ConfirmAppointment() {
     if (error) { setStage("error"); return; }
 
     // Fire webhook for n8n — pre-wired
-    supabase.functions.invoke("notify-status-change", {
+    supabaseCD.functions.invoke("notify-status-change", {
       body: {
         claim_id: claim.id,
         new_status: "APPT_CONFIRMED",

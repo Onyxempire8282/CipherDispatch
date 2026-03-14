@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "../../lib/supabase";
+import { supabaseCD } from "../../lib/supabaseCD";
 import { Link, useSearchParams, useLocation } from "react-router-dom";
 import {
   initializeSupabaseAuthz,
@@ -107,7 +108,7 @@ export default function AdminClaims() {
 
   const initializeAuth = async () => {
     try {
-      await initializeSupabaseAuthz(supabase);
+      await initializeSupabaseAuthz(supabase, supabaseCD);
       setAuthzInitialized(true);
     } catch (err: any) {
       setError(err.message);
@@ -116,7 +117,7 @@ export default function AdminClaims() {
   };
 
   const loadProfiles = useCallback(async () => {
-    const { data } = await supabase
+    const { data } = await supabaseCD
       .from("profiles")
       .select("user_id, full_name");
     if (data) {
@@ -138,7 +139,7 @@ export default function AdminClaims() {
         throw new Error("Authorization not properly initialized");
       }
 
-      let query = supabase
+      let query = supabaseCD
         .from("claims_v")
         .select("*")
         .order("created_at", { ascending: false });
@@ -215,7 +216,7 @@ export default function AdminClaims() {
 
   const handleQuickComplete = async (claimId: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await supabaseCD
         .from("claims")
         .update({ status: "COMPLETED" })
         .eq("id", claimId);
@@ -265,11 +266,11 @@ export default function AdminClaims() {
       load();
       const authz = getSupabaseAuthz();
       if (authz?.isInitialized) {
-        const ch = supabase
+        const ch = supabaseCD
           .channel("claims-list")
           .on("postgres_changes", { event: "*", schema: "public", table: "claims" }, () => load())
           .subscribe();
-        return () => { supabase.removeChannel(ch); };
+        return () => { supabaseCD.removeChannel(ch); };
       }
     }
   }, [showArchived, authzInitialized]);

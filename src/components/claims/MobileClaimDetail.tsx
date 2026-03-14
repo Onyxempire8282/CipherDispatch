@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getFirmColor } from '../../constants/firmColors';
 import { supabase } from '../../lib/supabase';
+import { supabaseCD } from '../../lib/supabaseCD';
 import { getPhotoUrlWithFallback } from '../../utils/uploadManager';
 import ClaimMessageThread from '../ClaimMessageThread';
 import '../claim-message-thread.css';
@@ -164,7 +165,7 @@ export default function MobileClaimDetail({
   const [supplements, setSupplements] = useState<any[]>([]);
   useEffect(() => {
     if (claim.id && !claim.is_supplement) {
-      supabase
+      supabaseCD
         .from('claims_v')
         .select('*')
         .eq('original_claim_id', claim.id)
@@ -315,7 +316,7 @@ export default function MobileClaimDetail({
               <button
                 className="mobile-detail__action-secondary mobile-detail__action-secondary--amber"
                 onClick={async () => {
-                  await supabase.rpc('generate_confirm_token', { claim_id: claim.id });
+                  await supabaseCD.rpc('generate_confirm_token', { claim_id: claim.id });
                   window.location.reload();
                 }}
               >
@@ -568,7 +569,7 @@ export default function MobileClaimDetail({
               className="mobile-detail__action-secondary mobile-detail__action-secondary--amber"
               onClick={async () => {
                 if (currentUser) {
-                  await supabase.from("claim_messages").insert({
+                  await supabaseCD.from("claim_messages").insert({
                     claim_id: claim.id,
                     author_name: currentUser.name,
                     author_role: currentUser.role,

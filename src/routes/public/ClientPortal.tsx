@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
+import { supabaseCD } from "../../lib/supabaseCD";
 import "./client-portal.css";
 
 type Stage = "loading" | "ready" | "expired" | "error";
@@ -18,7 +19,7 @@ export default function ClientPortal() {
     if (!token) { setStage("expired"); return; }
     (async () => {
       // Look up the portal token in a portal_clients table
-      const { data: portal, error: pErr } = await supabase
+      const { data: portal, error: pErr } = await supabaseCD
         .from("portal_clients")
         .select("id, client_name, client_email, active")
         .eq("portal_token", token)
@@ -27,7 +28,7 @@ export default function ClientPortal() {
       if (pErr || !portal || !portal.active) { setStage("expired"); return; }
 
       // Load their claims
-      const { data: claimsData, error: cErr } = await supabase
+      const { data: claimsData, error: cErr } = await supabaseCD
         .from("claims_v")
         .select("*")
         .eq("portal_client_id", portal.id)

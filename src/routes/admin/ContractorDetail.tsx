@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
+import { supabaseCD } from "../../lib/supabaseCD";
 import { NavBar } from "../../components/NavBar";
 import { useRole } from "../../hooks/useRole";
 import PageHeader from "../../components/ui/PageHeader";
@@ -21,13 +22,13 @@ export default function ContractorDetail() {
       ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
       const [profileRes, openRes, allRes] = await Promise.all([
-        supabase.from("profiles").select("*").eq("user_id", id).single(),
-        supabase.from("claims_v")
+        supabaseCD.from("profiles").select("*").eq("user_id", id).single(),
+        supabaseCD.from("claims_v")
           .select("id, claim_number, customer_name, firm, status, appointment_start, city, state")
           .eq("assigned_to", id)
           .is("archived_at", null)
           .not("status", "in", '("COMPLETED","CANCELED")'),
-        supabase.from("claims_v")
+        supabaseCD.from("claims_v")
           .select("id, claim_number, customer_name, firm, status, created_at, completion_date, pay_amount")
           .eq("assigned_to", id)
           .is("archived_at", null)

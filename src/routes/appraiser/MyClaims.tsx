@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
+import { supabaseCD } from "../../lib/supabaseCD";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   initializeSupabaseAuthz,
@@ -57,7 +58,7 @@ export default function MyClaims() {
   const initializeAuth = async () => {
     try {
       console.log("Initializing authorization for MyClaims component...");
-      await initializeSupabaseAuthz(supabase);
+      await initializeSupabaseAuthz(supabase, supabaseCD);
       setAuthzInitialized(true);
       console.log("Authorization initialized successfully");
     } catch (err: any) {
@@ -88,7 +89,7 @@ export default function MyClaims() {
       );
 
       // Create base query - load ALL claims
-      let query = supabase
+      let query = supabaseCD
         .from("claims_v")
         .select("*");
 
@@ -191,7 +192,7 @@ export default function MyClaims() {
       // Set up real-time subscription with proper scoping
       const authz = getSupabaseAuthz();
       if (authz?.isInitialized) {
-        const ch = supabase
+        const ch = supabaseCD
           .channel("my-claims")
           .on(
             "postgres_changes",
@@ -204,7 +205,7 @@ export default function MyClaims() {
           .subscribe();
 
         return () => {
-          supabase.removeChannel(ch);
+          supabaseCD.removeChannel(ch);
         };
       }
     }

@@ -8,6 +8,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
+import { supabaseCD } from "../../lib/supabaseCD";
 import { NavBar } from "../../components/NavBar";
 import "./today-run.css";
 
@@ -99,7 +100,7 @@ export default function MyRoutes() {
         now.getDate() + 1
       ).toISOString();
 
-      const { data } = await supabase
+      const { data } = await supabaseCD
         .from("claims_v")
         .select(
           "id, claim_number, customer_name, status, appointment_start, appointment_end, address_line1, city, state, zip, vehicle_year, vehicle_make, vehicle_model, firm, pay_amount"
@@ -119,7 +120,7 @@ export default function MyRoutes() {
   };
 
   const handleStartInspection = async (claimId: string) => {
-    const { error } = await supabase
+    const { error } = await supabaseCD
       .from("claims")
       .update({ status: "IN_PROGRESS" })
       .eq("id", claimId);
@@ -142,7 +143,7 @@ export default function MyRoutes() {
     const completionDate = `${year}-${month}-${day}T00:00:00Z`;
     const completedMonth = `${year}-${month}`;
 
-    const { error } = await supabase
+    const { error } = await supabaseCD
       .from("claims")
       .update({
         status: "COMPLETED",
@@ -161,7 +162,7 @@ export default function MyRoutes() {
         )
       );
 
-      supabase.functions
+      supabaseCD.functions
         .invoke("notify-status-change", {
           body: { claim_id: claimId, new_status: "COMPLETED" },
         })

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { supabaseCD } from "../lib/supabaseCD";
 import {
   initializeSupabaseAuthz,
   getSupabaseAuthz,
@@ -49,7 +50,7 @@ export function useRole(): RoleState {
       try {
         const authz = getSupabaseAuthz();
         if (!authz?.isInitialized) {
-          await initializeSupabaseAuthz(supabase);
+          await initializeSupabaseAuthz(supabase, supabaseCD);
         }
         const user = getSupabaseAuthz()?.getCurrentUser();
         if (user) {

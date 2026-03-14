@@ -50,6 +50,7 @@
  */
 
 import { supabase } from '../lib/supabase';
+import { supabaseCD } from '../lib/supabaseCD';
 import type { CloseRouteResult, MileageLogInsert } from '../types/mileage';
 
 // ═══════════════════════════════════════════════════════════════
@@ -118,7 +119,7 @@ export async function closeRoute(
   // ─────────────────────────────────────────────────────────────
   // 2. Collect completed claims
   // ─────────────────────────────────────────────────────────────
-  const { data: completedClaims, error: claimsError } = await supabase
+  const { data: completedClaims, error: claimsError } = await supabaseCD
     .from('claims_v')
     .select('id')
     .eq('route_id', routeId)

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
+import { supabaseCD } from "../../lib/supabaseCD";
 import { useNavigate } from "react-router-dom";
 import { NavBar } from "../NavBar";
 import { useRole } from "../../hooks/useRole";
@@ -30,15 +31,15 @@ export default function ContractorManagement() {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 90);
 
     const [cRes, clRes, allRes] = await Promise.all([
-      supabase.from("profiles")
+      supabaseCD.from("profiles")
         .select("*")
         .in("role", ["appraiser", "writer"])
         .order("full_name"),
-      supabase.from("claims_v")
+      supabaseCD.from("claims_v")
         .select("id, assigned_to, status, claim_number, customer_name, firm, appointment_start")
         .is("archived_at", null)
         .not("status", "in", '("COMPLETED","CANCELED")'),
-      supabase.from("claims_v")
+      supabaseCD.from("claims_v")
         .select("id, assigned_to, status, created_at, completion_date")
         .is("archived_at", null)
         .gte("created_at", thirtyDaysAgo.toISOString()),
@@ -76,7 +77,7 @@ export default function ContractorManagement() {
   const invite = async () => {
     setSaving(true);
     try {
-      const { error } = await supabase.functions.invoke("invite-contractor", {
+      const { error } = await supabaseCD.functions.invoke("invite-contractor", {
         body: {
           ...form,
           pay_rate: form.pay_rate ? parseFloat(form.pay_rate) : null,
@@ -96,7 +97,7 @@ export default function ContractorManagement() {
   };
 
   const toggleAvailable = async (c: any) => {
-    await supabase.from("profiles")
+    await supabaseCD.from("profiles")
       .update({ available: !c.available })
       .eq("user_id", c.user_id);
     await load();

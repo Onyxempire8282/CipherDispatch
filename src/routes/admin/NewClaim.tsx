@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
+import { supabaseCD } from "../../lib/supabaseCD";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { Link, useNavigate } from "react-router-dom";
 import { isHolidayISO, formatHolidayName } from "../../utils/holidays";
@@ -111,13 +112,13 @@ export default function NewClaim() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
+      const { data } = await supabaseCD
         .from("profiles")
         .select("user_id, full_name, role");
       setUsers(data || []);
     })();
     (async () => {
-      const { data } = await supabase
+      const { data } = await supabaseCD
         .from("vendors")
         .select("id, name, pay_amount, fee_auto, fee_heavy_duty, fee_photos_scope, default_insurance_company")
         .eq("active", true)
@@ -173,7 +174,7 @@ export default function NewClaim() {
     };
 
     if (override) {
-      const { error } = await supabase
+      const { error } = await supabaseCD
         .from("claims")
         .update(claimPayload)
         .eq("claim_number", form.claim_number);
@@ -186,7 +187,7 @@ export default function NewClaim() {
       return;
     }
 
-    const { error } = await supabase.rpc('create_claim', {
+    const { error } = await supabaseCD.rpc('create_claim', {
       p_owner_id: claimPayload.owner_id,
       p_firm: claimPayload.firm,
       p_claim_number: claimPayload.claim_number,
@@ -239,7 +240,7 @@ export default function NewClaim() {
       console.log("FOLLOW-UP UPDATE extraFields:", JSON.stringify(extraFields, null, 2));
       console.log("FOLLOW-UP UPDATE claim_number:", form.claim_number);
 
-      const { error: updateError, data: updateData, count: updateCount } = await supabase
+      const { error: updateError, data: updateData, count: updateCount } = await supabaseCD
         .from("claims")
         .update(extraFields)
         .eq("claim_number", form.claim_number)
@@ -255,14 +256,14 @@ export default function NewClaim() {
       if (form.assigned_to) {
         (async () => {
           try {
-            const { data: profile } = await supabase
+            const { data: profile } = await supabaseCD
               .from("profiles")
               .select("full_name")
               .eq("user_id", user.id)
               .single();
 
             // Look up the created claim ID by claim_number
-            const { data: created } = await supabase
+            const { data: created } = await supabaseCD
               .from("claims_v")
               .select("id")
               .eq("claim_number", form.claim_number)

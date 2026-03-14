@@ -24,7 +24,7 @@ function SupplementHistory({ claimId }: { claimId: string }) {
   const nav = useNavigate();
 
   useEffect(() => {
-    supabase.from("claims_v")
+    supabaseCD.from("claims_v")
       .select("*")
       .eq("original_claim_id", claimId)
       .order("supplement_number")
@@ -103,7 +103,7 @@ export default function ClaimDetail() {
   const [firmSchedules, setFirmSchedules] = useState<Record<string, FirmSchedule>>({});
 
   const load = async () => {
-    const { data } = await supabase
+    const { data } = await supabaseCD
       .from("claims_v")
       .select("*")
       .eq("id", id)
@@ -124,7 +124,7 @@ export default function ClaimDetail() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       // Only mark if this claim is assigned to the current user and not yet viewed
-      const { data: claimData } = await supabase
+      const { data: claimData } = await supabaseCD
         .from("claims_v")
         .select("*")
         .eq("id", id)
@@ -134,7 +134,7 @@ export default function ClaimDetail() {
         claimData.assigned_to === user.id &&
         !claimData.viewed_by_appraiser_at
       ) {
-        supabase
+        supabaseCD
           .from("claims")
           .update({ viewed_by_appraiser_at: new Date().toISOString() })
           .eq("id", id)
@@ -148,7 +148,7 @@ export default function ClaimDetail() {
     load();
     // Load users for assignment dropdown
     (async () => {
-      const { data } = await supabase
+      const { data } = await supabaseCD
         .from("profiles")
         .select("user_id, full_name, role")
         .order("full_name");
@@ -156,7 +156,7 @@ export default function ClaimDetail() {
     })();
     // Load firms for firm dropdown + schedule data
     (async () => {
-      const { data } = await supabase
+      const { data } = await supabaseCD
         .from("vendors")
         .select("id, name, pay_schedule_type, pay_day, reference_date")
         .eq("active", true)
@@ -247,7 +247,7 @@ export default function ClaimDetail() {
 
   const update = async (patch: any) => {
     if (!id) return;
-    const { error } = await supabase.from("claims").update(patch).eq("id", id);
+    const { error } = await supabaseCD.from("claims").update(patch).eq("id", id);
     if (error) alert(error.message);
     else await load();
   };
@@ -382,7 +382,7 @@ export default function ClaimDetail() {
       (async () => {
         try {
           const { data: { user } } = await supabase.auth.getUser();
-          const { data: profile } = await supabase
+          const { data: profile } = await supabaseCD
             .from("profiles")
             .select("full_name")
             .eq("user_id", user?.id)
@@ -478,7 +478,7 @@ export default function ClaimDetail() {
       payout_status: "unpaid",
     });
 
-    supabase.functions.invoke("notify-status-change", {
+    supabaseCD.functions.invoke("notify-status-change", {
       body: { claim_id: id, new_status: "COMPLETED", claim_number: claim.claim_number }
     }).catch(() => {});
 
@@ -509,7 +509,7 @@ export default function ClaimDetail() {
     await supabaseCD.from("claim_photos").delete().eq("claim_id", id);
 
     // Delete claim
-    const { error } = await supabase.from("claims").delete().eq("id", id);
+    const { error } = await supabaseCD.from("claims").delete().eq("id", id);
 
     if (error) {
       alert(`Error deleting claim: ${error.message}`);
@@ -671,7 +671,7 @@ export default function ClaimDetail() {
         const cancelFunctionsUrl = import.meta.env.VITE_CD_SUPABASE_FUNCTIONS_URL;
         try {
           const { data: { user } } = await supabase.auth.getUser();
-          const { data: profile } = await supabase
+          const { data: profile } = await supabaseCD
             .from("profiles")
             .select("full_name")
             .eq("user_id", user?.id)
@@ -733,7 +733,7 @@ export default function ClaimDetail() {
       });
 
       // Pre-wired for n8n Workflow 4
-      supabase.functions.invoke("notify-status-change", {
+      supabaseCD.functions.invoke("notify-status-change", {
         body: {
           claim_id: id,
           new_status: "COMPLETED",
@@ -1485,7 +1485,7 @@ export default function ClaimDetail() {
             <button
               className="detail__btn detail__btn--supplement"
               onClick={async () => {
-                await supabase.from("claim_messages").insert({
+                await supabaseCD.from("claim_messages").insert({
                   claim_id: id,
                   author_name: userInfo?.fullName || "System",
                   author_role: userInfo?.role || "admin",

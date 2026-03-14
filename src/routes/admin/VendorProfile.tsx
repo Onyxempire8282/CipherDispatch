@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
+import { supabaseCD } from "../../lib/supabaseCD";
 import { NavBar } from "../../components/NavBar";
 import { useRole } from "../../hooks/useRole";
 import PageHeader from "../../components/ui/PageHeader";
@@ -72,7 +73,7 @@ export default function VendorProfile() {
   const loadVendor = useCallback(async () => {
     if (!id) return;
     setLoading(true);
-    const { data, error } = await supabase
+    const { data, error } = await supabaseCD
       .from("vendors")
       .select("*")
       .eq("id", id)
@@ -94,15 +95,15 @@ export default function VendorProfile() {
     const firmName = vendor.name;
 
     const [totalRes, openRes, completedRes, revenueRes] = await Promise.all([
-      supabase.from("claims_v").select("id", { count: "exact", head: true })
+      supabaseCD.from("claims_v").select("id", { count: "exact", head: true })
         .eq("firm", firmName).is("archived_at", null),
-      supabase.from("claims_v").select("id", { count: "exact", head: true })
+      supabaseCD.from("claims_v").select("id", { count: "exact", head: true })
         .eq("firm", firmName).is("archived_at", null)
         .not("status", "in", '("COMPLETED","CANCELED")'),
-      supabase.from("claims_v").select("id", { count: "exact", head: true })
+      supabaseCD.from("claims_v").select("id", { count: "exact", head: true })
         .eq("firm", firmName).is("archived_at", null)
         .eq("status", "COMPLETED"),
-      supabase.from("claims_v").select("file_total, pay_amount")
+      supabaseCD.from("claims_v").select("file_total, pay_amount")
         .eq("firm", firmName).is("archived_at", null)
         .eq("status", "COMPLETED"),
     ]);
@@ -121,7 +122,7 @@ export default function VendorProfile() {
     const from = historyPage * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
 
-    const { data, count } = await supabase
+    const { data, count } = await supabaseCD
       .from("claims_v")
       .select("id, claim_number, customer_name, status, claim_type, file_total, pay_amount, created_at, completed_at", { count: "exact" })
       .eq("firm", vendor.name)
@@ -140,7 +141,7 @@ export default function VendorProfile() {
   const handleSaveFees = async () => {
     if (!vendor) return;
     setSaving(true);
-    const { error } = await supabase
+    const { error } = await supabaseCD
       .from("vendors")
       .update({
         fee_auto: feeAuto ? parseFloat(feeAuto) : null,

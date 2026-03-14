@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
+import { supabaseCD } from "../../lib/supabaseCD";
 import "./appraiser-dashboard.css";
 
 interface TodayClaim {
@@ -63,7 +64,7 @@ export default function AppraiserDashboard() {
       if (!user) return;
 
       // Get first name from profile or auth metadata
-      const { data: profile } = await supabase
+      const { data: profile } = await supabaseCD
         .from("profiles")
         .select("full_name")
         .eq("user_id", user.id)
@@ -90,7 +91,7 @@ export default function AppraiserDashboard() {
       ).toISOString();
 
       // Today's run claims
-      const { data: todayData } = await supabase
+      const { data: todayData } = await supabaseCD
         .from("claims_v")
         .select(
           "id, claim_number, customer_name, status, appointment_start, address_line1, city, state"
@@ -105,7 +106,7 @@ export default function AppraiserDashboard() {
       setTodayClaims((todayData as TodayClaim[]) || []);
 
       // Count of all today's claims (for "VIEW ALL N STOPS" link)
-      const { count: todayTotal } = await supabase
+      const { count: todayTotal } = await supabaseCD
         .from("claims_v")
         .select("id", { count: "exact", head: true })
         .eq("assigned_to", user.id)
@@ -123,7 +124,7 @@ export default function AppraiserDashboard() {
       }
 
       // Performance stats — all claims assigned to this user
-      const { data: allClaims } = await supabase
+      const { data: allClaims } = await supabaseCD
         .from("claims_v")
         .select("status, created_at, completion_date, completed_month")
         .eq("assigned_to", user.id);

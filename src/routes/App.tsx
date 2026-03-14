@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { supabaseCD } from "../lib/supabaseCD";
 import { useNavigate, Link } from "react-router-dom";
 import { NavBar } from "../components/NavBar";
 import PageHeader from "../components/ui/PageHeader";
@@ -27,7 +28,7 @@ export default function App() {
     const h24ago = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
 
     const baseQuery = () =>
-      supabase
+      supabaseCD
         .from("claims_v")
         .select("id", { count: "exact", head: true })
         .is("archived_at", null)
@@ -58,7 +59,7 @@ export default function App() {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) return nav("/login");
-      const { data } = await supabase
+      const { data } = await supabaseCD
         .from("profiles")
         .select("user_id, role, full_name")
         .eq("user_id", user.id)
@@ -68,14 +69,14 @@ export default function App() {
       await loadStats();
     })();
 
-    const channel = supabase
+    const channel = supabaseCD
       .channel("dashboard-claims")
       .on("postgres_changes", { event: "*", schema: "public", table: "claims" }, () => {
         loadStats();
       })
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => { supabaseCD.removeChannel(channel); };
   }, []);
 
   useEffect(() => {

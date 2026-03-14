@@ -389,7 +389,7 @@ export default function PhotoCapture() {
     setState((prev) => ({ ...prev, completed: true }));
 
     // Mark claim as having photos completed
-    await supabase
+    await supabaseCD
       .from("claims")
       .update({ photos_completed: true })
       .eq("id", claimId);

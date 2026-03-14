@@ -19,13 +19,15 @@ export interface AuthzResult {
 }
 
 export class SupabaseAuthz {
-  private supabaseClient: SupabaseClient;
+  private authClient: SupabaseClient;
+  private dataClient: SupabaseClient;
   private currentUser: any = null;
   private userProfile: UserProfile | null = null;
   private initialized = false;
 
-  constructor(supabaseClient: SupabaseClient) {
-    this.supabaseClient = supabaseClient;
+  constructor(authClient: SupabaseClient, dataClient?: SupabaseClient) {
+    this.authClient = authClient;
+    this.dataClient = dataClient || authClient;
   }
 
   get isAdmin(): boolean {
@@ -51,7 +53,7 @@ export class SupabaseAuthz {
       const {
         data: { session },
         error: sessionError,
-      } = await this.supabaseClient.auth.getSession();
+      } = await this.authClient.auth.getSession();
 
       if (sessionError) {
         console.error("Session error:", sessionError);
@@ -67,7 +69,7 @@ export class SupabaseAuthz {
       console.log("Current user ID:", this.currentUser.id);
 
       // Fetch user profile to determine role
-      const { data: profile, error: profileError } = await this.supabaseClient
+      const { data: profile, error: profileError } = await this.dataClient
         .from("profiles")
         .select("user_id, role, full_name")
         .eq("user_id", this.currentUser.id)
@@ -202,10 +204,11 @@ let globalAuthz: SupabaseAuthz | null = null;
  * Initialize the global authorization helper for React
  */
 export async function initializeSupabaseAuthz(
-  supabaseClient: SupabaseClient
+  authClient: SupabaseClient,
+  dataClient?: SupabaseClient
 ): Promise<SupabaseAuthz> {
   if (!globalAuthz) {
-    globalAuthz = new SupabaseAuthz(supabaseClient);
+    globalAuthz = new SupabaseAuthz(authClient, dataClient);
   }
 
   const result = await globalAuthz.initialize();

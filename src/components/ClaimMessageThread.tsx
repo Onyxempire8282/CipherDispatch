@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { supabaseCD } from "../lib/supabaseCD";
 import {
   CUSTOMER_SCRIPTS,
   FIRM_SCRIPTS,
@@ -56,7 +57,7 @@ export default function ClaimMessageThread({
     messageType === "customer" ? CUSTOMER_SCRIPTS : FIRM_SCRIPTS;
 
   const fetchMessages = async () => {
-    const { data } = await supabase
+    const { data } = await supabaseCD
       .from("claim_messages")
       .select("*")
       .eq("claim_id", claimId)
@@ -69,7 +70,7 @@ export default function ClaimMessageThread({
     fetchMessages();
 
     // Realtime subscription
-    const channel = supabase
+    const channel = supabaseCD
       .channel(`claim-messages-${messageType}-${claimId}`)
       .on(
         "postgres_changes",
@@ -92,7 +93,7 @@ export default function ClaimMessageThread({
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabaseCD.removeChannel(channel);
     };
   }, [claimId, messageType]);
 
@@ -117,7 +118,7 @@ export default function ClaimMessageThread({
     setSaving(true);
     setError("");
 
-    const { error: insertErr } = await supabase.from("claim_messages").insert({
+    const { error: insertErr } = await supabaseCD.from("claim_messages").insert({
       claim_id: claimId,
       author_name: currentUser.name,
       author_role: currentUser.role,

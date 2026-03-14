@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import { supabaseCD } from '../../lib/supabaseCD';
 import { getFirmColor, FIRM_COLORS } from '../../constants/firmColors';
 import { getSupabaseAuthz } from '../../lib/supabaseAuthz';
 import { isHoliday, formatHolidayName } from '../../utils/holidays';
@@ -64,7 +65,7 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
+      const { data } = await supabaseCD
         .from('profiles')
         .select('user_id, full_name')
         .eq('role', 'appraiser')
@@ -119,11 +120,11 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
       if (scheduleNotes.trim()) updateData.notes = scheduleNotes.trim();
       if (selectedAppraiser) updateData.assigned_to = selectedAppraiser;
 
-      const { error } = await supabase.from('claims').update(updateData).eq('id', pendingDrop);
+      const { error } = await supabaseCD.from('claims').update(updateData).eq('id', pendingDrop);
       if (error) throw error;
 
       // Pre-wired for n8n — fires when claim is scheduled
-      supabase.functions.invoke("notify-status-change", {
+      supabaseCD.functions.invoke("notify-status-change", {
         body: {
           claim_id: pendingDrop,
           new_status: "SCHEDULED",
@@ -159,7 +160,7 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
     if (!claim.appointment_start) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await supabaseCD
         .from('claims')
         .update({ appointment_start: null, appointment_end: null, status: 'IN_PROGRESS' })
         .eq('id', claimId);

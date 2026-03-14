@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
+import { supabaseCD } from "../../lib/supabaseCD";
 import { NavBar } from "../../components/NavBar";
 import PageHeader from "../../components/ui/PageHeader";
 import Field from "../../components/ui/Field";
@@ -47,15 +48,15 @@ export default function NewSupplement() {
 
   const loadOriginal = async (claimId: string) => {
     const [claimRes, suppsRes, usersRes] = await Promise.all([
-      supabase.from("claims_v")
+      supabaseCD.from("claims_v")
         .select("*")
         .eq("id", claimId)
         .single(),
-      supabase.from("claims_v")
+      supabaseCD.from("claims_v")
         .select("*")
         .eq("original_claim_id", claimId)
         .order("supplement_number"),
-      supabase.from("profiles")
+      supabaseCD.from("profiles")
         .select("user_id, full_name, role")
         .order("full_name"),
     ]);
@@ -77,7 +78,7 @@ export default function NewSupplement() {
   useEffect(() => {
     if (id) loadOriginal(id);
     else {
-      supabase.from("profiles").select("user_id, full_name, role")
+      supabaseCD.from("profiles").select("user_id, full_name, role")
         .order("full_name")
         .then(({ data }) => setUsers(data || []));
     }
@@ -86,7 +87,7 @@ export default function NewSupplement() {
   const searchClaims = async () => {
     if (!searchQuery.trim()) return;
     setSearching(true);
-    const { data } = await supabase
+    const { data } = await supabaseCD
       .from("claims_v")
       .select("*")
       .or(`claim_number.ilike.%${searchQuery}%,customer_name.ilike.%${searchQuery}%`)
@@ -151,7 +152,7 @@ export default function NewSupplement() {
       payout_status:     "unpaid",
     };
 
-    const { error } = await supabase.from("claims").insert(payload);
+    const { error } = await supabaseCD.from("claims").insert(payload);
 
     setSaving(false);
 
