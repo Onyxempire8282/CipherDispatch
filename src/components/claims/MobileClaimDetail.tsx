@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { getFirmColor } from '../../constants/firmColors';
 import { supabase } from '../../lib/supabase';
 import { getPhotoUrlWithFallback } from '../../utils/uploadManager';
+import ClaimMessageThread from '../ClaimMessageThread';
+import '../claim-message-thread.css';
 import './mobile-claim-detail.css';
 
 /**
@@ -40,6 +42,7 @@ interface MobileClaimDetailProps {
   onPhotoClick: (index: number) => void;
   onPhotoCapture: string;
   onPhoto?: (files: FileList) => void;
+  currentUser?: { name: string; role: string };
 }
 
 // Map claim status to BEM modifier suffix
@@ -114,6 +117,7 @@ export default function MobileClaimDetail({
   onPhotoClick,
   onPhotoCapture,
   onPhoto,
+  currentUser,
 }: MobileClaimDetailProps) {
   // Get status display text
   const getStatusText = (status: string | null): string => {
@@ -397,10 +401,43 @@ export default function MobileClaimDetail({
           </CollapsibleSection>
         )}
 
-        {/* Client-Visible Notes */}
-        {claim.public_notes && (
-          <CollapsibleSection title="Client Notes" icon="📋" defaultOpen={false}>
-            <div className="mobile-detail__notes">{claim.public_notes}</div>
+        {/* Customer Messages */}
+        {isAdmin && currentUser && (
+          <CollapsibleSection title="Customer Messages" icon="" defaultOpen={false}>
+            <div className="msg-section">
+              <div className="msg-section__header">
+                <span />
+                {claim.customer_phone ? (
+                  <a href={`sms:${claim.customer_phone}`} className="msg-section__text-btn">
+                    Text Customer
+                  </a>
+                ) : (
+                  <span className="msg-section__text-btn msg-section__text-btn--disabled" title="No customer phone number on file">
+                    Text Customer
+                  </span>
+                )}
+              </div>
+              <ClaimMessageThread
+                claimId={claim.id}
+                claimData={claim}
+                currentUser={currentUser}
+                messageType="customer"
+              />
+            </div>
+          </CollapsibleSection>
+        )}
+
+        {/* Firm & Carrier Messages */}
+        {isAdmin && currentUser && (
+          <CollapsibleSection title="Firm & Carrier Messages" icon="" defaultOpen={false}>
+            <div className="msg-section">
+              <ClaimMessageThread
+                claimId={claim.id}
+                claimData={claim}
+                currentUser={currentUser}
+                messageType="firm"
+              />
+            </div>
           </CollapsibleSection>
         )}
 
@@ -527,12 +564,23 @@ export default function MobileClaimDetail({
             ) : (
               <Field label="" value="No supplements yet" />
             )}
-            <Link
-              to={`/admin/claims/${claim.id}/supplement`}
+            <button
               className="mobile-detail__action-secondary mobile-detail__action-secondary--amber"
+              onClick={async () => {
+                if (currentUser) {
+                  await supabase.from("claim_messages").insert({
+                    claim_id: claim.id,
+                    author_name: currentUser.name,
+                    author_role: currentUser.role,
+                    body: `Supplement created by ${currentUser.name}`,
+                    message_type: "system",
+                  });
+                }
+                nav(`/admin/claims/${claim.id}/supplement`);
+              }}
             >
               + Create Supplement
-            </Link>
+            </button>
           </CollapsibleSection>
         )}
 

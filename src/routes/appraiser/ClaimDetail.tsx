@@ -16,6 +16,7 @@ import { NavBar } from "../../components/NavBar";
 import JSZip from "jszip";
 import { getPhotoUrlWithFallback } from "../../utils/uploadManager";
 import { getTimezoneForState } from "../../utils/stateTimezone";
+import ClaimMessageThread from "../../components/ClaimMessageThread";
 import "./claim-detail.css";
 
 function SupplementHistory({ claimId }: { claimId: string }) {
@@ -767,6 +768,7 @@ export default function ClaimDetail() {
           onPhotoClick={setLightboxIndex}
           onPhotoCapture={`/appraiser/claim/${id}/photos`}
           onPhoto={handlePhotoUpload}
+          currentUser={{ name: userInfo?.fullName || "Unknown", role: userInfo?.role || "admin" }}
         />
 
         {/* Lightbox Modal - shared between mobile and desktop */}
@@ -1306,23 +1308,48 @@ export default function ClaimDetail() {
           </div>
         )}
 
-        {/* Client-Visible Notes */}
-        {(claim.public_notes || isEditing) && (
-          <div className="detail__section detail__section--mb">
-            <h4 className="detail__section-title">Client-Visible Notes</h4>
-            <p className="detail__section-sub">These notes are visible to carriers and TPAs tracking this claim.</p>
-            {isEditing ? (
-              <textarea
-                className="detail__textarea"
-                value={editPublicNotes}
-                onChange={(e) => setEditPublicNotes(e.target.value)}
-                placeholder="Enter client-visible notes..."
-              />
-            ) : (
-              <div className="detail__notes-box">
-                {claim.public_notes || <span className="detail__value--muted">No client notes</span>}
-              </div>
-            )}
+        {/* Customer Messages */}
+        {isAdmin && (
+          <div className="detail__section detail__section--mb msg-section">
+            <div className="msg-section__header">
+              <h4 className="msg-section__title">Customer Messages</h4>
+              {claim.customer_phone ? (
+                <a
+                  href={`sms:${claim.customer_phone}`}
+                  className="msg-section__text-btn"
+                >
+                  Text Customer
+                </a>
+              ) : (
+                <span
+                  className="msg-section__text-btn msg-section__text-btn--disabled"
+                  title="No customer phone number on file"
+                >
+                  Text Customer
+                </span>
+              )}
+            </div>
+            <p className="msg-section__sub">Messages to the insured. All entries are timestamped.</p>
+            <ClaimMessageThread
+              claimId={id!}
+              claimData={claim}
+              currentUser={{ name: userInfo?.fullName || "Unknown", role: userInfo?.role || "admin" }}
+              messageType="customer"
+            />
+          </div>
+        )}
+
+        {/* Firm & Carrier Messages */}
+        {isAdmin && (
+          <div className="detail__section detail__section--mb msg-section">
+            <h4 className="msg-section__title">Firm & Carrier Messages</h4>
+            <p className="msg-section__sub">Internal notes and carrier communications. Timestamped.</p>
+            <ClaimMessageThread
+              claimId={id!}
+              claimData={claim}
+              currentUser={{ name: userInfo?.fullName || "Unknown", role: userInfo?.role || "admin" }}
+              messageType="firm"
+            />
           </div>
         )}
 
@@ -1455,12 +1482,21 @@ export default function ClaimDetail() {
           <div className="detail__section">
             <h4 className="detail__section-title">Supplements</h4>
             <SupplementHistory claimId={id!} />
-            <Link
-              to={`/admin/claims/${id}/supplement`}
+            <button
               className="detail__btn detail__btn--supplement"
+              onClick={async () => {
+                await supabase.from("claim_messages").insert({
+                  claim_id: id,
+                  author_name: userInfo?.fullName || "System",
+                  author_role: userInfo?.role || "admin",
+                  body: `Supplement created by ${userInfo?.fullName || "dispatch"}`,
+                  message_type: "system",
+                });
+                nav(`/admin/claims/${id}/supplement`);
+              }}
             >
               + Create Supplement
-            </Link>
+            </button>
           </div>
         )}
 
