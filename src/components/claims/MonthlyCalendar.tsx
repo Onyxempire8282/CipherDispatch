@@ -119,7 +119,7 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
       if (scheduleNotes.trim()) updateData.notes = scheduleNotes.trim();
       if (selectedAppraiser) updateData.assigned_to = selectedAppraiser;
 
-      const { error } = await supabase.from('claims_v').update(updateData).eq('id', pendingDrop);
+      const { error } = await supabase.from('claims').update(updateData).eq('id', pendingDrop);
       if (error) throw error;
 
       // Pre-wired for n8n — fires when claim is scheduled
@@ -160,7 +160,7 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
 
     try {
       const { error } = await supabase
-        .from('claims_v')
+        .from('claims')
         .update({ appointment_start: null, appointment_end: null, status: 'IN_PROGRESS' })
         .eq('id', claimId);
       if (error) throw error;

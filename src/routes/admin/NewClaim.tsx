@@ -174,7 +174,7 @@ export default function NewClaim() {
 
     if (override) {
       const { error } = await supabase
-        .from("claims_v")
+        .from("claims")
         .update(claimPayload)
         .eq("claim_number", form.claim_number);
       if (error) {

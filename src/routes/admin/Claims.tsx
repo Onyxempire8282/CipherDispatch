@@ -216,7 +216,7 @@ export default function AdminClaims() {
   const handleQuickComplete = async (claimId: string) => {
     try {
       const { error } = await supabase
-        .from("claims_v")
+        .from("claims")
         .update({ status: "COMPLETED" })
         .eq("id", claimId);
       if (error) throw error;

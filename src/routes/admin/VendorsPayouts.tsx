@@ -315,7 +315,7 @@ export default function VendorsPayouts() {
       }
 
       const { error } = await supabase
-        .from("claims_v")
+        .from("claims")
         .update(updateData)
         .eq("id", claimId);
       if (error) throw error;

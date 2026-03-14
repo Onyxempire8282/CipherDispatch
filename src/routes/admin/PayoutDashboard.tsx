@@ -134,7 +134,7 @@ export default function PayoutDashboard() {
       }
 
       const { error } = await supabase
-        .from('claims_v')
+        .from('claims')
         .update(updateData)
         .eq('id', claimId);
 

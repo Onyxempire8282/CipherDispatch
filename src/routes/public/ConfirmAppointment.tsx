@@ -32,7 +32,7 @@ export default function ConfirmAppointment() {
   const confirm = async () => {
     setStage("loading");
     const { error } = await supabase
-      .from("claims_v")
+      .from("claims")
       .update({ appt_confirmed: true, appt_confirmed_at: new Date().toISOString() })
       .eq("confirm_token", token);
 

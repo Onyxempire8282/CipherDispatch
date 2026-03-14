@@ -151,7 +151,7 @@ export default function NewSupplement() {
       payout_status:     "unpaid",
     };
 
-    const { error } = await supabase.from("claims_v").insert(payload);
+    const { error } = await supabase.from("claims").insert(payload);
 
     setSaving(false);
 

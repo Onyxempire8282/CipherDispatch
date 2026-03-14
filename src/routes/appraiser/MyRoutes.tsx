@@ -120,7 +120,7 @@ export default function MyRoutes() {
 
   const handleStartInspection = async (claimId: string) => {
     const { error } = await supabase
-      .from("claims_v")
+      .from("claims")
       .update({ status: "IN_PROGRESS" })
       .eq("id", claimId);
     if (error) {
@@ -143,7 +143,7 @@ export default function MyRoutes() {
     const completedMonth = `${year}-${month}`;
 
     const { error } = await supabase
-      .from("claims_v")
+      .from("claims")
       .update({
         status: "COMPLETED",
         completion_date: completionDate,
