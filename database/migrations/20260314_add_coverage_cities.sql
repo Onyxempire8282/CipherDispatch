@@ -1,4 +1,4 @@
--- Add coverage_cities column to profiles table
--- Stores an array of city names the contractor covers
+-- Add coverage columns to profiles table
 ALTER TABLE profiles
+  ADD COLUMN IF NOT EXISTS coverage_states TEXT[] DEFAULT '{}',
   ADD COLUMN IF NOT EXISTS coverage_cities TEXT[] DEFAULT '{}';
