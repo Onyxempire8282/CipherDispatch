@@ -145,7 +145,7 @@ export default function AdminClaims() {
       }
 
       let query = supabaseCD
-        .from("claims_v")
+        .from('claims')
         .select("*")
         .order("created_at", { ascending: false });
 

@@ -29,7 +29,7 @@ export default function ClientPortal() {
 
       // Load their claims
       const { data: claimsData, error: cErr } = await supabaseCD
-        .from("claims_v")
+        .from('claims')
         .select("*")
         .eq("portal_client_id", portal.id)
         .is("archived_at", null)

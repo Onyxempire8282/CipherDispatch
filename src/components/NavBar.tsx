@@ -97,7 +97,7 @@ export const NavBar: React.FC<NavBarProps> = ({ role, userName }) => {
       if (!user) return;
 
       const { count } = await supabaseCD
-        .from("claims_v")
+        .from('claims')
         .select("id", { count: "exact", head: true })
         .eq("assigned_to", user.id)
         .is("viewed_by_appraiser_at", null)

@@ -166,7 +166,7 @@ export default function MobileClaimDetail({
   useEffect(() => {
     if (claim.id && !claim.is_supplement) {
       supabaseCD
-        .from('claims_v')
+        .from('claims')
         .select('*')
         .eq('original_claim_id', claim.id)
         .order('supplement_number')

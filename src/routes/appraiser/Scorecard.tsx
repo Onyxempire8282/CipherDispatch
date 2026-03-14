@@ -22,12 +22,12 @@ export default function Scorecard() {
 
       const [profileRes, openRes, allRes] = await Promise.all([
         supabaseCD.from("profiles").select("*").eq("user_id", userId).single(),
-        supabaseCD.from("claims_v")
+        supabaseCD.from('claims')
           .select("id, claim_number, customer_name, firm, status, appointment_start, city, state")
           .eq("assigned_to", userId)
           .is("archived_at", null)
           .not("status", "in", '("COMPLETED","CANCELED")'),
-        supabaseCD.from("claims_v")
+        supabaseCD.from('claims')
           .select("id, claim_number, customer_name, firm, status, created_at, completion_date, pay_amount")
           .eq("assigned_to", userId)
           .is("archived_at", null)

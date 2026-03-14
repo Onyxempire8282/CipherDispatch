@@ -48,11 +48,11 @@ export default function NewSupplement() {
 
   const loadOriginal = async (claimId: string) => {
     const [claimRes, suppsRes, usersRes] = await Promise.all([
-      supabaseCD.from("claims_v")
+      supabaseCD.from('claims')
         .select("*")
         .eq("id", claimId)
         .single(),
-      supabaseCD.from("claims_v")
+      supabaseCD.from('claims')
         .select("*")
         .eq("original_claim_id", claimId)
         .order("supplement_number"),
@@ -88,7 +88,7 @@ export default function NewSupplement() {
     if (!searchQuery.trim()) return;
     setSearching(true);
     const { data } = await supabaseCD
-      .from("claims_v")
+      .from('claims')
       .select("*")
       .or(`claim_number.ilike.%${searchQuery}%,customer_name.ilike.%${searchQuery}%`)
       .is("original_claim_id", null)

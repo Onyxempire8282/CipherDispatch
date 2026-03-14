@@ -17,7 +17,7 @@ export default function ConfirmAppointment() {
     if (!token) { setStage("expired"); return; }
     (async () => {
       const { data, error } = await supabaseCD
-        .from("claims_v")
+        .from('claims')
         .select("*")
         .eq("confirm_token", token)
         .is("archived_at", null)

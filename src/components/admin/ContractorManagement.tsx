@@ -35,11 +35,11 @@ export default function ContractorManagement() {
         .select("*")
         .in("role", ["appraiser", "writer"])
         .order("full_name"),
-      supabaseCD.from("claims_v")
+      supabaseCD.from('claims')
         .select("id, assigned_to, status, claim_number, customer_name, firm, appointment_start")
         .is("archived_at", null)
         .not("status", "in", '("COMPLETED","CANCELED")'),
-      supabaseCD.from("claims_v")
+      supabaseCD.from('claims')
         .select("id, assigned_to, status, created_at, completion_date")
         .is("archived_at", null)
         .gte("created_at", thirtyDaysAgo.toISOString()),

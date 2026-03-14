@@ -24,7 +24,7 @@ function SupplementHistory({ claimId }: { claimId: string }) {
   const nav = useNavigate();
 
   useEffect(() => {
-    supabaseCD.from("claims_v")
+    supabaseCD.from('claims')
       .select("*")
       .eq("original_claim_id", claimId)
       .order("supplement_number")
@@ -104,7 +104,7 @@ export default function ClaimDetail() {
 
   const load = async () => {
     const { data } = await supabaseCD
-      .from("claims_v")
+      .from('claims')
       .select("*")
       .eq("id", id)
       .single();
@@ -125,7 +125,7 @@ export default function ClaimDetail() {
       if (!user) return;
       // Only mark if this claim is assigned to the current user and not yet viewed
       const { data: claimData } = await supabaseCD
-        .from("claims_v")
+        .from('claims')
         .select("*")
         .eq("id", id)
         .single();

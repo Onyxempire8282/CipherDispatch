@@ -44,7 +44,7 @@ export default function KPIDashboard() {
 
     const [claimsRes, profilesRes, slaRes] = await Promise.all([
       supabaseCD
-        .from('claims_v')
+        .from('claims')
         .select("*")
         .gte('created_at', thirteenMonthsAgo.toISOString())
         .is('archived_at', null),

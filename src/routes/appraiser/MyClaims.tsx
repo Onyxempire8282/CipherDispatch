@@ -90,7 +90,7 @@ export default function MyClaims() {
 
       // Create base query - load ALL claims
       let query = supabaseCD
-        .from("claims_v")
+        .from('claims')
         .select("*");
 
       // Apply role-based scoping

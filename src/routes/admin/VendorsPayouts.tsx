@@ -149,7 +149,7 @@ export default function VendorsPayouts() {
     try {
       const [claimsRes, vendorsRes] = await Promise.all([
         supabaseCD
-          .from("claims_v")
+          .from('claims')
           .select("*")
           .is("archived_at", null)
           .or("status.eq.COMPLETED,status.eq.SCHEDULED,status.eq.IN_PROGRESS"),
@@ -294,7 +294,7 @@ export default function VendorsPayouts() {
     setEditingRefDate(false);
     try {
       const { data, error } = await supabaseCD
-        .from("claims_v")
+        .from('claims')
         .select("*")
         .is("archived_at", null)
         .in("id", payout.claimIds);
@@ -328,7 +328,7 @@ export default function VendorsPayouts() {
 
       if (selectedPayout) {
         const { data } = await supabaseCD
-          .from("claims_v")
+          .from('claims')
           .select("*")
           .is("archived_at", null)
           .in("id", selectedPayout.claimIds);

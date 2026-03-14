@@ -92,7 +92,7 @@ export default function AppraiserDashboard() {
 
       // Today's run claims
       const { data: todayData } = await supabaseCD
-        .from("claims_v")
+        .from('claims')
         .select(
           "id, claim_number, customer_name, status, appointment_start, address_line1, city, state"
         )
@@ -107,7 +107,7 @@ export default function AppraiserDashboard() {
 
       // Count of all today's claims (for "VIEW ALL N STOPS" link)
       const { count: todayTotal } = await supabaseCD
-        .from("claims_v")
+        .from('claims')
         .select("id", { count: "exact", head: true })
         .eq("assigned_to", user.id)
         .gte("appointment_start", todayStart)
@@ -125,7 +125,7 @@ export default function AppraiserDashboard() {
 
       // Performance stats — all claims assigned to this user
       const { data: allClaims } = await supabaseCD
-        .from("claims_v")
+        .from('claims')
         .select("status, created_at, completion_date, completed_month")
         .eq("assigned_to", user.id);
 

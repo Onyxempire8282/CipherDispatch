@@ -29,7 +29,7 @@ export default function App() {
 
     const baseQuery = () =>
       supabaseCD
-        .from("claims_v")
+        .from('claims')
         .select("id", { count: "exact", head: true })
         .is("archived_at", null)
         .not("status", "in", '("COMPLETED","CANCELED")');

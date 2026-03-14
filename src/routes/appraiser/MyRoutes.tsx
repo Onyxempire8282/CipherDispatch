@@ -101,7 +101,7 @@ export default function MyRoutes() {
       ).toISOString();
 
       const { data } = await supabaseCD
-        .from("claims_v")
+        .from('claims')
         .select(
           "id, claim_number, customer_name, status, appointment_start, appointment_end, address_line1, city, state, zip, vehicle_year, vehicle_make, vehicle_model, firm, pay_amount"
         )

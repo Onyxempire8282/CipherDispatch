@@ -264,7 +264,7 @@ export default function NewClaim() {
 
             // Look up the created claim ID by claim_number
             const { data: created } = await supabaseCD
-              .from("claims_v")
+              .from('claims')
               .select("id")
               .eq("claim_number", form.claim_number)
               .single();

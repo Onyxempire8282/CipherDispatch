@@ -95,15 +95,15 @@ export default function VendorProfile() {
     const firmName = vendor.name;
 
     const [totalRes, openRes, completedRes, revenueRes] = await Promise.all([
-      supabaseCD.from("claims_v").select("id", { count: "exact", head: true })
+      supabaseCD.from('claims').select("id", { count: "exact", head: true })
         .eq("firm", firmName).is("archived_at", null),
-      supabaseCD.from("claims_v").select("id", { count: "exact", head: true })
+      supabaseCD.from('claims').select("id", { count: "exact", head: true })
         .eq("firm", firmName).is("archived_at", null)
         .not("status", "in", '("COMPLETED","CANCELED")'),
-      supabaseCD.from("claims_v").select("id", { count: "exact", head: true })
+      supabaseCD.from('claims').select("id", { count: "exact", head: true })
         .eq("firm", firmName).is("archived_at", null)
         .eq("status", "COMPLETED"),
-      supabaseCD.from("claims_v").select("file_total, pay_amount")
+      supabaseCD.from('claims').select("file_total, pay_amount")
         .eq("firm", firmName).is("archived_at", null)
         .eq("status", "COMPLETED"),
     ]);
@@ -123,7 +123,7 @@ export default function VendorProfile() {
     const to = from + PAGE_SIZE - 1;
 
     const { data, count } = await supabaseCD
-      .from("claims_v")
+      .from('claims')
       .select("id, claim_number, customer_name, status, claim_type, file_total, pay_amount, created_at, completed_at", { count: "exact" })
       .eq("firm", vendor.name)
       .is("archived_at", null)
