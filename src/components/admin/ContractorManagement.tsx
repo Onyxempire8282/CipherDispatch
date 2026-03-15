@@ -77,7 +77,7 @@ export default function ContractorManagement() {
   const invite = async () => {
     setSaving(true);
     try {
-      const { error } = await supabaseCD.functions.invoke("invite-contractor", {
+      const { data, error } = await supabaseCD.functions.invoke("invite-contractor", {
         body: {
           ...form,
           pay_rate: form.pay_rate ? parseFloat(form.pay_rate) : null,
@@ -85,7 +85,8 @@ export default function ContractorManagement() {
             .split(",").map(s => s.trim()).filter(Boolean),
         }
       });
-      if (error) throw error;
+      if (error) throw new Error(data?.error || error.message);
+      if (data?.error) throw new Error(data.error);
       alert(`Invite sent to ${form.email}`);
       setShowInvite(false);
       setForm({ email:"", full_name:"", first_name:"", last_name:"", phone:"", role:"appraiser", pay_rate:"", coverage_states:[], coverage_cities:"", license_number:"", notes:"" });
