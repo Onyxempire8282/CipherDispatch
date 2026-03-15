@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
-import { JSZip } from "https://deno.land/x/jszip@0.11.0/mod.ts";
+import { zipSync } from "https://esm.sh/fflate@0.8.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -89,54 +89,55 @@ serve(async (req) => {
       }
     }
 
-    // Build zip
-    const zip = new JSZip();
-    const photosFolder = zip.folder("photos")!;
-    const docsFolder = zip.folder("documents")!;
-
-    // Fetch all photos in parallel
-    await Promise.all(photoUrls.map(async (item) => {
+    // Fetch all photos in parallel — collect results
+    const photoResults = await Promise.all(photoUrls.map(async (item) => {
       try {
         const resp = await fetch(item.url);
         if (resp.ok) {
-          const buffer = await resp.arrayBuffer();
-          const bytes = new Uint8Array(buffer);
+          const bytes = new Uint8Array(await resp.arrayBuffer());
           if (bytes.length > 0) {
-            photosFolder.file(item.name, bytes);
-            console.log(`Added photo: ${item.name} (${bytes.length} bytes)`);
-          } else {
-            console.error(`Empty response for photo: ${item.name}`);
+            console.log(`Fetched photo: ${item.name} (${bytes.length} bytes)`);
+            return { name: `photos/${item.name}`, bytes };
           }
         } else {
-          console.error(`Failed to fetch photo ${item.name}: ${resp.status}`);
+          console.error(`Failed photo ${item.name}: ${resp.status}`);
         }
       } catch (err) {
-        console.error(`Error fetching photo ${item.name}:`, err);
+        console.error(`Error photo ${item.name}:`, err);
       }
+      return null;
     }));
 
-    // Fetch all documents in parallel
-    await Promise.all(docUrls.map(async (item) => {
+    // Fetch all documents in parallel — collect results
+    const docResults = await Promise.all(docUrls.map(async (item) => {
       try {
         const resp = await fetch(item.url);
         if (resp.ok) {
-          const buffer = await resp.arrayBuffer();
-          const bytes = new Uint8Array(buffer);
+          const bytes = new Uint8Array(await resp.arrayBuffer());
           if (bytes.length > 0) {
-            docsFolder.file(item.name, bytes);
-            console.log(`Added document: ${item.name} (${bytes.length} bytes)`);
-          } else {
-            console.error(`Empty response for doc: ${item.name}`);
+            console.log(`Fetched document: ${item.name} (${bytes.length} bytes)`);
+            return { name: `documents/${item.name}`, bytes };
           }
         } else {
-          console.error(`Failed to fetch doc ${item.name}: ${resp.status}`);
+          console.error(`Failed doc ${item.name}: ${resp.status}`);
         }
       } catch (err) {
-        console.error(`Error fetching doc ${item.name}:`, err);
+        console.error(`Error doc ${item.name}:`, err);
       }
+      return null;
     }));
 
-    const zipBlob = await zip.generateAsync({ type: "uint8array", compression: "DEFLATE", compressionOptions: { level: 6 } });
+    // Build zip synchronously after all fetches complete
+    const allResults = [...photoResults, ...docResults].filter(r => r !== null) as { name: string; bytes: Uint8Array }[];
+    console.log(`Total files to zip: ${allResults.length}`);
+
+    const files: Record<string, Uint8Array> = {};
+    for (const result of allResults) {
+      files[result.name] = result.bytes;
+    }
+
+    console.log(`Files in zip object: ${Object.keys(files).length}`);
+    const zipBlob = zipSync(files, { level: 1 });
     console.log(`Zip generated: ${zipBlob.length} bytes`);
 
     // Upload zip to packages bucket
