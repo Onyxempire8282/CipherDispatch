@@ -84,6 +84,7 @@ export default function ClaimDetail() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [isEditing, setIsEditing] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // Mobile breakpoint detection: <=600px shows MobileClaimDetail
   const isMobile = useIsMobile();
@@ -1008,92 +1009,15 @@ export default function ClaimDetail() {
   return (
     <div className="detail">
       <div className="detail__inner">
-        {/* Header Bar */}
-        <div className="detail__header">
-          <div>
-            <h2 className="detail__header-title">
-              Claim #{claim.claim_number}
-            </h2>
-            <p className="detail__header-subtitle">
-              {claim.customer_name}
-            </p>
-          </div>
-          <div className="detail__header-actions">
-            {/* Guided Photo Capture Button */}
-            <Link
-              to={`/appraiser/claim/${id}/photos`}
-              className="detail__btn detail__btn--photo-capture"
-            >
-              Guided Photo Capture
-            </Link>
-
-            {(() => {
-              const authz = getSupabaseAuthz();
-              const userInfo = authz?.getCurrentUser();
-              const isAdmin = userInfo?.role === "admin" || userInfo?.role === "dispatch";
-              const isArchived = claim.status === 'CANCELED';
-
-              return isAdmin ? (
-                !isEditing ? (
-                  isArchived ? (
-                    <div
-                      className="detail__btn--disabled"
-                      title="Editing is disabled for archived claims"
-                    >
-                      Archived - Edit Disabled
-                    </div>
-                  ) : (
-                    <button
-                      onClick={startEditing}
-                      className="detail__btn detail__btn--edit"
-                    >
-                      Edit Claim
-                    </button>
-                  )
-                ) : (
-                  <>
-                    <button
-                      onClick={saveEdits}
-                      className="detail__btn detail__btn--save"
-                    >
-                      Save Changes
-                    </button>
-                    <button
-                      onClick={cancelEdits}
-                      className="detail__btn detail__btn--cancel"
-                    >
-                      Cancel
-                    </button>
-                  </>
-                )
-              ) : null;
-            })()}
-            {(() => {
-              const authz = getSupabaseAuthz();
-              const userInfo = authz?.getCurrentUser();
-              const isAdmin = userInfo?.role === "admin" || userInfo?.role === "dispatch";
-              const fromCalendar = searchParams.get("from") === "calendar";
-
-              let backLink = isAdmin ? "/admin/claims" : "/my-claims";
-              if (fromCalendar) {
-                backLink += "?view=calendar";
-              }
-
-              return (
-                <Link
-                  to={backLink}
-                  className="detail__btn detail__btn--back"
-                >
-                  ← Back to {fromCalendar ? "Calendar" : "Claims"}
-                </Link>
-              );
-            })()}
-          </div>
-        </div>
-
         {/* Command Strip */}
         <div className="cmd-strip">
           <div className="cmd-strip__info">
+            <div className="cmd-strip__item">
+              <span className="cmd-strip__label">Claim #</span>
+              <span className="cmd-strip__value" style={{ fontFamily: 'var(--font-heading)', fontSize: '1rem' }}>
+                {claim.claim_number || '—'}
+              </span>
+            </div>
             <div className="cmd-strip__item">
               <span className="cmd-strip__label">Customer</span>
               <span className="cmd-strip__value">{claim.customer_name || '—'}</span>
@@ -1151,14 +1075,30 @@ export default function ClaimDetail() {
                 </span>
               </span>
             </div>
+            <div className="cmd-strip__item">
+              <span className="cmd-strip__label">Writing Completed</span>
+              <span className="cmd-strip__value">
+                {claim.writing_completed_at
+                  ? new Date(claim.writing_completed_at).toLocaleDateString('en-US', {
+                      month: 'short', day: 'numeric', year: 'numeric',
+                      hour: '2-digit', minute: '2-digit'
+                    })
+                  : '—'}
+              </span>
+            </div>
           </div>
 
           <div className="cmd-strip__actions">
-            {isAdmin && (<>
+            {isAdmin && !isEditing && (<>
               <button className="cmd-strip__status-btn" onClick={() => handleStatusChange('SCHEDULED')}>Mark Scheduled</button>
               <button className="cmd-strip__status-btn" onClick={() => handleStatusChange('IN_PROGRESS')}>In Progress</button>
               <button className="cmd-strip__status-btn" onClick={() => handleStatusChange('WRITING')}>Send to Writer</button>
               <button className="cmd-strip__status-btn cmd-strip__status-btn--active" onClick={() => handleStatusChange('COMPLETED')}>Mark Complete</button>
+              <span className="cmd-strip__divider" />
+            </>)}
+            {isEditing && (<>
+              <button className="cmd-strip__btn" onClick={saveEdits}>Save Changes</button>
+              <button className="cmd-strip__status-btn" onClick={cancelEdits}>Cancel Edit</button>
               <span className="cmd-strip__divider" />
             </>)}
             <button
@@ -1188,6 +1128,99 @@ export default function ClaimDetail() {
                 Mark As Paid
               </button>
             )}
+
+            {!isAdmin && claim.status === 'WRITING' && claim.writer_id === userInfo?.id && (
+              <button
+                className="cmd-strip__btn"
+                onClick={async () => {
+                  if (!confirm("Mark writing as complete? This will finalize the claim.")) return;
+                  const now = new Date();
+                  const year = now.getFullYear();
+                  const month = String(now.getMonth() + 1).padStart(2, '0');
+                  const day = String(now.getDate()).padStart(2, '0');
+                  const completionDate = `${year}-${month}-${day}T00:00:00Z`;
+                  const completedMonth = `${year}-${month}`;
+                  let expectedPayoutDate = null;
+                  if (claim.firm) {
+                    try {
+                      const payPeriod = getPayPeriod(claim.firm, now, firmSchedules[normalizeFirmNameForConfig(claim.firm)]);
+                      const payYear = payPeriod.payoutDate.getFullYear();
+                      const payMonth = String(payPeriod.payoutDate.getMonth() + 1).padStart(2, '0');
+                      const payDay = String(payPeriod.payoutDate.getDate()).padStart(2, '0');
+                      expectedPayoutDate = `${payYear}-${payMonth}-${payDay}T00:00:00Z`;
+                    } catch (err) {
+                      console.warn("Could not calculate expected payout date:", err);
+                    }
+                  }
+                  await update({
+                    status: "COMPLETED",
+                    writing_completed_at: now.toISOString(),
+                    completion_date: completionDate,
+                    completed_month: completedMonth,
+                    expected_payout_date: expectedPayoutDate,
+                    payout_status: "unpaid",
+                  });
+                }}
+              >
+                Mark Writing Complete
+              </button>
+            )}
+
+            <div className="cmd-strip__menu" style={{ position: 'relative', marginLeft: 'auto' }}>
+              <button
+                className="cmd-strip__status-btn"
+                onClick={() => setMenuOpen(!menuOpen)}
+                style={{ padding: '0.45rem 0.75rem', letterSpacing: 0 }}
+              >
+                ☰
+              </button>
+              {menuOpen && (
+                <div className="cmd-strip__dropdown">
+                  <Link
+                    to={`/appraiser/claim/${id}/photos`}
+                    className="cmd-strip__dropdown-item"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    Guided Photo Capture
+                  </Link>
+                  {isAdmin && !isEditing && claim.status !== 'CANCELED' && (
+                    <button
+                      className="cmd-strip__dropdown-item"
+                      onClick={() => { setMenuOpen(false); startEditing(); }}
+                    >
+                      Edit Claim
+                    </button>
+                  )}
+                  <Link
+                    to={(() => {
+                      const fromCalendar = searchParams.get("from") === "calendar";
+                      let backLink = isAdmin ? "/admin/claims" : "/my-claims";
+                      if (fromCalendar) backLink += "?view=calendar";
+                      return backLink;
+                    })()}
+                    className="cmd-strip__dropdown-item"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    ← Back to Claims
+                  </Link>
+                  {isAdmin && (<>
+                    <div className="cmd-strip__dropdown-divider" />
+                    <button
+                      className="cmd-strip__dropdown-item cmd-strip__dropdown-item--danger"
+                      onClick={() => { setMenuOpen(false); handleStatusChange("CANCELED"); }}
+                    >
+                      Cancel Claim
+                    </button>
+                    <button
+                      className="cmd-strip__dropdown-item cmd-strip__dropdown-item--danger"
+                      onClick={() => { setMenuOpen(false); handleStatusChange("DELETE"); }}
+                    >
+                      Delete Claim
+                    </button>
+                  </>)}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -1349,6 +1382,37 @@ export default function ClaimDetail() {
                 </div>
               )}
             </div>
+            <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--rivet)' }}>
+              <div className="detail__label">Appointment</div>
+              {isEditing ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '6px' }}>
+                  <input
+                    className="detail__input"
+                    type="datetime-local"
+                    value={editAppointmentStart}
+                    onChange={(e) => setEditAppointmentStart(e.target.value)}
+                    placeholder="Start"
+                  />
+                  <input
+                    className="detail__input"
+                    type="datetime-local"
+                    value={editAppointmentEnd}
+                    onChange={(e) => setEditAppointmentEnd(e.target.value)}
+                    placeholder="End"
+                  />
+                </div>
+              ) : claim.appointment_start ? (
+                <div className="detail__value">
+                  {new Date(claim.appointment_start).toLocaleString('en-US', {
+                    weekday: 'short', month: 'short', day: 'numeric',
+                    year: 'numeric', hour: '2-digit', minute: '2-digit',
+                    timeZone: getTimezoneForState(claim.state),
+                  })}
+                </div>
+              ) : (
+                <div className="detail__value detail__value--muted">No appointment set</div>
+              )}
+            </div>
           </div>
 
 
@@ -1418,129 +1482,6 @@ export default function ClaimDetail() {
           </div>
         )}
 
-        {/* Appointment and Assignment Section */}
-        <div className="detail__grid">
-          {/* Appointment */}
-          <div className="detail__section">
-            <h4 className="detail__section-title">Appointment</h4>
-            <div className="detail__field--lg">
-              <div className="detail__label">Start Date & Time</div>
-              {isEditing ? (
-                <input
-                  className="detail__input"
-                  type="datetime-local"
-                  value={editAppointmentStart}
-                  onChange={(e) => setEditAppointmentStart(e.target.value)}
-                />
-              ) : claim.appointment_start ? (
-                <div className="detail__value">
-                  {new Date(claim.appointment_start).toLocaleString('en-US', {
-                    weekday: 'short',
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    timeZone: getTimezoneForState(claim.state),
-                  })}
-                </div>
-              ) : (
-                <div className="detail__value detail__value--muted">No appointment set</div>
-              )}
-            </div>
-            <div>
-              <div className="detail__label">End Date & Time</div>
-              {isEditing ? (
-                <input
-                  className="detail__input"
-                  type="datetime-local"
-                  value={editAppointmentEnd}
-                  onChange={(e) => setEditAppointmentEnd(e.target.value)}
-                />
-              ) : claim.appointment_end ? (
-                <div className="detail__value">
-                  {new Date(claim.appointment_end).toLocaleString('en-US', {
-                    weekday: 'short',
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    timeZone: getTimezoneForState(claim.state),
-                  })}
-                </div>
-              ) : (
-                <div className="detail__value detail__value--muted">No end time set</div>
-              )}
-            </div>
-          </div>
-
-          {/* Assignment */}
-          <div className="detail__section">
-            <h4 className="detail__section-title">Assignment</h4>
-            <div className="detail__label">Assigned Appraiser</div>
-            {isEditing ? (
-              <select
-                className="detail__select"
-                value={editAssignedTo}
-                onChange={(e) => setEditAssignedTo(e.target.value)}
-              >
-                <option value="">Unassigned</option>
-                {users.map((u) => (
-                  <option key={u.user_id} value={u.user_id}>
-                    {u.full_name || u.user_id} ({u.role})
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <div className="detail__value">
-                {claim.assigned_to
-                  ? users.find(u => u.user_id === claim.assigned_to)?.full_name || "Unknown User"
-                  : "Unassigned"}
-              </div>
-            )}
-            {isAdmin && claim.writer_id && (
-              <div className="detail__field">
-                <div className="detail__label">Writer</div>
-                <div className="detail__value">
-                  {users.find(u => u.user_id === claim.writer_id)?.full_name || "Unknown"}
-                </div>
-              </div>
-            )}
-            {isAdmin && claim.writing_completed_at && (
-              <div className="detail__field">
-                <div className="detail__label">Writing Completed</div>
-                <div className="detail__value">
-                  {new Date(claim.writing_completed_at).toLocaleString()}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Location Type */}
-          <div className="detail__field">
-            <div className="detail__label">Location Type</div>
-            {isEditing ? (
-              <select
-                className="detail__select"
-                value={editLocationTypeValue}
-                onChange={e => setEditLocationTypeValue(e.target.value)}
-              >
-                <option value="customer_address">Customer Address</option>
-                <option value="body_shop">Body Shop</option>
-                <option value="dealership">Dealership</option>
-                <option value="other">Other</option>
-              </select>
-            ) : (
-              <div className="detail__value">
-                {claim.location_type === 'body_shop' ? 'Body Shop'
-                 : claim.location_type === 'dealership' ? 'Dealership'
-                 : claim.location_type === 'other' ? 'Other'
-                 : 'Customer Address'}
-              </div>
-            )}
-          </div>
-        </div>
 
         {/* Supplement Actions — Admin only, original claims only */}
         {isAdmin && !claim.is_supplement && (
@@ -1637,72 +1578,6 @@ export default function ClaimDetail() {
           </div>
         )}
 
-        {/* Status & Actions */}
-        <div className="detail__section">
-          <h4 className="detail__section-title">Status & Actions</h4>
-
-          <div className="detail__field">
-            <div className="detail__label">Current Status</div>
-            <div className={`detail__status-badge ${statusClass}`}>
-              {claim.status || "NOT_STARTED"}
-            </div>
-          </div>
-
-          {/* Writer "Mark Writing Complete" button */}
-          {!isAdmin && claim.status === 'WRITING' && claim.writer_id === userInfo?.id && (
-            <button
-              className="detail__btn detail__btn--complete"
-              onClick={async () => {
-                if (!confirm("Mark writing as complete? This will finalize the claim.")) return;
-                const now = new Date();
-                const year = now.getFullYear();
-                const month = String(now.getMonth() + 1).padStart(2, '0');
-                const day = String(now.getDate()).padStart(2, '0');
-                const completionDate = `${year}-${month}-${day}T00:00:00Z`;
-                const completedMonth = `${year}-${month}`;
-
-                let expectedPayoutDate = null;
-                if (claim.firm) {
-                  try {
-                    const payPeriod = getPayPeriod(claim.firm, now, firmSchedules[normalizeFirmNameForConfig(claim.firm)]);
-                    const payYear = payPeriod.payoutDate.getFullYear();
-                    const payMonth = String(payPeriod.payoutDate.getMonth() + 1).padStart(2, '0');
-                    const payDay = String(payPeriod.payoutDate.getDate()).padStart(2, '0');
-                    expectedPayoutDate = `${payYear}-${payMonth}-${payDay}T00:00:00Z`;
-                  } catch (err) {
-                    console.warn("Could not calculate expected payout date:", err);
-                  }
-                }
-
-                await update({
-                  status: "COMPLETED",
-                  writing_completed_at: now.toISOString(),
-                  completion_date: completionDate,
-                  completed_month: completedMonth,
-                  expected_payout_date: expectedPayoutDate,
-                  payout_status: "unpaid",
-                });
-              }}
-            >
-              Mark Writing Complete
-            </button>
-          )}
-
-          {/*
-            ROLE GATING: Update Status - Admin only
-            Appraisers must NOT see status change controls (view + photo capture only)
-          */}
-          {isAdmin && (
-            <div className="detail__status-actions">
-              <div className="detail__label">Danger Zone</div>
-              <div className="detail__status-buttons">
-                <button className="btn btn--danger btn--sm" onClick={() => handleStatusChange("CANCELED")}>Cancel Claim</button>
-                <button className="btn btn--danger btn--sm" onClick={() => handleStatusChange("DELETE")}>Delete Claim</button>
-              </div>
-              <p className="detail__status-hint">Permanent delete cannot be undone. All photos and data will be lost.</p>
-            </div>
-          )}
-        </div>
 
         {/* Cycle Time */}
         {claim.created_at && (
