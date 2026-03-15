@@ -1088,60 +1088,106 @@ export default function ClaimDetail() {
                 </Link>
               );
             })()}
-            <Link
-              to="/"
-              className="detail__btn detail__btn--back"
-            >
-              ← Home
-            </Link>
           </div>
         </div>
 
-        {/* Command Header */}
-        <div className="cmd-header">
-          <div className="cmd-header__info">
-            <div className="cmd-header__row">
-              <span className="cmd-header__item">
-                <span className="cmd-header__label">Customer</span>
-                <span className="cmd-header__value">{claim.customer_name || '—'}</span>
+        {/* Command Strip */}
+        <div className="cmd-strip">
+          <div className="cmd-strip__info">
+            <div className="cmd-strip__item">
+              <span className="cmd-strip__label">Customer</span>
+              <span className="cmd-strip__value">{claim.customer_name || '—'}</span>
+            </div>
+            <div className="cmd-strip__item">
+              <span className="cmd-strip__label">Vehicle</span>
+              <span className="cmd-strip__value">
+                {[claim.vehicle_year, claim.vehicle_make, claim.vehicle_model]
+                  .filter(Boolean).join(' ') || '—'}
               </span>
-              <span className="cmd-header__item">
-                <span className="cmd-header__label">Vehicle</span>
-                <span className="cmd-header__value">
-                  {[claim.vehicle_year, claim.vehicle_make, claim.vehicle_model].filter(Boolean).join(' ') || '—'}
-                </span>
+            </div>
+            <div className="cmd-strip__item">
+              <span className="cmd-strip__label">VIN</span>
+              <span className="cmd-strip__value">{claim.vin || '—'}</span>
+            </div>
+            <div className="cmd-strip__item">
+              <span className="cmd-strip__label">Inspector</span>
+              <span className="cmd-strip__value">
+                {claim.assigned_to
+                  ? users.find(u => u.user_id === claim.assigned_to)?.full_name || 'Unknown'
+                  : '—'}
               </span>
-              <span className="cmd-header__item">
-                <span className="cmd-header__label">VIN</span>
-                <span className="cmd-header__value">{claim.vin || '—'}</span>
+            </div>
+            <div className="cmd-strip__item">
+              <span className="cmd-strip__label">Firm</span>
+              <span className="cmd-strip__value">{claim.firm || '—'}</span>
+            </div>
+            <div className="cmd-strip__item">
+              <span className="cmd-strip__label">Insurance Co</span>
+              <span className="cmd-strip__value">{claim.insurance_company || '—'}</span>
+            </div>
+            <div className="cmd-strip__item">
+              <span className="cmd-strip__label">Phone</span>
+              <span className="cmd-strip__value">
+                {claim.customer_phone
+                  ? <a href={`tel:${claim.customer_phone}`} className="detail__link">{claim.customer_phone}</a>
+                  : '—'}
               </span>
-              <span className="cmd-header__item">
-                <span className="cmd-header__label">Inspector</span>
-                <span className="cmd-header__value">
-                  {claim.assigned_to
-                    ? users.find(u => u.user_id === claim.assigned_to)?.full_name || 'Unknown'
-                    : '—'}
+            </div>
+            <div className="cmd-strip__item">
+              <span className="cmd-strip__label">Cycle Time</span>
+              <span className="cmd-strip__value cmd-strip__cycle">
+                {totalHrs === 'Pending' ? '—' : totalHrs}
+                {' '}
+                <span style={{
+                  color: totalHrs === 'Pending' ? 'inherit'
+                    : parseFloat(totalHrs) > 124 ? '#e87a72'
+                    : parseFloat(totalHrs) > 93 ? '#e8952a'
+                    : '#6fc86f',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '0.62rem',
+                  letterSpacing: '0.08em'
+                }}>
+                  {cycleStatus(totalHrs, 124, claim?.writing_completed_at)}
                 </span>
               </span>
             </div>
           </div>
-          <div className="cmd-header__actions">
-            <Link to={`/appraiser/claim/${id}/photos`} className="cmd-header__btn">
-              Guided Photos
-            </Link>
+
+          <div className="cmd-strip__actions">
+            {isAdmin && (<>
+              <button className="cmd-strip__status-btn" onClick={() => handleStatusChange('SCHEDULED')}>Mark Scheduled</button>
+              <button className="cmd-strip__status-btn" onClick={() => handleStatusChange('IN_PROGRESS')}>In Progress</button>
+              <button className="cmd-strip__status-btn" onClick={() => handleStatusChange('WRITING')}>Send to Writer</button>
+              <button className="cmd-strip__status-btn cmd-strip__status-btn--active" onClick={() => handleStatusChange('COMPLETED')}>Mark Complete</button>
+              <span className="cmd-strip__divider" />
+            </>)}
             <button
-              className="cmd-header__btn"
+              className="cmd-strip__btn"
               onClick={handleDownloadPackage}
               disabled={packageLoading}
             >
               {packageLoading ? 'Generating...' : 'Download Package'}
             </button>
-            <button
-              className="cmd-header__btn cmd-header__btn--secondary"
-              onClick={downloadAllPhotos}
-            >
-              Download Photos
-            </button>
+            {isAdmin && claim.status === 'COMPLETED' && claim.payout_status !== 'paid' && !claim.actual_payout_date && (
+              <button
+                className="cmd-strip__btn cmd-strip__btn--secondary"
+                onClick={async () => {
+                  if (confirm("Mark this claim as PAID and record today as the payment date?")) {
+                    const now = new Date();
+                    const year = now.getFullYear();
+                    const month = String(now.getMonth() + 1).padStart(2, '0');
+                    const day = String(now.getDate()).padStart(2, '0');
+                    const actualPayoutDate = `${year}-${month}-${day}T00:00:00Z`;
+                    await update({
+                      actual_payout_date: actualPayoutDate,
+                      payout_status: 'paid'
+                    });
+                  }
+                }}
+              >
+                Mark As Paid
+              </button>
+            )}
           </div>
         </div>
 
@@ -1305,171 +1351,7 @@ export default function ClaimDetail() {
             </div>
           </div>
 
-          {/* Customer Information */}
-          <div className="detail__section">
-            <h4 className="detail__section-title">Customer Information</h4>
-            <div className="detail__field">
-              <div className="detail__label">Name</div>
-              {isEditing ? (
-                <input
-                  className="detail__input"
-                  type="text"
-                  value={editCustomerName}
-                  onChange={(e) => setEditCustomerName(e.target.value)}
-                />
-              ) : (
-                <div className="detail__value">{claim.customer_name}</div>
-              )}
-            </div>
-            <div className="detail__field">
-              <div className="detail__label">Phone</div>
-              {isEditing ? (
-                <input
-                  className="detail__input"
-                  type="tel"
-                  value={editPhone}
-                  onChange={(e) => setEditPhone(e.target.value)}
-                  placeholder="Phone number"
-                />
-              ) : claim.customer_phone ? (
-                <a
-                  href={`tel:${claim.customer_phone}`}
-                  className="detail__link"
-                >
-                  {claim.customer_phone}
-                </a>
-              ) : (
-                <div className="detail__value detail__value--muted">No phone</div>
-              )}
-            </div>
-            <div className="detail__field">
-              <div className="detail__label">Email</div>
-              {isEditing ? (
-                <input
-                  className="detail__input"
-                  type="email"
-                  value={editEmail}
-                  onChange={(e) => setEditEmail(e.target.value)}
-                  placeholder="Email address"
-                />
-              ) : claim.email ? (
-                <a
-                  href={`mailto:${claim.email}`}
-                  className="detail__link"
-                >
-                  {claim.email}
-                </a>
-              ) : (
-                <div className="detail__value detail__value--muted">No email</div>
-              )}
-            </div>
-          </div>
 
-          {/* Vehicle Information */}
-          <div className="detail__section">
-            <h4 className="detail__section-title">Vehicle Information</h4>
-            <div className="detail__field">
-              <div className="detail__label">VIN</div>
-              {isEditing ? (
-                <input
-                  className="detail__input detail__input--mono"
-                  type="text"
-                  value={editVin}
-                  onChange={(e) => setEditVin(e.target.value)}
-                  placeholder="Vehicle Identification Number"
-                />
-              ) : claim.vin ? (
-                <div className="detail__value detail__value--mono">{claim.vin}</div>
-              ) : (
-                <div className="detail__value detail__value--muted">No VIN</div>
-              )}
-            </div>
-            <div className="detail__grid--auto">
-              <div>
-                <div className="detail__label">Year</div>
-                {isEditing ? (
-                  <input
-                    className="detail__input"
-                    type="number"
-                    value={editVehicleYear}
-                    onChange={(e) => setEditVehicleYear(e.target.value)}
-                    placeholder="Year"
-                    min="1900"
-                    max="2100"
-                  />
-                ) : claim.vehicle_year ? (
-                  <div className="detail__value">{claim.vehicle_year}</div>
-                ) : (
-                  <div className="detail__value detail__value--muted">-</div>
-                )}
-              </div>
-              <div>
-                <div className="detail__label">Make</div>
-                {isEditing ? (
-                  <input
-                    className="detail__input"
-                    type="text"
-                    value={editVehicleMake}
-                    onChange={(e) => setEditVehicleMake(e.target.value)}
-                    placeholder="Make"
-                  />
-                ) : claim.vehicle_make ? (
-                  <div className="detail__value">{claim.vehicle_make}</div>
-                ) : (
-                  <div className="detail__value detail__value--muted">-</div>
-                )}
-              </div>
-              <div>
-                <div className="detail__label">Model</div>
-                {isEditing ? (
-                  <input
-                    className="detail__input"
-                    type="text"
-                    value={editVehicleModel}
-                    onChange={(e) => setEditVehicleModel(e.target.value)}
-                    placeholder="Model"
-                  />
-                ) : claim.vehicle_model ? (
-                  <div className="detail__value">{claim.vehicle_model}</div>
-                ) : (
-                  <div className="detail__value detail__value--muted">-</div>
-                )}
-              </div>
-            </div>
-            <div className="detail__grid--auto-lg">
-              <div>
-                <div className="detail__label">Date of Loss</div>
-                {isEditing ? (
-                  <input
-                    className="detail__input"
-                    type="date"
-                    value={editDateOfLoss}
-                    onChange={(e) => setEditDateOfLoss(e.target.value)}
-                  />
-                ) : claim.date_of_loss ? (
-                  <div className="detail__value">{new Date(claim.date_of_loss).toLocaleDateString()}</div>
-                ) : (
-                  <div className="detail__value detail__value--muted">-</div>
-                )}
-              </div>
-              <div>
-                <div className="detail__label">Insurance Company</div>
-                {isEditing ? (
-                  <input
-                    className="detail__input"
-                    type="text"
-                    value={editInsuranceCompany}
-                    onChange={(e) => setEditInsuranceCompany(e.target.value)}
-                    placeholder="Insurance Company"
-                  />
-                ) : claim.insurance_company ? (
-                  <div className="detail__value">{claim.insurance_company}</div>
-                ) : (
-                  <div className="detail__value detail__value--muted">-</div>
-                )}
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Accident Description */}
@@ -1812,12 +1694,8 @@ export default function ClaimDetail() {
           */}
           {isAdmin && (
             <div className="detail__status-actions">
-              <div className="detail__label">Update Status</div>
+              <div className="detail__label">Danger Zone</div>
               <div className="detail__status-buttons">
-                <button className="btn btn--ghost btn--sm" onClick={() => handleStatusChange("SCHEDULED")}>Mark Scheduled</button>
-                <button className="btn btn--ghost btn--sm" onClick={() => handleStatusChange("IN_PROGRESS")}>In Progress</button>
-                <button className="btn btn--ghost btn--sm" onClick={() => handleStatusChange("WRITING")}>Send to Writer</button>
-                <button className="btn btn--primary btn--sm" onClick={() => handleStatusChange("COMPLETED")}>Mark Complete</button>
                 <button className="btn btn--danger btn--sm" onClick={() => handleStatusChange("CANCELED")}>Cancel Claim</button>
                 <button className="btn btn--danger btn--sm" onClick={() => handleStatusChange("DELETE")}>Delete Claim</button>
               </div>
@@ -1998,21 +1876,6 @@ export default function ClaimDetail() {
               </div>
             </div>
 
-            {photos.length > 0 && (
-              <button
-                onClick={downloadAllPhotos}
-                className="detail__photo-btn-download"
-              >
-                Download All Photos
-              </button>
-            )}
-            <button
-              onClick={handleDownloadPackage}
-              className="detail__photo-btn-download"
-              disabled={packageLoading}
-            >
-              {packageLoading ? "Generating..." : "Download Claim Package"}
-            </button>
             {packageError && (
               <div className="detail__photo-error">{packageError}</div>
             )}
