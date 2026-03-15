@@ -1,9 +1,10 @@
 -- Migration: Create create_claim RPC function
 -- Date: 2026-03-14
 -- Fixes: Missing RPC function after migrating from HQ to CD
+-- Note: p_owner_id is accepted but not inserted (column doesn't exist in CD claims table)
 
 CREATE OR REPLACE FUNCTION public.create_claim(
-  p_owner_id uuid,
+  p_owner_id uuid DEFAULT NULL,
   p_firm text DEFAULT NULL,
   p_claim_number text DEFAULT NULL,
   p_file_number text DEFAULT NULL,
@@ -25,7 +26,6 @@ SECURITY DEFINER
 AS $$
 BEGIN
   INSERT INTO public.claims (
-    owner_id,
     firm,
     claim_number,
     file_number,
@@ -43,7 +43,6 @@ BEGIN
     status,
     created_at
   ) VALUES (
-    p_owner_id,
     p_firm,
     p_claim_number,
     p_file_number,
