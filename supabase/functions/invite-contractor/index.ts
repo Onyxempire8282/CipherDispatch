@@ -31,7 +31,7 @@ serve(async (req) => {
     // Verify the calling user is admin/dispatch
     const userClient = createClient(
       Deno.env.get("HQ_SUPABASE_URL")!,
-      Deno.env.get("HQ_SERVICE_ROLE_KEY")!,
+      Deno.env.get("HQ_SUPABASE_ANON_KEY")!,
       { global: { headers: { Authorization: authHeader } } }
     );
     const { data: { user } } = await userClient.auth.getUser();
