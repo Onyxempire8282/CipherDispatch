@@ -1325,28 +1325,6 @@ export default function ClaimDetail() {
                         </div>
                       </div>
 
-                      {/* Mark as Paid Button */}
-                      {claim.payout_status !== 'paid' && !claim.actual_payout_date && (
-                        <button
-                          className="detail__btn detail__btn--mark-paid"
-                          onClick={async () => {
-                            if (confirm("Mark this claim as PAID and record today as the payment date?")) {
-                              const now = new Date();
-                              const year = now.getFullYear();
-                              const month = String(now.getMonth() + 1).padStart(2, '0');
-                              const day = String(now.getDate()).padStart(2, '0');
-                              const actualPayoutDate = `${year}-${month}-${day}T00:00:00Z`;
-
-                              await update({
-                                actual_payout_date: actualPayoutDate,
-                                payout_status: 'paid'
-                              });
-                            }
-                          }}
-                        >
-                          Mark as Paid Today
-                        </button>
-                      )}
                     </div>
                   </>
                 )}
