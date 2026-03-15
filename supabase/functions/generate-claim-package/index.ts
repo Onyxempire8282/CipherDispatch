@@ -69,7 +69,7 @@ serve(async (req) => {
     for (const photo of photos) {
       const { data } = await cdSupabase.storage
         .from("claim-photos")
-        .createSignedUrl(photo.storage_path, 60);
+        .createSignedUrl(photo.storage_path, 300);
       if (data?.signedUrl) {
         const idx = String(photo.order_index ?? photoUrls.length).padStart(2, "0");
         const type = photo.photo_type || "photo";
@@ -82,7 +82,7 @@ serve(async (req) => {
     for (const doc of documents) {
       const { data } = await cdSupabase.storage
         .from("documents")
-        .createSignedUrl(doc.storage_path, 60);
+        .createSignedUrl(doc.storage_path, 300);
       if (data?.signedUrl) {
         docUrls.push({ url: data.signedUrl, name: doc.file_name || `document_${doc.id}` });
       }
@@ -90,21 +90,32 @@ serve(async (req) => {
 
     // Fetch all file bytes in parallel
     const allFetches = [...photoUrls, ...docUrls].map(async (item) => {
-      const resp = await fetch(item.url);
-      return { name: item.name, bytes: new Uint8Array(await resp.arrayBuffer()) };
+      try {
+        const resp = await fetch(item.url);
+        if (!resp.ok) {
+          console.error(`Failed to fetch ${item.name}: ${resp.status}`);
+          return null;
+        }
+        return { name: item.name, bytes: new Uint8Array(await resp.arrayBuffer()) };
+      } catch (err) {
+        console.error(`Error fetching ${item.name}:`, err);
+        return null;
+      }
     });
-    const allFiles = await Promise.all(allFetches);
+    const allFiles = (await Promise.all(allFetches)).filter(f => f !== null);
 
     // Build zip
     const zip = new JSZip();
     const photosFolder = zip.folder("photos")!;
     const docsFolder = zip.folder("documents")!;
 
-    for (let i = 0; i < photoUrls.length; i++) {
-      photosFolder.file(allFiles[i].name, allFiles[i].bytes);
-    }
-    for (let i = photoUrls.length; i < allFiles.length; i++) {
-      docsFolder.file(allFiles[i].name, allFiles[i].bytes);
+    for (const file of allFiles) {
+      const isPhoto = photoUrls.some(p => p.name === file.name);
+      if (isPhoto) {
+        photosFolder.file(file.name, file.bytes);
+      } else {
+        docsFolder.file(file.name, file.bytes);
+      }
     }
 
     const zipBlob = await zip.generateAsync({ type: "uint8array" });
