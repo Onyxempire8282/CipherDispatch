@@ -828,8 +828,12 @@ export default function ClaimDetail() {
       }
       return;
     }
+    if (status === "IN_PROGRESS") {
+      update({ status: "IN_PROGRESS", completed_at: new Date().toISOString() });
+      return;
+    }
     if (status === "WRITING") {
-      update({ status: "WRITING" });
+      update({ status: "WRITING", writing_started_at: new Date().toISOString() });
       return;
     }
     if (status === "COMPLETED") {
