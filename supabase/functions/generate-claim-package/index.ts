@@ -94,39 +94,50 @@ serve(async (req) => {
     const photosFolder = zip.folder("photos")!;
     const docsFolder = zip.folder("documents")!;
 
-    // Fetch and add photos
-    for (let i = 0; i < photoUrls.length; i++) {
+    // Fetch all photos in parallel
+    await Promise.all(photoUrls.map(async (item) => {
       try {
-        const resp = await fetch(photoUrls[i].url);
+        const resp = await fetch(item.url);
         if (resp.ok) {
-          const bytes = new Uint8Array(await resp.arrayBuffer());
-          photosFolder.file(photoUrls[i].name, bytes);
-          console.log(`Added photo: ${photoUrls[i].name}`);
+          const buffer = await resp.arrayBuffer();
+          const bytes = new Uint8Array(buffer);
+          if (bytes.length > 0) {
+            photosFolder.file(item.name, bytes);
+            console.log(`Added photo: ${item.name} (${bytes.length} bytes)`);
+          } else {
+            console.error(`Empty response for photo: ${item.name}`);
+          }
         } else {
-          console.error(`Failed to fetch photo ${photoUrls[i].name}: ${resp.status}`);
+          console.error(`Failed to fetch photo ${item.name}: ${resp.status}`);
         }
       } catch (err) {
-        console.error(`Error fetching photo ${photoUrls[i].name}:`, err);
+        console.error(`Error fetching photo ${item.name}:`, err);
       }
-    }
+    }));
 
-    // Fetch and add documents
-    for (let i = 0; i < docUrls.length; i++) {
+    // Fetch all documents in parallel
+    await Promise.all(docUrls.map(async (item) => {
       try {
-        const resp = await fetch(docUrls[i].url);
+        const resp = await fetch(item.url);
         if (resp.ok) {
-          const bytes = new Uint8Array(await resp.arrayBuffer());
-          docsFolder.file(docUrls[i].name, bytes);
-          console.log(`Added document: ${docUrls[i].name}`);
+          const buffer = await resp.arrayBuffer();
+          const bytes = new Uint8Array(buffer);
+          if (bytes.length > 0) {
+            docsFolder.file(item.name, bytes);
+            console.log(`Added document: ${item.name} (${bytes.length} bytes)`);
+          } else {
+            console.error(`Empty response for doc: ${item.name}`);
+          }
         } else {
-          console.error(`Failed to fetch doc ${docUrls[i].name}: ${resp.status}`);
+          console.error(`Failed to fetch doc ${item.name}: ${resp.status}`);
         }
       } catch (err) {
-        console.error(`Error fetching doc ${docUrls[i].name}:`, err);
+        console.error(`Error fetching doc ${item.name}:`, err);
       }
-    }
+    }));
 
-    const zipBlob = await zip.generateAsync({ type: "uint8array" });
+    const zipBlob = await zip.generateAsync({ type: "uint8array", compression: "DEFLATE", compressionOptions: { level: 6 } });
+    console.log(`Zip generated: ${zipBlob.length} bytes`);
 
     // Upload zip to packages bucket
     const storagePath = `firm/${firm_id}/claim/${claim_id}/claim-package.zip`;
