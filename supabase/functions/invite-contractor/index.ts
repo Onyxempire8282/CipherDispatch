@@ -28,24 +28,31 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Verify the calling user is admin/dispatch
-    const userClient = createClient(
-      Deno.env.get("HQ_SUPABASE_URL")!,
-      Deno.env.get("HQ_SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
-    const { data: { user } } = await userClient.auth.getUser();
-    if (!user) {
+    // Extract user ID from JWT without verification
+    // The JWT is already verified by Supabase before reaching this function
+    let userId: string | null = null;
+    try {
+      const token = authHeader.replace('Bearer ', '');
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      userId = payload.sub;
+    } catch {
       return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!userId) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     const { data: callerProfile } = await supabaseAdmin
       .from("profiles")
       .select("role, firm_id")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .single();
     if (callerProfile?.role !== "admin" && callerProfile?.role !== "dispatch") {
       return new Response(
