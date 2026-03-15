@@ -704,6 +704,83 @@
   padding: 6px 0;
 }
 
+.detail__select {
+  background: var(--steel, #161a1d);
+  border: 1px solid var(--rivet, rgba(255,255,255,0.08));
+  color: var(--text-hi, #e8e6e3);
+  padding: 0.4rem 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.detail__empty {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  color: var(--text-dim, rgba(232,230,227,0.4));
+  padding: 0.5rem 0;
+}
+
+.detail__doc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.detail__doc-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: var(--steel, #161a1d);
+  border: 1px solid var(--rivet, rgba(255,255,255,0.08));
+  border-top: 2px solid var(--amber, #e8952a);
+}
+
+.detail__doc-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.detail__doc-type {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  color: var(--amber, #e8952a);
+}
+
+.detail__doc-name {
+  font-size: 0.8rem;
+  color: var(--text-hi, #e8e6e3);
+}
+
+.detail__doc-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.detail__photo-btn-delete {
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+  padding: 0.35rem 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.detail__photo-btn-delete:hover {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: #ef4444;
+}
+
 .detail__photo-tip {
   font-family: var(--font-body);
   font-weight: 300;

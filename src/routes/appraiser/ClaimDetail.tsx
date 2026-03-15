@@ -125,6 +125,10 @@ export default function ClaimDetail() {
   const [firmId, setFirmId] = useState<string | null>(null);
   const [packageLoading, setPackageLoading] = useState(false);
   const [packageError, setPackageError] = useState('');
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [docUploading, setDocUploading] = useState(false);
+  const [docUploadError, setDocUploadError] = useState('');
+  const [docType, setDocType] = useState('estimate');
 
   const load = async () => {
     let claimQuery = supabaseCD
@@ -141,6 +145,18 @@ export default function ClaimDetail() {
     if (firmId) photoQuery = photoQuery.eq("firm_id", firmId);
     const ph = await photoQuery.order("created_at", { ascending: false });
     setPhotos(ph.data || []);
+  };
+
+  const loadDocuments = async () => {
+    if (!claim?.id || !firmId) return;
+    const { data } = await supabase
+      .from('documents')
+      .select('*')
+      .eq('claim_id', claim.id)
+      .eq('firm_id', firmId)
+      .neq('type', 'package')
+      .order('created_at', { ascending: false });
+    setDocuments(data || []);
   };
 
   // Mark claim as viewed by appraiser on mount
@@ -173,6 +189,10 @@ export default function ClaimDetail() {
   useEffect(() => {
     getCurrentFirmId().then(setFirmId);
   }, []);
+
+  useEffect(() => {
+    if (claim?.id && firmId) loadDocuments();
+  }, [claim?.id, firmId]);
 
   useEffect(() => {
     load();
@@ -636,6 +656,59 @@ export default function ClaimDetail() {
       setPackageLoading(false);
     }
   }
+
+  const handleDocumentUpload = async (file: File) => {
+    if (!claim?.id || !firmId) return;
+    if (!file) return;
+    setDocUploading(true);
+    setDocUploadError('');
+    try {
+      const ext = file.name.split('.').pop() || 'pdf';
+      const fileName = `${docType}_${Date.now()}.${ext}`;
+      const storagePath = `firm/${firmId}/claim/${claim.id}/${fileName}`;
+      const { error: uploadError } = await supabaseCD.storage
+        .from('documents')
+        .upload(storagePath, file, { upsert: true });
+      if (uploadError) throw new Error(uploadError.message);
+      const { error: insertError } = await supabase
+        .from('documents')
+        .insert({
+          claim_id: claim.id,
+          firm_id: firmId,
+          type: docType,
+          storage_path: storagePath,
+          file_name: fileName
+        });
+      if (insertError) throw new Error(insertError.message);
+      await loadDocuments();
+    } catch (err: any) {
+      setDocUploadError(err.message || 'Upload failed. Try again.');
+    } finally {
+      setDocUploading(false);
+    }
+  };
+
+  const handleDocumentDelete = async (docId: string, storagePath: string) => {
+    if (!confirm('Delete this document?')) return;
+    try {
+      await supabaseCD.storage.from('documents').remove([storagePath]);
+      await supabase.from('documents').delete().eq('id', docId);
+      await loadDocuments();
+    } catch (err) {
+      console.error('Document delete error:', err);
+    }
+  };
+
+  const handleDocumentDownload = async (storagePath: string, fileName: string) => {
+    try {
+      const { data } = await supabaseCD.storage
+        .from('documents')
+        .createSignedUrl(storagePath, 300);
+      if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+    } catch (err) {
+      console.error('Document download error:', err);
+    }
+  };
 
   // Photo viewer helper functions
   const resetViewerState = () => {
@@ -1921,6 +1994,76 @@ export default function ClaimDetail() {
               );
             })}
           </div>
+        </div>
+
+        {/* Documents */}
+        <div className="detail__section">
+          <h4 className="detail__section-title">DOCUMENTS</h4>
+
+          <div className="detail__photos-actions">
+            <select
+              value={docType}
+              onChange={e => setDocType(e.target.value)}
+              className="detail__select"
+            >
+              <option value="estimate">Estimate</option>
+              <option value="bcif">BCIF</option>
+              <option value="claim_summary">Claim Summary</option>
+              <option value="nada">NADA</option>
+              <option value="acv">ACV</option>
+              <option value="billing">Billing</option>
+            </select>
+
+            <label className="detail__photo-btn-download">
+              {docUploading ? 'Uploading...' : 'Upload Document'}
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx,.xlsx,.png,.jpg"
+                className="detail__file-input"
+                disabled={docUploading}
+                onChange={e => {
+                  const file = e.target.files?.[0];
+                  if (file) handleDocumentUpload(file);
+                  e.target.value = '';
+                }}
+              />
+            </label>
+          </div>
+
+          {docUploadError && (
+            <div className="detail__photo-error">{docUploadError}</div>
+          )}
+
+          {documents.length === 0 ? (
+            <p className="detail__empty">No documents uploaded yet.</p>
+          ) : (
+            <div className="detail__doc-list">
+              {documents.map(doc => (
+                <div key={doc.id} className="detail__doc-row">
+                  <div className="detail__doc-info">
+                    <span className="detail__doc-type">
+                      {doc.type.replace(/_/g, ' ').toUpperCase()}
+                    </span>
+                    <span className="detail__doc-name">{doc.file_name}</span>
+                  </div>
+                  <div className="detail__doc-actions">
+                    <button
+                      className="detail__photo-btn-download"
+                      onClick={() => handleDocumentDownload(doc.storage_path, doc.file_name)}
+                    >
+                      Download
+                    </button>
+                    <button
+                      className="detail__photo-btn-delete"
+                      onClick={() => handleDocumentDelete(doc.id, doc.storage_path)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Lightbox Modal */}
