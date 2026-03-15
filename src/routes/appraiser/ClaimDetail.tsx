@@ -1092,6 +1092,54 @@ export default function ClaimDetail() {
           </div>
         </div>
 
+        {/* Command Header */}
+        <div className="cmd-header">
+          <div className="cmd-header__info">
+            <div className="cmd-header__row">
+              <span className="cmd-header__item">
+                <span className="cmd-header__label">Customer</span>
+                <span className="cmd-header__value">{claim.customer_name || '—'}</span>
+              </span>
+              <span className="cmd-header__item">
+                <span className="cmd-header__label">Vehicle</span>
+                <span className="cmd-header__value">
+                  {[claim.vehicle_year, claim.vehicle_make, claim.vehicle_model].filter(Boolean).join(' ') || '—'}
+                </span>
+              </span>
+              <span className="cmd-header__item">
+                <span className="cmd-header__label">VIN</span>
+                <span className="cmd-header__value">{claim.vin || '—'}</span>
+              </span>
+              <span className="cmd-header__item">
+                <span className="cmd-header__label">Inspector</span>
+                <span className="cmd-header__value">
+                  {claim.assigned_to
+                    ? users.find(u => u.user_id === claim.assigned_to)?.full_name || 'Unknown'
+                    : '—'}
+                </span>
+              </span>
+            </div>
+          </div>
+          <div className="cmd-header__actions">
+            <Link to={`/appraiser/claim/${id}/photos`} className="cmd-header__btn">
+              Guided Photos
+            </Link>
+            <button
+              className="cmd-header__btn"
+              onClick={handleDownloadPackage}
+              disabled={packageLoading}
+            >
+              {packageLoading ? 'Generating...' : 'Download Package'}
+            </button>
+            <button
+              className="cmd-header__btn cmd-header__btn--secondary"
+              onClick={downloadAllPhotos}
+            >
+              Download Photos
+            </button>
+          </div>
+        </div>
+
         {/* Main Content Grid */}
         <div className="detail__grid">
           {/* Payment Information - Admin Only */}
