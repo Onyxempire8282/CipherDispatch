@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase, getCurrentFirmId } from "../../lib/supabase";
 import { supabaseCD } from "../../lib/supabaseCD";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
@@ -107,8 +107,41 @@ export default function NewClaim() {
   const [firms, setFirms] = useState<any[]>([]);
   const [mapCoords, setMapCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [loadingMap, setLoadingMap] = useState(false);
+  const [vinDecoding, setVinDecoding] = useState(false);
+  const addressRef = useRef<HTMLInputElement>(null);
   const nav = useNavigate();
   const { role } = useRole();
+
+  async function decodeVin(vin: string) {
+    if (vin.length !== 17) return;
+    setVinDecoding(true);
+    try {
+      const resp = await fetch(
+        `https://vpic.nhtsa.dot.gov/api/vehicles/decodevin/${vin}?format=json`
+      );
+      const data = await resp.json();
+      const results = data.Results;
+      const get = (var_: string) =>
+        results.find((r: any) => r.Variable === var_)?.Value || '';
+
+      const year = get('Model Year');
+      const make = get('Make');
+      const model = get('Model');
+
+      if (year || make || model) {
+        setForm(prev => ({
+          ...prev,
+          vehicle_year: year ? parseInt(year) : prev.vehicle_year,
+          vehicle_make: make || prev.vehicle_make,
+          vehicle_model: model || prev.vehicle_model,
+        }));
+      }
+    } catch (err) {
+      console.error('VIN decode error:', err);
+    } finally {
+      setVinDecoding(false);
+    }
+  }
 
   useEffect(() => {
     (async () => {
@@ -125,6 +158,61 @@ export default function NewClaim() {
         .order("name");
       setFirms(data || []);
     })();
+  }, []);
+
+  // Google Places address autocomplete
+  useEffect(() => {
+    const w = window as any;
+    if (!w.ENV_GOOGLE_MAPS_KEY) return;
+
+    function initAutocomplete() {
+      const input = addressRef.current;
+      if (!input || !w.google?.maps?.places) return;
+
+      const autocomplete = new w.google.maps.places.Autocomplete(input, {
+        types: ['address'],
+        componentRestrictions: { country: 'us' },
+      });
+
+      autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
+        if (!place.address_components) return;
+
+        let streetNumber = '';
+        let route = '';
+        let city = '';
+        let state = '';
+        let zip = '';
+
+        for (const component of place.address_components) {
+          const type = component.types[0];
+          if (type === 'street_number') streetNumber = component.long_name;
+          if (type === 'route') route = component.long_name;
+          if (type === 'locality') city = component.long_name;
+          if (type === 'administrative_area_level_1') state = component.short_name;
+          if (type === 'postal_code') zip = component.long_name;
+        }
+
+        const address = [streetNumber, route].filter(Boolean).join(' ');
+        setForm(prev => ({
+          ...prev,
+          address_line1: address,
+          city,
+          state,
+          zip,
+        }));
+      });
+    }
+
+    if (!w.google?.maps?.places) {
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${w.ENV_GOOGLE_MAPS_KEY}&libraries=places`;
+      script.async = true;
+      script.onload = initAutocomplete;
+      document.head.appendChild(script);
+    } else {
+      initAutocomplete();
+    }
   }, []);
 
   const previewMap = async () => {
@@ -537,7 +625,11 @@ export default function NewClaim() {
                 placeholder="17-character VIN"
                 value={form.vin || ""}
                 onChange={(e) => setForm({ ...form, vin: e.target.value })}
+                onBlur={(e) => decodeVin(e.target.value)}
               />
+              {vinDecoding && (
+                <span className="new-claim__vin-decoding">DECODING...</span>
+              )}
             </Field>
             <div className="new-claim__grid-3">
               <Field label="Year">
@@ -612,6 +704,7 @@ export default function NewClaim() {
             </Field>
             <Field label="Address Line 1">
               <input
+                ref={addressRef}
                 className="field__input"
                 type="text"
                 placeholder="Street address"

@@ -183,3 +183,12 @@
   .new-claim__actions button { width: 100%; }
   .new-claim__map { height: 200px; }
 }
+
+.new-claim__vin-decoding {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--amber);
+  letter-spacing: 0.1em;
+  margin-top: 4px;
+  display: inline-block;
+}
