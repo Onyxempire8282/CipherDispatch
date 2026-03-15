@@ -23,14 +23,14 @@ serve(async (req) => {
       );
     }
 
-    // HQ client (claims, documents)
+    // HQ client (claims only)
     const hqUrl = Deno.env.get("HQ_SUPABASE_URL")!;
     const hqKey = Deno.env.get("HQ_SERVICE_ROLE_KEY")!;
     const hqSupabase = createClient(hqUrl, hqKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // CD client (claim_photos, storage)
+    // CD client (claim_photos, documents, storage)
     const cdUrl = Deno.env.get("SUPABASE_URL")!;
     const cdKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const cdSupabase = createClient(cdUrl, cdKey, {
@@ -45,7 +45,7 @@ serve(async (req) => {
         .eq("claim_id", claim_id)
         .eq("firm_id", firm_id)
         .order("order_index"),
-      hqSupabase
+      cdSupabase
         .from("documents")
         .select("*")
         .eq("claim_id", claim_id)
@@ -150,8 +150,8 @@ serve(async (req) => {
       throw new Error(`Failed to upload package: ${uploadError.message}`);
     }
 
-    // Insert document record in HQ
-    await hqSupabase.from("documents").upsert({
+    // Insert document record in CD
+    await cdSupabase.from("documents").upsert({
       claim_id,
       firm_id,
       type: "package",
