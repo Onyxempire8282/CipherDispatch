@@ -149,7 +149,7 @@ export default function ClaimDetail() {
 
   const loadDocuments = async () => {
     if (!claim?.id || !firmId) return;
-    const { data } = await supabase
+    const { data } = await supabaseCD
       .from('documents')
       .select('*')
       .eq('claim_id', claim.id)
@@ -676,7 +676,7 @@ export default function ClaimDetail() {
         .from('documents')
         .upload(storagePath, file, { upsert: true });
       if (uploadError) throw new Error(uploadError.message);
-      const { error: insertError } = await supabase
+      const { error: insertError } = await supabaseCD
         .from('documents')
         .insert({
           claim_id: claim.id,
@@ -698,7 +698,7 @@ export default function ClaimDetail() {
     if (!confirm('Delete this document?')) return;
     try {
       await supabaseCD.storage.from('documents').remove([storagePath]);
-      await supabase.from('documents').delete().eq('id', docId);
+      await supabaseCD.from('documents').delete().eq('id', docId);
       await loadDocuments();
     } catch (err) {
       console.error('Document delete error:', err);
