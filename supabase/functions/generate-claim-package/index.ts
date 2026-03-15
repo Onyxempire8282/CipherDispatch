@@ -102,7 +102,7 @@ serve(async (req) => {
         return null;
       }
     });
-    const allFiles = (await Promise.all(allFetches)).filter(f => f !== null);
+    const allFiles = (await Promise.all(allFetches)).filter(f => f !== null) as { name: string; bytes: Uint8Array }[];
 
     // Build zip
     const zip = new JSZip();
