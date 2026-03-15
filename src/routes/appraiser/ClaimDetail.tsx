@@ -54,6 +54,27 @@ function SupplementHistory({ claimId }: { claimId: string }) {
   );
 }
 
+function calcCycleHours(start: string | null, end: string | null): string {
+  if (!start) return 'Pending';
+  if (!end) {
+    const hrs = (Date.now() - new Date(start).getTime()) / 36e5;
+    return `${hrs.toFixed(1)}hrs (in progress)`;
+  }
+  const hrs = (new Date(end).getTime() - new Date(start).getTime()) / 36e5;
+  return `${hrs.toFixed(1)}hrs`;
+}
+
+function cycleStatus(
+  actual: string,
+  targetHrs: number,
+  endTimestamp: string | null
+): string {
+  if (actual === 'Pending') return 'Pending';
+  if (!endTimestamp) return 'In Progress';
+  const hrs = parseFloat(actual);
+  return hrs <= targetHrs ? 'On Time' : 'Over Target';
+}
+
 export default function ClaimDetail() {
   const { id } = useParams();
   const nav = useNavigate();
@@ -676,6 +697,11 @@ export default function ClaimDetail() {
   };
 
   if (!claim) return null;
+
+  const assignmentHrs = calcCycleHours(claim?.created_at, claim?.scheduled_at);
+  const inspectionHrs = calcCycleHours(claim?.scheduled_at, claim?.completed_at);
+  const appraisalHrs  = calcCycleHours(claim?.completed_at, claim?.writing_completed_at);
+  const totalHrs      = calcCycleHours(claim?.created_at, claim?.writing_completed_at);
 
   // Calculate auth info for mobile view
   const authz = getSupabaseAuthz();
@@ -1669,67 +1695,48 @@ export default function ClaimDetail() {
         </div>
 
         {/* Cycle Time */}
-        {claim.created_at && (() => {
-          function calcCycleHours(start: string | null, end: string | null): string {
-            if (!start) return 'Pending';
-            if (!end) {
-              const hrs = (Date.now() - new Date(start).getTime()) / 36e5;
-              return `${hrs.toFixed(1)}hrs (in progress)`;
-            }
-            const hrs = (new Date(end).getTime() - new Date(start).getTime()) / 36e5;
-            return `${hrs.toFixed(1)}hrs`;
-          }
-          const assignmentHrs = calcCycleHours(claim.created_at, claim.scheduled_at);
-          const inspectionHrs = calcCycleHours(claim.scheduled_at, claim.completed_at);
-          const appraisalHrs  = calcCycleHours(claim.completed_at, claim.writing_completed_at);
-          const totalHrs      = calcCycleHours(claim.created_at, claim.writing_completed_at);
-
-          const phases = [
-            { label: "Assignment", value: assignmentHrs, end: claim.scheduled_at, target: 4 },
-            { label: "Inspection", value: inspectionHrs, end: claim.completed_at, target: 48 },
-            { label: "Appraisal",  value: appraisalHrs,  end: claim.writing_completed_at, target: 72 },
-            { label: "Total",      value: totalHrs,      end: claim.writing_completed_at, target: 124 },
-          ];
-          return (
-            <div className="detail__section">
-              <h4 className="detail__section-title">Cycle Time</h4>
-              <div className="cycle-bar">
-                {phases.map((phase) => {
-                  const numHrs = parseFloat(phase.value);
-                  const hasValue = !isNaN(numHrs);
-                  const pct = hasValue ? (numHrs / phase.target) * 100 : 0;
-                  const color = !hasValue ? "var(--text-dim)"
-                    : pct > 100 ? "#e87a72"
-                    : pct >= 75  ? "#e8952a"
-                    : "#6fc86f";
-                  const status = phase.value === 'Pending' ? 'Pending'
-                    : !phase.end ? 'In Progress'
-                    : numHrs <= phase.target ? 'On Time' : 'Over Target';
-                  return (
-                    <div className="cycle-bar__phase" key={phase.label}>
-                      <div className="cycle-bar__row">
-                        <span className="cycle-bar__label">{phase.label}</span>
-                        <span className="cycle-bar__value" style={{ color }}>
-                          {phase.value}
-                        </span>
-                      </div>
-                      <div className="cycle-bar__track">
-                        <div
-                          className="cycle-bar__fill"
-                          style={{
-                            width: `${Math.min(pct, 100)}%`,
-                            background: color,
-                          }}
-                        />
-                      </div>
-                      <span className="cycle-bar__target">target: {phase.target}hrs — {status}</span>
+        {claim.created_at && (
+          <div className="detail__section">
+            <h4 className="detail__section-title">Cycle Time</h4>
+            <div className="cycle-bar">
+              {([
+                { label: "Assignment", value: assignmentHrs, end: claim.scheduled_at, target: 4 },
+                { label: "Inspection", value: inspectionHrs, end: claim.completed_at, target: 48 },
+                { label: "Appraisal",  value: appraisalHrs,  end: claim.writing_completed_at, target: 72 },
+                { label: "Total",      value: totalHrs,      end: claim.writing_completed_at, target: 124 },
+              ]).map((phase) => {
+                const numHrs = parseFloat(phase.value);
+                const hasValue = !isNaN(numHrs);
+                const pct = hasValue ? (numHrs / phase.target) * 100 : 0;
+                const color = !hasValue ? "var(--text-dim)"
+                  : pct > 100 ? "#e87a72"
+                  : pct >= 75  ? "#e8952a"
+                  : "#6fc86f";
+                const status = cycleStatus(phase.value, phase.target, phase.end);
+                return (
+                  <div className="cycle-bar__phase" key={phase.label}>
+                    <div className="cycle-bar__row">
+                      <span className="cycle-bar__label">{phase.label}</span>
+                      <span className="cycle-bar__value" style={{ color }}>
+                        {phase.value}
+                      </span>
                     </div>
-                  );
-                })}
-              </div>
+                    <div className="cycle-bar__track">
+                      <div
+                        className="cycle-bar__fill"
+                        style={{
+                          width: `${Math.min(pct, 100)}%`,
+                          background: color,
+                        }}
+                      />
+                    </div>
+                    <span className="cycle-bar__target">target: {phase.target}hrs — {status}</span>
+                  </div>
+                );
+              })}
             </div>
-          );
-        })()}
+          </div>
+        )}
 
         {/* Location & Map */}
         <div className="detail__section">
