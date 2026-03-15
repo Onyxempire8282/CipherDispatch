@@ -7,7 +7,7 @@ export const supabase = createClient(
 );
 
 export async function getCurrentFirmId(): Promise<string | null> {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await supabaseCD.auth.getUser();
   if (!user) return null;
   const { data } = await supabaseCD
     .from('profiles')
