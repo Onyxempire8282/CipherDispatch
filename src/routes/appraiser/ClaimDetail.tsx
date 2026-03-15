@@ -530,9 +530,14 @@ export default function ClaimDetail() {
       payout_status: "unpaid",
     });
 
-    supabaseCD.functions.invoke("notify-status-change", {
-      body: { claim_id: id, new_status: "COMPLETED", claim_number: claim.claim_number }
-    }).catch(() => {});
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) return;
+      fetch(`${import.meta.env.VITE_CD_SUPABASE_URL}/functions/v1/notify-status-change`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({ claim_id: id, new_status: "COMPLETED", claim_number: claim.claim_number }),
+      }).catch(() => {});
+    });
 
     nav("/my-claims");
   };
@@ -652,10 +657,15 @@ export default function ClaimDetail() {
       if (!claim?.id || !resolvedFirmId) {
         throw new Error('Missing claim ID or firm ID');
       }
-      const { data, error } = await supabaseCD.functions.invoke('generate-claim-package', {
-        body: { claim_id: claim.id, firm_id: resolvedFirmId }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No active session');
+      const resp = await fetch(`${import.meta.env.VITE_CD_SUPABASE_URL}/functions/v1/generate-claim-package`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({ claim_id: claim.id, firm_id: resolvedFirmId }),
       });
-      if (error || !data?.signed_url) throw error ?? new Error('No URL returned');
+      const data = await resp.json();
+      if (!resp.ok || !data?.signed_url) throw new Error(data?.error || 'No URL returned');
       window.open(data.signed_url, '_blank');
     } catch (err) {
       setPackageError('Package generation failed. Try again.');
@@ -869,17 +879,22 @@ export default function ClaimDetail() {
       });
 
       // Pre-wired for n8n Workflow 4
-      supabaseCD.functions.invoke("notify-status-change", {
-        body: {
-          claim_id: id,
-          new_status: "COMPLETED",
-          claim_number: claim.claim_number,
-          customer_name: claim.customer_name,
-          firm: claim.firm,
-          file_total: claim.file_total,
-          pay_amount: claim.pay_amount,
-        }
-      }).catch(() => {});
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!session) return;
+        fetch(`${import.meta.env.VITE_CD_SUPABASE_URL}/functions/v1/notify-status-change`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+          body: JSON.stringify({
+            claim_id: id,
+            new_status: "COMPLETED",
+            claim_number: claim.claim_number,
+            customer_name: claim.customer_name,
+            firm: claim.firm,
+            file_total: claim.file_total,
+            pay_amount: claim.pay_amount,
+          }),
+        }).catch(() => {});
+      });
       return;
     }
     update({ status });

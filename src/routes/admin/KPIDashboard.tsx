@@ -49,7 +49,14 @@ export default function KPIDashboard() {
         .gte('created_at', thirteenMonthsAgo.toISOString())
         .is('archived_at', null),
       supabaseCD.from('profiles').select('user_id, full_name, role'),
-      supabaseCD.functions.invoke('sla-check').catch(() => ({ data: null })),
+      supabase.auth.getSession().then(async ({ data: { session } }) => {
+        if (!session) return { data: null };
+        const resp = await fetch(`${import.meta.env.VITE_CD_SUPABASE_URL}/functions/v1/sla-check`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        }).catch(() => null);
+        return resp ? { data: await resp.json().catch(() => null) } : { data: null };
+      }),
     ]);
 
     // Filter out supplements to avoid double-counting in metrics

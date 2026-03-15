@@ -40,14 +40,18 @@ export default function ConfirmAppointment() {
     if (error) { setStage("error"); return; }
 
     // Fire webhook for n8n — pre-wired
-    supabaseCD.functions.invoke("notify-status-change", {
-      body: {
-        claim_id: claim.id,
-        new_status: "APPT_CONFIRMED",
-        claim_number: claim.claim_number,
-        customer_name: claim.customer_name,
-      }
-    }).catch(() => {});
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      fetch(`${import.meta.env.VITE_CD_SUPABASE_URL}/functions/v1/notify-status-change`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token ?? ''}` },
+        body: JSON.stringify({
+          claim_id: claim.id,
+          new_status: "APPT_CONFIRMED",
+          claim_number: claim.claim_number,
+          customer_name: claim.customer_name,
+        }),
+      }).catch(() => {});
+    });
 
     setStage("confirmed");
   };

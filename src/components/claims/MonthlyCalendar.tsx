@@ -124,16 +124,21 @@ export default function MonthlyCalendar({ claims, onClaimUpdate }: MonthlyCalend
       if (error) throw error;
 
       // Pre-wired for n8n — fires when claim is scheduled
-      supabaseCD.functions.invoke("notify-status-change", {
-        body: {
-          claim_id: pendingDrop,
-          new_status: "SCHEDULED",
-          claim_number: claims.find(c => c.id === pendingDrop)?.claim_number,
-          appointment_start: appointmentStart.toISOString(),
-          customer_name: claims.find(c => c.id === pendingDrop)?.customer_name,
-          assigned_to: selectedAppraiser || null,
-        }
-      }).catch(() => {}); // silent until n8n is live
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!session) return;
+        fetch(`${import.meta.env.VITE_CD_SUPABASE_URL}/functions/v1/notify-status-change`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+          body: JSON.stringify({
+            claim_id: pendingDrop,
+            new_status: "SCHEDULED",
+            claim_number: claims.find(c => c.id === pendingDrop)?.claim_number,
+            appointment_start: appointmentStart.toISOString(),
+            customer_name: claims.find(c => c.id === pendingDrop)?.customer_name,
+            assigned_to: selectedAppraiser || null,
+          }),
+        }).catch(() => {});
+      });
 
       handleCancelSchedule();
       onClaimUpdate();
