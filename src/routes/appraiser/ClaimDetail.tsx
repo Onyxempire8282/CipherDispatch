@@ -645,8 +645,13 @@ export default function ClaimDetail() {
     setPackageLoading(true);
     setPackageError('');
     try {
+      const resolvedFirmId = firmId ?? await getCurrentFirmId();
+      console.log('Package request:', { claim_id: claim?.id, firm_id: resolvedFirmId });
+      if (!claim?.id || !resolvedFirmId) {
+        throw new Error('Missing claim ID or firm ID');
+      }
       const { data, error } = await supabaseCD.functions.invoke('generate-claim-package', {
-        body: { claim_id: claim.id, firm_id: firmId }
+        body: { claim_id: claim.id, firm_id: resolvedFirmId }
       });
       if (error || !data?.signed_url) throw error ?? new Error('No URL returned');
       window.open(data.signed_url, '_blank');
@@ -658,14 +663,15 @@ export default function ClaimDetail() {
   }
 
   const handleDocumentUpload = async (file: File) => {
-    if (!claim?.id || !firmId) return;
+    const resolvedFirmId = firmId ?? await getCurrentFirmId();
+    if (!claim?.id || !resolvedFirmId) return;
     if (!file) return;
     setDocUploading(true);
     setDocUploadError('');
     try {
       const ext = file.name.split('.').pop() || 'pdf';
       const fileName = `${docType}_${Date.now()}.${ext}`;
-      const storagePath = `firm/${firmId}/claim/${claim.id}/${fileName}`;
+      const storagePath = `firm/${resolvedFirmId}/claim/${claim.id}/${fileName}`;
       const { error: uploadError } = await supabaseCD.storage
         .from('documents')
         .upload(storagePath, file, { upsert: true });
@@ -674,7 +680,7 @@ export default function ClaimDetail() {
         .from('documents')
         .insert({
           claim_id: claim.id,
-          firm_id: firmId,
+          firm_id: resolvedFirmId,
           type: docType,
           storage_path: storagePath,
           file_name: fileName
