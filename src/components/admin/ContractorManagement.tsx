@@ -77,16 +77,31 @@ export default function ContractorManagement() {
   const invite = async () => {
     setSaving(true);
     try {
-      const { data, error } = await supabaseCD.functions.invoke("invite-contractor", {
-        body: {
-          ...form,
-          pay_rate: form.pay_rate ? parseFloat(form.pay_rate) : null,
-          coverage_cities: form.coverage_cities
-            .split(",").map(s => s.trim()).filter(Boolean),
+      // Get HQ session token since auth lives in HQ
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No active session');
+
+      const invitePayload = {
+        ...form,
+        pay_rate: form.pay_rate ? parseFloat(form.pay_rate) : null,
+        coverage_cities: form.coverage_cities
+          .split(",").map(s => s.trim()).filter(Boolean),
+      };
+
+      const response = await fetch(
+        `${import.meta.env.VITE_CD_SUPABASE_URL}/functions/v1/invite-contractor`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify(invitePayload),
         }
-      });
-      if (error) throw new Error(data?.error || error.message);
-      if (data?.error) throw new Error(data.error);
+      );
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Invite failed');
       alert(`Invite sent to ${form.email}`);
       setShowInvite(false);
       setForm({ email:"", full_name:"", first_name:"", last_name:"", phone:"", role:"appraiser", pay_rate:"", coverage_states:[], coverage_cities:"", license_number:"", notes:"" });
