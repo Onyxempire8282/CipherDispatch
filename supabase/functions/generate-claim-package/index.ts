@@ -66,12 +66,13 @@ serve(async (req) => {
 
     // Generate signed URLs for photos
     const photoUrls: { url: string; name: string }[] = [];
-    for (const photo of photos) {
+    for (let i = 0; i < photos.length; i++) {
+      const photo = photos[i];
       const { data } = await cdSupabase.storage
         .from("claim-photos")
         .createSignedUrl(photo.storage_path, 300);
       if (data?.signedUrl) {
-        const idx = String(photo.order_index ?? photoUrls.length).padStart(2, "0");
+        const idx = String(i + 1).padStart(2, "0");
         const type = photo.photo_type || "photo";
         photoUrls.push({ url: data.signedUrl, name: `${idx}_${type}.jpg` });
       }
@@ -88,33 +89,40 @@ serve(async (req) => {
       }
     }
 
-    // Fetch all file bytes in parallel
-    const allFetches = [...photoUrls, ...docUrls].map(async (item) => {
-      try {
-        const resp = await fetch(item.url);
-        if (!resp.ok) {
-          console.error(`Failed to fetch ${item.name}: ${resp.status}`);
-          return null;
-        }
-        return { name: item.name, bytes: new Uint8Array(await resp.arrayBuffer()) };
-      } catch (err) {
-        console.error(`Error fetching ${item.name}:`, err);
-        return null;
-      }
-    });
-    const allFiles = (await Promise.all(allFetches)).filter(f => f !== null) as { name: string; bytes: Uint8Array }[];
-
     // Build zip
     const zip = new JSZip();
     const photosFolder = zip.folder("photos")!;
     const docsFolder = zip.folder("documents")!;
 
-    for (const file of allFiles) {
-      const isPhoto = photoUrls.some(p => p.name === file.name);
-      if (isPhoto) {
-        photosFolder.file(file.name, file.bytes);
-      } else {
-        docsFolder.file(file.name, file.bytes);
+    // Fetch and add photos
+    for (let i = 0; i < photoUrls.length; i++) {
+      try {
+        const resp = await fetch(photoUrls[i].url);
+        if (resp.ok) {
+          const bytes = new Uint8Array(await resp.arrayBuffer());
+          photosFolder.file(photoUrls[i].name, bytes);
+          console.log(`Added photo: ${photoUrls[i].name}`);
+        } else {
+          console.error(`Failed to fetch photo ${photoUrls[i].name}: ${resp.status}`);
+        }
+      } catch (err) {
+        console.error(`Error fetching photo ${photoUrls[i].name}:`, err);
+      }
+    }
+
+    // Fetch and add documents
+    for (let i = 0; i < docUrls.length; i++) {
+      try {
+        const resp = await fetch(docUrls[i].url);
+        if (resp.ok) {
+          const bytes = new Uint8Array(await resp.arrayBuffer());
+          docsFolder.file(docUrls[i].name, bytes);
+          console.log(`Added document: ${docUrls[i].name}`);
+        } else {
+          console.error(`Failed to fetch doc ${docUrls[i].name}: ${resp.status}`);
+        }
+      } catch (err) {
+        console.error(`Error fetching doc ${docUrls[i].name}:`, err);
       }
     }
 
