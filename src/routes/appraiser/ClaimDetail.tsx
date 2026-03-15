@@ -371,6 +371,7 @@ export default function ClaimDetail() {
       state: editState,
       zip: editZip ? String(editZip).replace('.0', '') : null,
       assigned_to: editAssignedTo || null,
+      ...(editAssignedTo ? { assigned_at: new Date().toISOString() } : {}),
       firm: editFirmName || null,
       // location_type removed until PostgREST schema cache clears
     };
