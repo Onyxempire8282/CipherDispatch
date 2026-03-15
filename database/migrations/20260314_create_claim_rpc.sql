@@ -1,7 +1,8 @@
 -- Migration: Create create_claim RPC function
 -- Date: 2026-03-14
 -- Fixes: Missing RPC function after migrating from HQ to CD
--- Note: p_owner_id is accepted but not inserted (column doesn't exist in CD claims table)
+-- Note: p_owner_id accepted but not inserted (no owner_id column in CD)
+-- Note: p_inspection_address maps to address_line1 in CD claims table
 
 CREATE OR REPLACE FUNCTION public.create_claim(
   p_owner_id uuid DEFAULT NULL,
@@ -35,7 +36,7 @@ BEGIN
     vehicle_model,
     vehicle_year,
     vin,
-    inspection_address,
+    address_line1,
     zip,
     scheduled_at,
     notes,
