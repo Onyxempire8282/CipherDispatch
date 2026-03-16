@@ -279,3 +279,21 @@
   text-transform: uppercase;
   color: var(--rivet-hi);
 }
+
+/* Invite password setup */
+.login__invite-title {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  color: var(--amber);
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+
+.login__invite-sub {
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: 14px;
+  color: var(--text-hi);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
