@@ -17,8 +17,10 @@ export default function Login() {
     const hash = window.location.hash;
     if (hash.includes('type=invite') || hash.includes('type=recovery')) {
       setIsInviteFlow(true);
-      supabase.auth.getSession().then(({ data }) => {
-        if (data.session) setIsInviteFlow(true);
+      // Exchange the token to establish a session
+      supabase.auth.exchangeCodeForSession(window.location.href).catch(() => {
+        // Try getSession as fallback — token may already be exchanged
+        supabase.auth.getSession();
       });
     }
   }, []);
@@ -39,6 +41,10 @@ export default function Login() {
     }
     setSettingPassword(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Auth session missing - please request a new invite link');
+      }
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
       window.location.href = '/CipherDispatch/';
