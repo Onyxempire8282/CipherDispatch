@@ -130,11 +130,25 @@ export default function ContractorManagement() {
 
   const deleteContractor = async (c: any) => {
     const name = c.full_name || c.email || c.user_id;
-    if (!confirm(`Remove contractor "${name}"?\n\nThis will delete their profile from Cipher Dispatch.\nClaims assigned to them will NOT be deleted.`)) return;
+    if (!confirm(`Remove contractor "${name}"?\n\nThis will delete their profile and auth account from Cipher Dispatch.\nClaims assigned to them will NOT be deleted.`)) return;
 
     try {
-      const { error } = await supabaseCD.from("profiles").delete().eq("user_id", c.user_id);
-      if (error) throw error;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No active session');
+
+      const response = await fetch(
+        `${import.meta.env.VITE_CD_SUPABASE_URL}/functions/v1/delete-contractor`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ user_id: c.user_id }),
+        }
+      );
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Delete failed');
       await load();
     } catch (err: any) {
       alert(`Error: ${err.message}`);
