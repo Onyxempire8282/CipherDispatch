@@ -19,13 +19,14 @@ export default function Login() {
     if (hash.includes('type=invite') || hash.includes('access_token')) {
       setIsInviteFlow(true);
 
-      // Parse tokens from hash
       const params = new URLSearchParams(hash.substring(1));
       const accessToken = params.get('access_token');
       const refreshToken = params.get('refresh_token');
+      const type = params.get('type');
 
-      if (accessToken && refreshToken) {
-        // Set session on CD client — invite users live in CD auth
+      // Only set session if this is actually an invite/recovery flow
+      // Don't overwrite an existing admin session
+      if (accessToken && refreshToken && (type === 'invite' || type === 'recovery')) {
         supabaseCD.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken,
