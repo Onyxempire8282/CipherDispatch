@@ -36,12 +36,34 @@ export default function Login() {
   }, []);
 
   const signIn = async () => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) return alert(error.message);
-    nav("/");
+    try {
+      // Try HQ auth first (admin/dispatch users)
+      const { data: hqData, error: hqError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (!hqError && hqData.session) {
+        nav("/");
+        return;
+      }
+
+      // HQ failed — try CD auth (contractor/appraiser accounts)
+      const { data: cdData, error: cdError } = await supabaseCD.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (!cdError && cdData.session) {
+        nav("/");
+        return;
+      }
+
+      // Both failed
+      alert('Invalid login credentials');
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
   const handleSetPassword = async () => {
