@@ -58,9 +58,9 @@ export default function AppraiserDashboard() {
 
   const loadDashboard = async () => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user: hqUser } } = await supabase.auth.getUser();
+      const { data: { user: cdUser } } = await supabaseCD.auth.getUser();
+      const user = hqUser || cdUser;
       if (!user) return;
 
       // Get first name from profile or auth metadata

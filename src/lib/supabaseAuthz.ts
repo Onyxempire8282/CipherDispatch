@@ -49,24 +49,25 @@ export class SupabaseAuthz {
     try {
       console.log("Initializing React Supabase authorization...");
 
-      // Get current session
+      // Try HQ session first (admin/dispatch users)
       const {
-        data: { session },
-        error: sessionError,
+        data: { session: hqSession },
       } = await this.authClient.auth.getSession();
 
-      if (sessionError) {
-        console.error("Session error:", sessionError);
-        return { success: false, error: "Authentication failed" };
-      }
+      // Fall back to CD session (contractor/appraiser users)
+      const {
+        data: { session: cdSession },
+      } = await this.dataClient.auth.getSession();
+
+      const session = hqSession || cdSession;
 
       if (!session) {
-        console.warn("No active session");
+        console.warn("No active session in HQ or CD");
         return { success: false, error: "No active session" };
       }
 
       this.currentUser = session.user;
-      console.log("Current user ID:", this.currentUser.id);
+      console.log("Current user ID:", this.currentUser.id, hqSession ? "(HQ)" : "(CD)");
 
       // Fetch user profile to determine role
       const { data: profile, error: profileError } = await this.dataClient

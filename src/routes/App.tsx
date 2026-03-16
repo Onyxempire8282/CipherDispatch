@@ -55,9 +55,10 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      // Try HQ user first, then CD user
+      const { data: { user: hqUser } } = await supabase.auth.getUser();
+      const { data: { user: cdUser } } = await supabaseCD.auth.getUser();
+      const user = hqUser || cdUser;
       if (!user) return nav("/login");
       const { data } = await supabaseCD
         .from("profiles")

@@ -93,7 +93,9 @@ export const NavBar: React.FC<NavBarProps> = ({ role, userName }) => {
     if (role !== "appraiser") return;
 
     const getUnviewedCount = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user: hqUser } } = await supabase.auth.getUser();
+      const { data: { user: cdUser } } = await supabaseCD.auth.getUser();
+      const user = hqUser || cdUser;
       if (!user) return;
 
       const { count } = await supabaseCD
@@ -113,6 +115,7 @@ export const NavBar: React.FC<NavBarProps> = ({ role, userName }) => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    await supabaseCD.auth.signOut();
     nav("/login");
   };
 
