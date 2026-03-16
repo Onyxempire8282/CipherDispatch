@@ -55,7 +55,8 @@ export default function Login() {
       });
 
       if (!cdError && cdData.session) {
-        nav("/");
+        // CD login succeeded — navigate to appraiser home
+        window.location.href = '/CipherDispatch/';
         return;
       }
 
