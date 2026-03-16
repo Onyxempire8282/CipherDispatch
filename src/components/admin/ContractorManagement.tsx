@@ -128,6 +128,19 @@ export default function ContractorManagement() {
     }));
   };
 
+  const deleteContractor = async (c: any) => {
+    const name = c.full_name || c.email || c.user_id;
+    if (!confirm(`Remove contractor "${name}"?\n\nThis will delete their profile from Cipher Dispatch.\nClaims assigned to them will NOT be deleted.`)) return;
+
+    try {
+      const { error } = await supabaseCD.from("profiles").delete().eq("user_id", c.user_id);
+      if (error) throw error;
+      await load();
+    } catch (err: any) {
+      alert(`Error: ${err.message}`);
+    }
+  };
+
   const getOpenClaims = (uid: string) =>
     claims.filter(c => c.assigned_to === uid);
 
@@ -189,6 +202,13 @@ export default function ContractorManagement() {
                     onClick={e => { e.stopPropagation(); toggleAvailable(c); }}
                   >
                     {c.available ? "● AVAILABLE" : "○ OFFLINE"}
+                  </button>
+                  <button
+                    className="ctm__delete-btn"
+                    onClick={e => { e.stopPropagation(); deleteContractor(c); }}
+                    title="Remove contractor"
+                  >
+                    ×
                   </button>
                 </div>
               </div>
