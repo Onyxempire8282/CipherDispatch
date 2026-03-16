@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { supabaseCD } from "../lib/supabaseCD";
 import { useNavigate } from "react-router-dom";
 import Field from "../components/ui/Field";
 import "./login.css";
@@ -15,13 +16,21 @@ export default function Login() {
 
   useEffect(() => {
     const hash = window.location.hash;
-    if (hash.includes('type=invite') || hash.includes('type=recovery')) {
+    if (hash.includes('type=invite') || hash.includes('access_token')) {
       setIsInviteFlow(true);
-      // Exchange the token to establish a session
-      supabase.auth.exchangeCodeForSession(window.location.href).catch(() => {
-        // Try getSession as fallback — token may already be exchanged
-        supabase.auth.getSession();
-      });
+
+      // Parse tokens from hash
+      const params = new URLSearchParams(hash.substring(1));
+      const accessToken = params.get('access_token');
+      const refreshToken = params.get('refresh_token');
+
+      if (accessToken && refreshToken) {
+        // Set session on CD client — invite users live in CD auth
+        supabaseCD.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+      }
     }
   }, []);
 
@@ -41,11 +50,7 @@ export default function Login() {
     }
     setSettingPassword(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('Auth session missing - please request a new invite link');
-      }
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      const { error } = await supabaseCD.auth.updateUser({ password: newPassword });
       if (error) throw error;
       window.location.href = '/CipherDispatch/';
     } catch (err: any) {
