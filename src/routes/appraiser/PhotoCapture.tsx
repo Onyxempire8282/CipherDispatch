@@ -15,6 +15,7 @@ import {
 } from "../../utils/photoCapture";
 import { uploadManager } from "../../utils/uploadManager";
 import { PHOTO_SLOTS } from "../../config/photoSlots";
+import { correctOrientation } from "../../utils/correctOrientation";
 import "./photo-capture.css";
 
 export default function PhotoCapture() {
@@ -331,7 +332,7 @@ export default function PhotoCapture() {
     // Could add logic to delete from storage/DB if needed
   };
 
-  const handleFallbackUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFallbackUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -339,13 +340,15 @@ export default function PhotoCapture() {
     const currentSlot = activeSlots[currentSlotIndex];
     if (!currentSlot) return;
 
-    const url = URL.createObjectURL(file);
+    // Fix orientation before preview and upload
+    const oriented = await correctOrientation(file);
+    const url = URL.createObjectURL(oriented);
     const photoId = crypto.randomUUID();
 
     const photo: CapturedPhoto = {
       id: photoId,
       slot_id: currentSlot.id,
-      blob: file,
+      blob: oriented,
       url,
       uploaded: false,
     };
@@ -357,7 +360,7 @@ export default function PhotoCapture() {
       return { ...prev, captured_photos: newPhotos };
     });
 
-    uploadManager.addPhoto(currentSlot.id, file);
+    uploadManager.addPhoto(currentSlot.id, oriented);
 
     setTimeout(() => {
       const nextIndex = currentSlotIndex + 1;
@@ -367,6 +370,40 @@ export default function PhotoCapture() {
     }, 300);
 
     // Reset input so the same file can be re-selected
+    e.target.value = '';
+  };
+
+  const handleAdditionalUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const slotId = 'additional';
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      // Fix orientation before preview and upload
+      const oriented = await correctOrientation(file);
+      const url = URL.createObjectURL(oriented);
+      const photoId = crypto.randomUUID();
+
+      const photo: CapturedPhoto = {
+        id: photoId,
+        slot_id: slotId,
+        blob: oriented,
+        url,
+        uploaded: false,
+      };
+
+      setState((prev) => {
+        const newPhotos = new Map(prev.captured_photos);
+        const existing = newPhotos.get(slotId) || [];
+        newPhotos.set(slotId, [...existing, photo]);
+        return { ...prev, captured_photos: newPhotos };
+      });
+
+      uploadManager.addPhoto(slotId, oriented);
+    }
+
     e.target.value = '';
   };
 
@@ -426,6 +463,23 @@ export default function PhotoCapture() {
           >
             🚛 Heavy Duty / Commercial Vehicle
           </button>
+
+          <label className="capture__type-btn capture__type-btn--upload">
+            📎 Upload Additional Photos
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleAdditionalUpload}
+              className="capture__file-input"
+            />
+          </label>
+
+          {(state.captured_photos.get('additional')?.length ?? 0) > 0 && (
+            <div className="capture__upload-count">
+              {state.captured_photos.get('additional')!.length} additional photo(s) queued
+            </div>
+          )}
 
           <button
             onClick={() => navigate(`/appraiser/claim/${claimId}`)}

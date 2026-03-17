@@ -15,6 +15,7 @@ import MobileClaimDetail from "../../components/claims/MobileClaimDetail";
 import { NavBar } from "../../components/NavBar";
 import JSZip from "jszip";
 import { getPhotoUrlWithFallback } from "../../utils/uploadManager";
+import { correctOrientation } from "../../utils/correctOrientation";
 import { getTimezoneForState } from "../../utils/stateTimezone";
 import ClaimMessageThread from "../../components/ClaimMessageThread";
 import "./claim-detail.css";
@@ -234,10 +235,14 @@ export default function ClaimDetail() {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       try {
-        const compressed = await imageCompression(file, {
+        // Fix EXIF orientation before compression
+        const oriented = await correctOrientation(file);
+        const orientedFile = new File([oriented], file.name, { type: 'image/jpeg' });
+        const compressed = await imageCompression(orientedFile, {
           maxWidthOrHeight: 1600,
           maxSizeMB: 1.5,
           useWebWorker: true,
+          exifOrientation: 1,
         });
         const path = `claim/${id}/${crypto.randomUUID()}.jpg`;
         const { error: upErr } = await supabaseCD.storage
@@ -271,9 +276,11 @@ export default function ClaimDetail() {
       const storagePath = `claim/${id}/${photoId}.jpg`;
 
       try {
+        // Fix EXIF orientation before upload
+        const oriented = await correctOrientation(file);
         const { error } = await supabaseCD.storage
           .from('claim-photos')
-          .upload(storagePath, file, { upsert: true });
+          .upload(storagePath, oriented, { upsert: true });
 
         if (!error) {
           await supabaseCD
@@ -1027,6 +1034,10 @@ export default function ClaimDetail() {
         {/* Command Strip */}
         <div className="cmd-strip">
           <div className="cmd-strip__info">
+            <div className="cmd-strip__item">
+              <span className="cmd-strip__label">Status</span>
+              <span className={`detail__status-badge ${statusClass}`}>{claim.status}</span>
+            </div>
             <div className="cmd-strip__item">
               <span className="cmd-strip__label">Claim #</span>
               <span className="cmd-strip__value" style={{ fontFamily: 'var(--font-heading)', fontSize: '1rem' }}>

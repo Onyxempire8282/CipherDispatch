@@ -45,4 +45,7 @@ export const PHOTO_SLOTS: PhotoSlot[] = [
 
   // Tires - Heavy Duty (generic)
   { id: 'tires_generic', photo_type: 'tires_generic', label: 'Tires (Generic)', instruction: 'Capture tire condition (minimum 1 required)', order_index: 26, required: true, inspection_types: ['heavy_duty'], max_photos: -1 },
+
+  // Additional Photos (always available, unlimited, not required)
+  { id: 'additional', photo_type: 'additional', label: 'Additional Photos', instruction: 'Upload any additional photos needed for this claim', order_index: 99, required: false, inspection_types: ['regular', 'heavy_duty'], max_photos: -1 },
 ];

@@ -3,6 +3,7 @@ import { supabaseCD } from '../lib/supabaseCD';
 import { UploadTask, InspectionState } from '../types/photoCapture';
 import { PHOTO_SLOTS } from '../config/photoSlots';
 import imageCompression from 'browser-image-compression';
+import { correctOrientation } from './correctOrientation';
 
 export function getPhotoUrlWithFallback(storagePath: string): string {
   if (!storagePath) return '';
@@ -78,18 +79,25 @@ export class UploadManager {
         throw new Error('No claim ID available');
       }
 
+      // Fix EXIF orientation — re-draw pixels upright so the image
+      // displays correctly regardless of viewer / browser support
+      const orientedBlob = await correctOrientation(task.blob);
+
       // Compress photo — imageCompression expects File, convert Blob
-      const file = new File([task.blob], `${task.photoId}.jpg`, { type: 'image/jpeg' });
+      const file = new File([orientedBlob], `${task.photoId}.jpg`, { type: 'image/jpeg' });
       const compressed = await imageCompression(file, {
         maxWidthOrHeight: 1600,
         maxSizeMB: 1.5,
         useWebWorker: true,
+        exifOrientation: 1, // already corrected, force orientation=1
       });
 
-      // Upload to storage
+      // Build storage path with slot label for identifiability
+      const slot = PHOTO_SLOTS.find(s => s.id === task.slotId);
+      const slotTag = slot ? slot.photo_type.replace(/[^a-zA-Z0-9_-]/g, '') : 'photo';
       const path = firmId
-        ? `firm/${firmId}/claim/${claimId}/${task.photoId}.jpg`
-        : `claim/${claimId}/${task.photoId}.jpg`;
+        ? `firm/${firmId}/claim/${claimId}/${slotTag}_${task.photoId}.jpg`
+        : `claim/${claimId}/${slotTag}_${task.photoId}.jpg`;
       const { error: storageError } = await supabaseCD.storage
         .from('claim-photos')
         .upload(path, compressed, { contentType: 'image/jpeg' });
@@ -97,7 +105,6 @@ export class UploadManager {
       if (storageError) throw storageError;
 
       // Save to database
-      const slot = PHOTO_SLOTS.find(s => s.id === task.slotId);
       if (!slot) throw new Error('Slot not found');
 
       const { error: dbError } = await supabaseCD
