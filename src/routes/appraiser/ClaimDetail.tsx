@@ -655,6 +655,24 @@ export default function ClaimDetail() {
     }
   };
 
+  const downloadPhoto = async (url: string, filename: string) => {
+    try {
+      const resp = await fetch(url);
+      const blob = await resp.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      // Fallback: open in new tab
+      window.open(url, '_blank');
+    }
+  };
+
   async function handleDownloadPackage() {
     setPackageLoading(true);
     setPackageError('');
@@ -1783,14 +1801,15 @@ export default function ClaimDetail() {
                       ×
                     </button>
                   </div>
-                  <a
-                    href={photoUrl}
-                    download={`claim-${claim?.claim_number}-photo-${p.id}.jpg`}
-                    onClick={(e) => e.stopPropagation()}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      downloadPhoto(photoUrl, `claim-${claim?.claim_number}-photo-${p.id}.jpg`);
+                    }}
                     className="detail__photo-download"
                   >
                     Download
-                  </a>
+                  </button>
                 </div>
               );
             })}
@@ -1984,13 +2003,15 @@ export default function ClaimDetail() {
                 Next →
               </button>
 
-              <a
-                href={getPhotoUrlWithFallback(photos[lightboxIndex].storage_path)}
-                download={`claim-${claim?.claim_number}-photo-${photos[lightboxIndex].id}.jpg`}
+              <button
+                onClick={() => downloadPhoto(
+                  getPhotoUrlWithFallback(photos[lightboxIndex].storage_path),
+                  `claim-${claim?.claim_number}-photo-${photos[lightboxIndex].id}.jpg`
+                )}
                 className="detail__lightbox-download"
               >
                 Download
-              </a>
+              </button>
 
               <button
                 className="detail__lightbox-delete"
