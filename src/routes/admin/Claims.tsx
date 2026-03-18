@@ -190,7 +190,7 @@ export default function AdminClaims() {
         );
         break;
       case "in_progress":
-        filtered = filtered.filter(c => ["SCHEDULED", "IN_PROGRESS", "WRITING"].includes(c.status));
+        filtered = filtered.filter(c => ["UNASSIGNED", "SCHEDULED", "IN_PROGRESS", "WRITING"].includes(c.status));
         break;
       case "completed":
         filtered = filtered.filter(c => c.status === "COMPLETED");
@@ -351,7 +351,7 @@ export default function AdminClaims() {
     setTabCounts({
       all_active: active.length,
       needs_scheduling: active.filter(c => !c.appointment_start).length,
-      in_progress: allClaims.filter(c => ["SCHEDULED", "IN_PROGRESS", "WRITING"].includes(c.status)).length,
+      in_progress: allClaims.filter(c => ["UNASSIGNED", "SCHEDULED", "IN_PROGRESS", "WRITING"].includes(c.status)).length,
       completed: allClaims.filter(c => c.status === "COMPLETED").length,
     });
     applyFilters(allClaims, activeTab, selectedStatus, searchQuery);
