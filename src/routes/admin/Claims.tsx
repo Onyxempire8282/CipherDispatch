@@ -200,7 +200,7 @@ export default function AdminClaims() {
     // Status pill filtering
     if (status !== "ALL" && tab !== "completed") {
       if (status === "UNASSIGNED") {
-        filtered = filtered.filter(claim => !claim.assigned_to);
+        filtered = filtered.filter(claim => claim.status === 'UNASSIGNED');
       } else {
         filtered = filtered.filter(claim => claim.status === status);
       }
@@ -384,7 +384,7 @@ export default function AdminClaims() {
       }, {} as Record<string, number>)
     : {};
 
-  const unassignedCount = allClaims.filter((r) => !r.assigned_to).length;
+  const unassignedCount = allClaims.filter((r) => r.status === 'UNASSIGNED').length;
 
   const groupClaimsByFirm = () => {
     const groups: Record<string, Claim[]> = {};
