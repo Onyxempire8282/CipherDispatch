@@ -137,25 +137,26 @@ export default function ClaimDetail() {
       .from('claims')
       .select("*")
       .eq("id", id);
-    if (firmId) claimQuery = claimQuery.eq("firm_id", firmId);
+    if (firmId && firmId !== '00000000-0000-0000-0000-000000000001') claimQuery = claimQuery.eq("firm_id", firmId);
     const { data } = await claimQuery.single();
     setClaim(data);
     let photoQuery = supabaseCD
       .from("claim_photos")
       .select("*")
       .eq("claim_id", id);
-    if (firmId) photoQuery = photoQuery.eq("firm_id", firmId);
+    if (firmId && firmId !== '00000000-0000-0000-0000-000000000001') photoQuery = photoQuery.eq("firm_id", firmId);
     const ph = await photoQuery.order("created_at", { ascending: false });
     setPhotos(ph.data || []);
   };
 
   const loadDocuments = async () => {
     if (!claim?.id || !firmId) return;
-    const { data } = await supabaseCD
+    let docQuery = supabaseCD
       .from('documents')
       .select('*')
-      .eq('claim_id', claim.id)
-      .eq('firm_id', firmId)
+      .eq('claim_id', claim.id);
+    if (firmId && firmId !== '00000000-0000-0000-0000-000000000001') docQuery = docQuery.eq('firm_id', firmId);
+    const { data } = await docQuery
       .neq('type', 'package')
       .order('created_at', { ascending: false });
     setDocuments(data || []);
