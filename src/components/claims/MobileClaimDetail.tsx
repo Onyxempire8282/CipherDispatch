@@ -43,6 +43,7 @@ interface MobileClaimDetailProps {
   onPhotoClick: (index: number) => void;
   onPhotoCapture: string;
   onPhoto?: (files: FileList) => void;
+  onDownloadPhotos?: () => void;
   currentUser?: { name: string; role: string };
 }
 
@@ -118,6 +119,7 @@ export default function MobileClaimDetail({
   onPhotoClick,
   onPhotoCapture,
   onPhoto,
+  onDownloadPhotos,
   currentUser,
 }: MobileClaimDetailProps) {
   // Get status display text
@@ -444,6 +446,11 @@ export default function MobileClaimDetail({
 
         {/* Photos Section - EXPANDED only if photos exist, visible to all */}
         <CollapsibleSection title={`Photos (${photos.length})`} icon="📸" defaultOpen={hasPhotos}>
+          {photos.length > 0 && onDownloadPhotos && (
+            <button className="btn btn--ghost btn--sm mobile-detail__download-btn" onClick={onDownloadPhotos}>
+              Download All
+            </button>
+          )}
           {photos.length === 0 ? (
             <div className="mobile-detail__photos-empty">
               No photos yet. Use Guided Photo Capture to add photos.

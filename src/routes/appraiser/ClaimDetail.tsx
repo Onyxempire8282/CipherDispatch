@@ -945,6 +945,7 @@ export default function ClaimDetail() {
           onPhotoClick={setLightboxIndex}
           onPhotoCapture={`/appraiser/claim/${id}/photos`}
           onPhoto={handlePhotoUpload}
+          onDownloadPhotos={downloadAllPhotos}
           currentUser={{ name: userInfo?.fullName || "Unknown", role: userInfo?.role || "admin" }}
         />
 
@@ -1755,7 +1756,14 @@ export default function ClaimDetail() {
 
         {/* Photos Section */}
         <div className="detail__section">
-          <h4 className="detail__section-title">Photos ({photos.length})</h4>
+          <div className="detail__section-header">
+            <h4 className="detail__section-title">Photos ({photos.length})</h4>
+            {photos.length > 0 && (
+              <button className="btn btn--ghost btn--sm" onClick={downloadAllPhotos}>
+                Download All
+              </button>
+            )}
+          </div>
 
           <div className="detail__photos-actions">
             <div className="detail__photo-supplemental">

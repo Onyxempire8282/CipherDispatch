@@ -372,6 +372,10 @@
   font-weight: 300;
 }
 
+.mobile-detail__download-btn {
+  margin-bottom: 10px;
+}
+
 .mobile-detail__photos-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
